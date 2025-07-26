@@ -303,6 +303,11 @@ export default function OutputColumns({
   const [columnModels, setColumnModels] = useState<{ [key: string]: string }>({});
   const [initialized, setInitialized] = useState(false);
 
+  // Refs for smooth scrolling
+  const remixRef = useRef<HTMLDivElement>(null);
+  const socialPostsRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   // Get all column keys from columnResponses prop
   const columnKeys = Object.keys(columnResponses);
 
@@ -310,6 +315,58 @@ export default function OutputColumns({
   const prevColumnModelsRef = useRef<{ [key: string]: string }>({});
   // Use ref to track column keys to prevent infinite re-renders
   const prevColumnKeysRef = useRef<string[]>([]);
+  // Track previous states for scroll triggers
+  const prevShowRemixRef = useRef<boolean>(false);
+  const prevShowSocialPostsRef = useRef<{ [key: string]: boolean }>({});
+
+  // Smooth scroll function
+  const smoothScrollToElement = useCallback((element: HTMLElement | null) => {
+    if (!element || !scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const elementRect = element.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    const scrollTop = container.scrollTop;
+    const elementTop = element.offsetTop;
+    const containerHeight = container.clientHeight;
+
+    // Calculate the target scroll position to center the element
+    const targetScrollTop = elementTop - containerHeight / 2 + element.clientHeight / 2;
+
+    // Smooth scroll to the target position
+    container.scrollTo({
+      top: targetScrollTop,
+      behavior: 'smooth',
+    });
+  }, []);
+
+  // Effect to scroll to remix when it appears
+  useEffect(() => {
+    if (showRemix && !prevShowRemixRef.current && remixRef.current) {
+      // Small delay to ensure the element is rendered
+      setTimeout(() => {
+        smoothScrollToElement(remixRef.current);
+      }, 100);
+    }
+    prevShowRemixRef.current = showRemix;
+  }, [showRemix, smoothScrollToElement]);
+
+  // Effect to scroll to new social posts when they appear
+  useEffect(() => {
+    Object.entries(showSocialPosts).forEach(([socialPostId, isVisible]) => {
+      if (isVisible && !prevShowSocialPostsRef.current[socialPostId]) {
+        const socialPostRef = socialPostsRefs.current[socialPostId];
+        if (socialPostRef) {
+          // Small delay to ensure the element is rendered
+          setTimeout(() => {
+            smoothScrollToElement(socialPostRef);
+          }, 100);
+        }
+      }
+    });
+    prevShowSocialPostsRef.current = { ...showSocialPosts };
+  }, [showSocialPosts, smoothScrollToElement]);
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -425,7 +482,7 @@ export default function OutputColumns({
 
   return (
     <div className="relative w-full h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto content-scroll-area">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto content-scroll-area">
         <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto pb-32">
           {columnKeys.map((column, index) => (
             <motion.div
@@ -566,6 +623,7 @@ export default function OutputColumns({
           {/* Remix Column */}
           {showRemix && (
             <motion.div
+              ref={remixRef}
               initial={{ opacity: 0, y: 20, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -691,6 +749,9 @@ export default function OutputColumns({
             return (
               <motion.div
                 key={socialPostId}
+                ref={(el) => {
+                  socialPostsRefs.current[socialPostId] = el;
+                }}
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
