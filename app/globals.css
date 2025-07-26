@@ -342,16 +342,14 @@
     background: #94a3b8 !important;
   }
 
-  /* Ensure consistent column heights */
+  /* Allow columns to expand naturally */
   .column-container {
-    height: 600px;
     display: flex;
     flex-direction: column;
   }
 
   .column-content {
     flex: 1;
-    overflow-y: auto;
     min-height: 0;
   }
 }
