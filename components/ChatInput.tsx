@@ -10,6 +10,7 @@ interface ChatInputProps {
   onNewChat?: () => void;
   onRemix?: (modelId: string) => void;
   remixDisabled?: boolean;
+  isRemixGenerating?: boolean;
 }
 
 export default function ChatInput({
@@ -18,6 +19,7 @@ export default function ChatInput({
   onNewChat,
   onRemix,
   remixDisabled,
+  isRemixGenerating = false,
 }: ChatInputProps) {
   const [prompt, setPrompt] = useState(currentMessage);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -470,7 +472,13 @@ export default function ChatInput({
             {/* Right side buttons container (bottom right) */}
             <div className="absolute bottom-3 right-3 flex items-center space-x-2">
               {/* Remix button */}
-              {onRemix && <RemixDropdown onRemix={onRemix} disabled={remixDisabled} />}
+              {onRemix && (
+                <RemixDropdown
+                  onRemix={onRemix}
+                  disabled={remixDisabled}
+                  isGenerating={isRemixGenerating}
+                />
+              )}
 
               {/* Submit button */}
               <motion.button

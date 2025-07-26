@@ -679,6 +679,7 @@ export default function Home() {
                 !Object.values(originalResponses).some((response) => response.trim() !== '') ||
                 !currentMessage.trim()
               }
+              isRemixGenerating={isRemixGenerating}
             />
           </div>
           {showRightPanel && (

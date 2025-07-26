@@ -7,9 +7,14 @@ import { ModelInfo } from '@/lib/api-client';
 interface RemixDropdownProps {
   onRemix: (modelId: string) => void;
   disabled?: boolean;
+  isGenerating?: boolean;
 }
 
-export default function RemixDropdown({ onRemix, disabled = false }: RemixDropdownProps) {
+export default function RemixDropdown({
+  onRemix,
+  disabled = false,
+  isGenerating = false,
+}: RemixDropdownProps) {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,15 +127,20 @@ export default function RemixDropdown({ onRemix, disabled = false }: RemixDropdo
           }
           setIsOpen(!isOpen);
         }}
-        disabled={disabled}
+        disabled={disabled || isGenerating}
         className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${
-          disabled
+          disabled || isGenerating
             ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-500'
             : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-md hover:shadow-lg transform hover:scale-105'
-        }`}
+        } ${isGenerating ? 'animate-pulse' : ''}`}
       >
         <div className="flex items-center space-x-1">
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className={`w-3 h-3 ${isGenerating ? 'animate-spin' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -138,15 +148,22 @@ export default function RemixDropdown({ onRemix, disabled = false }: RemixDropdo
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
             />
           </svg>
-          <span>Remix</span>
-          <svg
-            className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <span>{isGenerating ? 'Generating...' : 'Remix'}</span>
+          {!isGenerating && (
+            <svg
+              className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          )}
         </div>
       </button>
 
