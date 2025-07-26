@@ -282,14 +282,14 @@ export default function ChatInput({
     >
       <form onSubmit={handleSubmit} className="flex justify-center">
         <div className="w-full relative">
-          <div className="relative bg-white dark:bg-kitchen-dark-surface rounded-xl border border-gray-200 dark:border-gray-700 p-8 shadow-sm">
+          <div className="relative bg-white dark:bg-kitchen-dark-surface rounded-xl border border-gray-200 dark:border-gray-700 p-8 pb-14 shadow-sm">
             <textarea
               ref={textareaRef}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything..."
-              className="w-full bg-transparent border-none outline-none resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pr-20 min-h-[3rem]"
+              className="w-full bg-transparent border-none outline-none resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pr-15 min-h-[3rem] pb-8"
               maxLength={1000}
               disabled={isSubmitting}
             />
