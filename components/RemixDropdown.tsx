@@ -66,10 +66,13 @@ export default function RemixDropdown({ onRemix, disabled = false }: RemixDropdo
   if (loading) {
     return (
       <div className="relative remix-dropdown">
-        <button disabled className="kitchen-button text-sm px-4 py-2 opacity-50 cursor-not-allowed">
-          <div className="flex items-center space-x-2">
+        <button
+          disabled
+          className="px-3 py-1.5 text-xs rounded-lg opacity-50 cursor-not-allowed bg-gray-200 text-gray-500"
+        >
+          <div className="flex items-center space-x-1">
             <motion.div
-              className="w-4 h-4 border-2 border-kitchen-accent-blue dark:border-kitchen-dark-accent-blue border-t-transparent rounded-full"
+              className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
             />
@@ -85,7 +88,7 @@ export default function RemixDropdown({ onRemix, disabled = false }: RemixDropdo
       <div className="relative remix-dropdown">
         <button
           disabled
-          className="kitchen-button text-sm px-4 py-2 opacity-50 cursor-not-allowed"
+          className="px-3 py-1.5 text-xs rounded-lg opacity-50 cursor-not-allowed bg-gray-200 text-gray-500"
           title={`Error: ${error}`}
         >
           Remix
@@ -120,14 +123,14 @@ export default function RemixDropdown({ onRemix, disabled = false }: RemixDropdo
           setIsOpen(!isOpen);
         }}
         disabled={disabled}
-        className={`text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+        className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${
           disabled
             ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-500'
             : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-md hover:shadow-lg transform hover:scale-105'
         }`}
       >
-        <div className="flex items-center space-x-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center space-x-1">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -137,7 +140,7 @@ export default function RemixDropdown({ onRemix, disabled = false }: RemixDropdo
           </svg>
           <span>Remix</span>
           <svg
-            className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
