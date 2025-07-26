@@ -474,13 +474,12 @@ export default function OutputColumns({
                       <div className="flex items-center space-x-2">
                         {/* Show model badge instead of dropdown when there's AI content */}
                         {hasAIContent ? (
-                          <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full">
-                            {models.find((m) => m.id === columnModels[column])?.name || 'Model'}
+                          <span className="text-xs bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-2 py-1 rounded-full">
+                            {columnModels[column] || 'Model'}
                           </span>
                         ) : (
-                          <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full">
-                            {models.find((m) => m.id === columnModels[column])?.name ||
-                              'Unknown Model'}
+                          <span className="text-xs bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-2 py-1 rounded-full">
+                            {columnModels[column] || 'Unknown Model'}
                           </span>
                         )}
                       </div>

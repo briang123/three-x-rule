@@ -129,16 +129,8 @@ export default function ModelGridSelector({
     );
   }
 
-  // Create a 3x3 grid, filling with available models and empty slots
-  const gridItems = [];
-  for (let i = 0; i < 9; i++) {
-    const model = models[i];
-    if (model) {
-      gridItems.push(model);
-    } else {
-      gridItems.push(null); // Empty slot
-    }
-  }
+  // Only show available models, no empty slots
+  const gridItems = models;
 
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
@@ -151,126 +143,33 @@ export default function ModelGridSelector({
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         {gridItems.map((model, index) => (
           <motion.div
-            key={model?.id || `empty-${index}`}
+            key={model.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
-            className={`relative ${model ? 'cursor-pointer' : 'opacity-30 cursor-not-allowed'}`}
+            className="relative cursor-pointer"
           >
-            {model ? (
-              <div
-                className={`relative p-4 rounded-xl border-2 transition-all duration-200 h-32 w-full flex flex-col ${
-                  isModelSelected(model.id)
-                    ? 'border-kitchen-accent-blue dark:border-kitchen-dark-accent-blue bg-kitchen-accent-blue/5 dark:bg-kitchen-dark-accent-blue/10'
-                    : 'border-kitchen-light-gray dark:border-kitchen-dark-border bg-kitchen-white dark:bg-kitchen-dark-surface hover:border-kitchen-accent-blue/50 dark:hover:border-kitchen-dark-accent-blue/50'
-                } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={() => handleModelToggle(model.id)}
-              >
-                {/* Selection indicator */}
-                {isModelSelected(model.id) && (
-                  <motion.div
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue rounded-full flex items-center justify-center"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <svg
-                      className="w-4 h-4 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  </motion.div>
-                )}
-
-                {/* Model info */}
-                <div className="text-center flex-1 flex flex-col">
-                  <h3 className="font-semibold text-kitchen-text dark:text-kitchen-dark-text text-sm mb-1">
-                    {model.name}
-                  </h3>
-                  <p
-                    className="text-xs text-kitchen-text-light dark:text-kitchen-dark-text-light mb-3 flex-1 overflow-hidden"
-                    style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                    }}
-                  >
-                    {model.description}
-                  </p>
-
-                  {/* Counter input - always reserve space */}
-                  <div className="h-8 flex items-center justify-center">
-                    {isModelSelected(model.id) ? (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center justify-center space-x-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          onClick={() => handleCountChange(model.id, getModelCount(model.id) - 1)}
-                          className="w-6 h-6 rounded-full bg-kitchen-light-gray dark:bg-kitchen-dark-surface-light flex items-center justify-center text-kitchen-text dark:text-kitchen-dark-text hover:bg-kitchen-accent-blue/20 transition-colors"
-                          disabled={disabled}
-                        >
-                          <svg
-                            className="w-3 h-3"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M20 12H4"
-                            />
-                          </svg>
-                        </button>
-                        <span className="text-sm font-medium text-kitchen-text dark:text-kitchen-dark-text min-w-[2rem]">
-                          {getModelCount(model.id)}
-                        </span>
-                        <button
-                          onClick={() => handleCountChange(model.id, getModelCount(model.id) + 1)}
-                          className="w-6 h-6 rounded-full bg-kitchen-light-gray dark:bg-kitchen-dark-surface-light flex items-center justify-center text-kitchen-text dark:text-kitchen-dark-text hover:bg-kitchen-accent-blue/20 transition-colors"
-                          disabled={disabled}
-                        >
-                          <svg
-                            className="w-3 h-3"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 4v16m8-8H4"
-                            />
-                          </svg>
-                        </button>
-                      </motion.div>
-                    ) : (
-                      <div className="h-6" /> // Invisible spacer to maintain consistent height
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 rounded-xl border-2 border-dashed border-kitchen-light-gray dark:border-kitchen-dark-border bg-transparent h-32 w-full flex flex-col justify-center">
-                <div className="text-center text-kitchen-text-light dark:text-kitchen-dark-text-light">
+            <div
+              className={`relative p-4 rounded-xl border-2 transition-all duration-200 h-32 w-full flex flex-col ${
+                isModelSelected(model.id)
+                  ? 'border-kitchen-accent-blue dark:border-kitchen-dark-accent-blue bg-kitchen-accent-blue/5 dark:bg-kitchen-dark-accent-blue/10'
+                  : 'border-kitchen-light-gray dark:border-kitchen-dark-border bg-kitchen-white dark:bg-kitchen-dark-surface hover:border-kitchen-accent-blue/50 dark:hover:border-kitchen-dark-accent-blue/50'
+              } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={() => handleModelToggle(model.id)}
+            >
+              {/* Selection indicator */}
+              {isModelSelected(model.id) && (
+                <motion.div
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue rounded-full flex items-center justify-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
                   <svg
-                    className="w-8 h-8 mx-auto mb-2 opacity-50"
+                    className="w-4 h-4 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -279,13 +178,85 @@ export default function ModelGridSelector({
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  <p className="text-xs">More models coming soon</p>
+                </motion.div>
+              )}
+
+              {/* Model info */}
+              <div className="text-center flex-1 flex flex-col">
+                <h3 className="font-semibold text-kitchen-text dark:text-kitchen-dark-text text-sm mb-1">
+                  {model.name}
+                </h3>
+                <p
+                  className="text-xs text-kitchen-text-light dark:text-kitchen-dark-text-light mb-3 flex-1 overflow-hidden"
+                  style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                  }}
+                >
+                  {model.description}
+                </p>
+
+                {/* Counter input - always reserve space */}
+                <div className="h-8 flex items-center justify-center">
+                  {isModelSelected(model.id) ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center justify-center space-x-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => handleCountChange(model.id, getModelCount(model.id) - 1)}
+                        className="w-6 h-6 rounded-full bg-kitchen-light-gray dark:bg-kitchen-dark-surface-light flex items-center justify-center text-kitchen-text dark:text-kitchen-dark-text hover:bg-kitchen-accent-blue/20 transition-colors"
+                        disabled={disabled}
+                      >
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M20 12H4"
+                          />
+                        </svg>
+                      </button>
+                      <span className="text-sm font-medium text-kitchen-text dark:text-kitchen-dark-text min-w-[2rem]">
+                        {getModelCount(model.id)}
+                      </span>
+                      <button
+                        onClick={() => handleCountChange(model.id, getModelCount(model.id) + 1)}
+                        className="w-6 h-6 rounded-full bg-kitchen-light-gray dark:bg-kitchen-dark-surface-light flex items-center justify-center text-kitchen-text dark:text-kitchen-dark-text hover:bg-kitchen-accent-blue/20 transition-colors"
+                        disabled={disabled}
+                      >
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 4v16m8-8H4"
+                          />
+                        </svg>
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <div className="h-6" /> // Invisible spacer to maintain consistent height
+                  )}
                 </div>
               </div>
-            )}
+            </div>
           </motion.div>
         ))}
       </div>
