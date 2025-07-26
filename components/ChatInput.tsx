@@ -23,6 +23,7 @@ export default function ChatInput({
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showFileSupport, setShowFileSupport] = useState(false);
+  const [hoveredFile, setHoveredFile] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -76,17 +77,33 @@ export default function ChatInput({
       const allowedTypes = [
         'text/plain',
         'text/markdown',
+        'text/x-markdown',
         'application/pdf',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'image/jpeg',
         'image/jpg',
         'image/png',
         'image/gif',
       ];
 
-      if (!allowedTypes.includes(file.type)) {
-        errors.push(`${file.name} has an unsupported file type.`);
+      // Check file extension for additional support
+      const fileName = file.name.toLowerCase();
+      const isMarkdownByExtension = fileName.endsWith('.md') || fileName.endsWith('.markdown');
+      const isExcelByExtension = fileName.endsWith('.xls') || fileName.endsWith('.xlsx');
+      const isWordByExtension = fileName.endsWith('.doc') || fileName.endsWith('.docx');
+      const isTextByExtension = fileName.endsWith('.txt');
+
+      // Allow files based on MIME type OR extension
+      const isAllowedByType = allowedTypes.includes(file.type);
+      const isAllowedByExtension =
+        isMarkdownByExtension || isExcelByExtension || isWordByExtension || isTextByExtension;
+
+      if (!isAllowedByType && !isAllowedByExtension) {
+        console.log('File type not supported:', file.name, 'Type:', file.type);
+        errors.push(`${file.name} has an unsupported file type (${file.type}).`);
         return;
       }
 
@@ -119,6 +136,113 @@ export default function ChatInput({
     fileInputRef.current?.click();
   };
 
+  const viewFile = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      // For images, open in a new tab
+      const url = URL.createObjectURL(file);
+      window.open(url, '_blank');
+    } else {
+      // For other files, download them
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const getFileIcon = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+        </svg>
+      );
+    } else if (file.type === 'application/pdf') {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+          />
+        </svg>
+      );
+    } else if (
+      file.type.includes('word') ||
+      file.name.toLowerCase().endsWith('.doc') ||
+      file.name.toLowerCase().endsWith('.docx')
+    ) {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      );
+    } else if (
+      file.type.includes('excel') ||
+      file.name.toLowerCase().endsWith('.xls') ||
+      file.name.toLowerCase().endsWith('.xlsx')
+    ) {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"
+          />
+        </svg>
+      );
+    } else {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      );
+    }
+  };
+
+  const getFileColor = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      return 'text-purple-500';
+    } else if (file.type === 'application/pdf') {
+      return 'text-red-500';
+    } else if (
+      file.type.includes('word') ||
+      file.name.toLowerCase().endsWith('.doc') ||
+      file.name.toLowerCase().endsWith('.docx')
+    ) {
+      return 'text-green-500';
+    } else if (
+      file.type.includes('excel') ||
+      file.name.toLowerCase().endsWith('.xls') ||
+      file.name.toLowerCase().endsWith('.xlsx')
+    ) {
+      return 'text-orange-500';
+    } else {
+      return 'text-blue-500';
+    }
+  };
+
   return (
     <motion.div
       className="bg-kitchen-white dark:bg-kitchen-dark-surface border-t border-kitchen-light-gray dark:border-t-kitchen-dark-border p-4 transition-colors duration-200"
@@ -143,115 +267,204 @@ export default function ChatInput({
               disabled={isSubmitting}
             />
 
-            {/* File attachment button (bottom left) with popover */}
-            <div className="absolute bottom-3 left-3">
-              <button
-                type="button"
-                onClick={openFileDialog}
-                onMouseEnter={() => setShowFileSupport(true)}
-                onMouseLeave={() => setShowFileSupport(false)}
-                disabled={isSubmitting}
-                className="w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors duration-200 disabled:opacity-50"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-              </button>
+            {/* File attachment button and file icons (bottom left) */}
+            <div className="absolute bottom-3 left-3 flex items-center space-x-2">
+              {/* File attachment button with popover */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={openFileDialog}
+                  onMouseEnter={() => setShowFileSupport(true)}
+                  onMouseLeave={() => setShowFileSupport(false)}
+                  disabled={isSubmitting}
+                  className="w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors duration-200 disabled:opacity-50"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                </button>
 
-              <AnimatePresence>
-                {showFileSupport && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 z-20"
+                <AnimatePresence>
+                  {showFileSupport && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 z-20"
+                    >
+                      <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs rounded-lg p-3 shadow-xl border border-gray-200 dark:border-gray-700 w-[32rem] backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
+                        <div className="font-medium text-sm mb-2">Supported Files</div>
+
+                        <div className="flex items-center justify-between mb-2 gap-2">
+                          <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+                            <svg
+                              className="w-3 h-3 text-blue-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                            <span>.txt, .md</span>
+                          </div>
+                          <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+                            <svg
+                              className="w-3 h-3 text-red-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                              />
+                            </svg>
+                            <span>.pdf</span>
+                          </div>
+                          <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+                            <svg
+                              className="w-3 h-3 text-green-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                            <span>.doc, .docx</span>
+                          </div>
+                          <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+                            <svg
+                              className="w-3 h-3 text-orange-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"
+                              />
+                            </svg>
+                            <span>.xls, .xlsx</span>
+                          </div>
+                          <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+                            <svg
+                              className="w-3 h-3 text-purple-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                            <span>.jpg, .png</span>
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Max 10MB per file
+                        </div>
+
+                        {/* Arrow pointing down */}
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-6 border-r-6 border-t-6 border-transparent border-t-white dark:border-t-gray-900"></div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* File attachment icons */}
+              {attachments.map((file, index) => (
+                <div key={index} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => viewFile(file)}
+                    onMouseEnter={() => setHoveredFile(index)}
+                    onMouseLeave={() => setHoveredFile(null)}
+                    className={`w-8 h-8 rounded-full bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 flex items-center justify-center ${getFileColor(file)} hover:scale-110 transition-all duration-200 shadow-sm`}
                   >
-                    <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs rounded-lg p-3 shadow-xl border border-gray-200 dark:border-gray-700 w-80 backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
-                      <div className="font-medium text-sm mb-2">Supported Files</div>
+                    {getFileIcon(file)}
+                  </button>
 
-                      <div className="flex items-center justify-between mb-2 gap-2">
-                        <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
-                          <svg
-                            className="w-3 h-3 text-blue-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          <span>.txt, .md</span>
-                        </div>
-                        <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
-                          <svg
-                            className="w-3 h-3 text-red-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                            />
-                          </svg>
-                          <span>.pdf</span>
-                        </div>
-                        <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
-                          <svg
-                            className="w-3 h-3 text-green-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          <span>.doc, .docx</span>
-                        </div>
-                        <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
-                          <svg
-                            className="w-3 h-3 text-purple-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                          <span>.jpg, .png</span>
-                        </div>
-                      </div>
+                  {/* Remove button */}
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(index)}
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200"
+                  >
+                    ×
+                  </button>
 
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        Max 10MB per file
-                      </div>
+                  {/* File info popover */}
+                  <AnimatePresence>
+                    {hoveredFile === index && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                        className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 z-20"
+                      >
+                        <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs rounded-lg p-3 shadow-xl border border-gray-200 dark:border-gray-700 w-[28rem] backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
+                          <div className="flex items-start space-x-2 mb-2">
+                            <div
+                              className={`w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center ${getFileColor(file)} flex-shrink-0`}
+                            >
+                              {getFileIcon(file)}
+                            </div>
+                            <div className="font-medium text-sm break-words min-w-0">
+                              {file.name}
+                            </div>
+                          </div>
 
-                      {/* Arrow pointing down */}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-6 border-r-6 border-t-6 border-transparent border-t-white dark:border-t-gray-900"></div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                          <div className="space-y-1 text-gray-600 dark:text-gray-300">
+                            <div className="flex justify-between">
+                              <span>Type:</span>
+                              <span className="capitalize truncate ml-2">
+                                {file.type.split('/')[1]}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Size:</span>
+                              <span>{(file.size / 1024).toFixed(1)} KB</span>
+                            </div>
+                          </div>
+
+                          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                            Click to {file.type.startsWith('image/') ? 'view' : 'download'}
+                          </div>
+
+                          {/* Arrow pointing down */}
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-6 border-r-6 border-t-6 border-transparent border-t-white dark:border-t-gray-900"></div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
             </div>
 
             {/* Right side buttons container (bottom right) */}
@@ -296,7 +509,7 @@ export default function ChatInput({
             multiple
             onChange={handleFileSelect}
             className="hidden"
-            accept=".txt,.md,.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+            accept=".txt,.md,.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
           />
 
           {/* Character count and help text */}
@@ -310,94 +523,6 @@ export default function ChatInput({
           </div>
         </div>
       </form>
-
-      {/* File Attachments - moved below the input */}
-      <div className="mt-4 space-y-2">
-        <div className="flex items-center space-x-2">
-          {attachments.length > 0 && (
-            <>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {attachments.length} file(s) attached
-              </span>
-              <button
-                type="button"
-                onClick={clearAllAttachments}
-                disabled={isSubmitting}
-                className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 transition-colors duration-200"
-              >
-                Clear All
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Attachment List */}
-        {attachments.length > 0 && (
-          <div className="space-y-1">
-            {attachments.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 transition-colors duration-200"
-              >
-                <div className="flex items-center space-x-2">
-                  {file.type.startsWith('image/') ? (
-                    <svg
-                      className="w-4 h-4 text-blue-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-4 h-4 text-gray-500 dark:text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                  )}
-                  <div className="flex flex-col">
-                    <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
-                      {file.name}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {file.type} • {(file.size / 1024).toFixed(1)} KB
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeAttachment(index)}
-                  disabled={isSubmitting}
-                  className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 transition-colors duration-200"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </motion.div>
   );
 }
