@@ -245,7 +245,7 @@ export default function ChatInput({
 
   return (
     <motion.div
-      className="bg-kitchen-white dark:bg-kitchen-dark-surface border-t border-kitchen-light-gray dark:border-t-kitchen-dark-border p-4 transition-colors duration-200"
+      className="p-4 transition-colors duration-200"
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -253,7 +253,7 @@ export default function ChatInput({
       <form onSubmit={handleSubmit} className="flex justify-center">
         <div className="w-1/2 relative">
           {/* Main input container */}
-          <div className="relative bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <div className="relative bg-white dark:bg-kitchen-dark-surface rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
             {/* Textarea */}
             <textarea
               ref={textareaRef}
