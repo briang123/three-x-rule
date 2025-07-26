@@ -139,7 +139,8 @@ export default function ModelGridSelector({
           Select AI Models
         </h2>
         <p className="text-kitchen-text-light dark:text-kitchen-dark-text-light">
-          Choose the models you want to compare and set how many columns to generate for each
+          Choose the models you want to compare and set how many response variations to generate for
+          each model.
         </p>
       </div>
 
@@ -269,7 +270,7 @@ export default function ModelGridSelector({
           className="bg-kitchen-light-gray dark:bg-kitchen-dark-surface-light rounded-lg p-4"
         >
           <h3 className="font-semibold text-kitchen-text dark:text-kitchen-dark-text mb-2">
-            Selected Models ({selectedModels.reduce((sum, s) => sum + s.count, 0)} total columns)
+            Selected Models ({selectedModels.reduce((sum, s) => sum + s.count, 0)} total models)
           </h3>
           <div className="flex flex-wrap gap-2">
             {selectedModels.map((selection) => {
