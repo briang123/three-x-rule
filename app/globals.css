@@ -304,10 +304,14 @@
     overflow-y: auto !important;
     scrollbar-width: thin !important;
     scrollbar-color: #d1d5db #f1f3f4 !important;
+    max-height: 100% !important;
+    height: 100% !important;
   }
 
   .dark .output-column-scroll {
     scrollbar-color: #64748b #334155 !important;
+    max-height: 100% !important;
+    height: 100% !important;
   }
 
   .output-column-scroll::-webkit-scrollbar {

@@ -414,8 +414,8 @@ export default function OutputColumns({
   };
 
   return (
-    <div className="relative w-full">
-      <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto">
+    <div className="relative w-full h-full output-column-scroll">
+      <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto pb-6 min-h-full">
         {columnKeys.map((column, index) => (
           <motion.div
             key={column}
