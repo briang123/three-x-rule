@@ -29,6 +29,29 @@ export default function ChatInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Auto-resize textarea function
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+
+    // Calculate the height needed for the content
+    const scrollHeight = textarea.scrollHeight;
+    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight);
+    const maxHeight = lineHeight * 8; // 8 rows maximum
+
+    // Set the height, but cap it at 8 rows
+    if (scrollHeight <= maxHeight) {
+      textarea.style.height = `${scrollHeight}px`;
+      textarea.style.overflowY = 'hidden';
+    } else {
+      textarea.style.height = `${maxHeight}px`;
+      textarea.style.overflowY = 'auto';
+    }
+  };
+
   // Update prompt when currentMessage changes (for new chat)
   useEffect(() => {
     console.log('ChatInput: currentMessage changed to:', currentMessage);
@@ -37,6 +60,11 @@ export default function ChatInput({
       textareaRef.current.focus();
     }
   }, [currentMessage]);
+
+  // Adjust textarea height when prompt changes
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [prompt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,8 +289,7 @@ export default function ChatInput({
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything..."
-              className="w-full bg-transparent border-none outline-none resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pr-20"
-              rows={2}
+              className="w-full bg-transparent border-none outline-none resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pr-20 min-h-[3rem]"
               maxLength={1000}
               disabled={isSubmitting}
             />
