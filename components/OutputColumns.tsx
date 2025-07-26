@@ -1,10 +1,14 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SelectedSentence } from '@/app/page';
 import { ModelInfo } from '@/lib/api-client';
 import ReactMarkdown from 'react-markdown';
+import TextHighlighter, { useTextHighlighter, Highlight } from './TextHighlighter';
+import { Typewriter } from './Typewriter';
+import { TypingIndicator } from './TypingIndicator';
+import './TextHighlighter.css';
 
 // Copy to Clipboard Component
 function CopyButton({ content }: { content: string }) {
@@ -49,40 +53,7 @@ function CopyButton({ content }: { content: string }) {
   );
 }
 
-// Floating Add Button Component
-function FloatingAddButton({
-  selectedText,
-  onAdd,
-  position,
-  columnColor,
-}: {
-  selectedText: string;
-  onAdd: () => void;
-  position: { x: number; y: number };
-  columnColor: string;
-}) {
-  return (
-    <div
-      className="fixed z-50"
-      style={{
-        left: position.x,
-        top: position.y,
-      }}
-    >
-      <button
-        onClick={onAdd}
-        className={`w-8 h-8 rounded-full shadow-lg flex items-center justify-center text-white transition-all duration-200 hover:scale-110 ${columnColor}`}
-        title="Add to selections"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      </button>
-    </div>
-  );
-}
-
-// Highlightable Text Component
+// Highlightable Text Component using the modular TextHighlighter
 function HighlightableText({
   content,
   onAddSelection,
@@ -92,70 +63,39 @@ function HighlightableText({
   onAddSelection: (text: string) => void;
   column: 'A' | 'B' | 'C';
 }) {
-  const [selectedText, setSelectedText] = useState('');
-  const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
-  const [showButton, setShowButton] = useState(false);
-  const [highlightedTexts, setHighlightedTexts] = useState<string[]>([]);
+  const { highlights, addHighlight, removeHighlight } = useTextHighlighter();
 
   const columnColors = {
-    A: 'bg-blue-500 hover:bg-blue-600',
-    B: 'bg-green-500 hover:bg-green-600',
-    C: 'bg-purple-500 hover:bg-purple-600',
+    A: 'rgba(59, 130, 246, 0.3)', // blue
+    B: 'rgba(34, 197, 94, 0.3)', // green
+    C: 'rgba(168, 85, 247, 0.3)', // purple
   };
 
-  const handleMouseUp = () => {
-    const selection = window.getSelection();
-    if (selection && selection.toString().trim()) {
-      const text = selection.toString().trim();
-      if (text.length > 0) {
-        setSelectedText(text);
+  const handleHighlightAdd = (highlight: Highlight) => {
+    // Add to local highlights - extract the data without id and timestamp
+    const { id, timestamp, ...highlightData } = highlight;
+    addHighlight(highlightData);
 
-        // Get selection coordinates
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-
-        setButtonPosition({
-          x: rect.right + 10,
-          y: rect.top - 20,
-        });
-        setShowButton(true);
-      }
-    } else {
-      setShowButton(false);
-    }
+    // Add to selections for the parent component
+    onAddSelection(highlight.text);
   };
 
-  const handleAddSelection = () => {
-    if (selectedText) {
-      onAddSelection(selectedText);
-      setHighlightedTexts((prev) => [...prev, selectedText]);
-      setShowButton(false);
-      setSelectedText('');
-      window.getSelection()?.removeAllRanges();
-    }
+  const handleHighlightRemove = (highlightId: string) => {
+    removeHighlight(highlightId);
   };
-
-  // Hide button when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setShowButton(false);
-      setSelectedText('');
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
 
   return (
     <div className="relative">
-      <div
+      <TextHighlighter
+        highlights={highlights}
+        onHighlightAdd={handleHighlightAdd}
+        onHighlightRemove={handleHighlightRemove}
+        highlightColor={columnColors[column]}
         className={`bg-gray-50 rounded-lg p-4 border border-gray-200 select-text highlightable-text-${column.toLowerCase()}`}
-        onMouseUp={handleMouseUp}
       >
         <div className="text-sm text-gray-800 markdown-content">
           <ReactMarkdown
             components={{
-              // Custom components to maintain styling
               p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
               h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
               h2: ({ children }) => <h2 className="text-base font-bold mb-2">{children}</h2>,
@@ -181,16 +121,7 @@ function HighlightableText({
             {content}
           </ReactMarkdown>
         </div>
-      </div>
-
-      {showButton && (
-        <FloatingAddButton
-          selectedText={selectedText}
-          onAdd={handleAddSelection}
-          position={buttonPosition}
-          columnColor={columnColors[column]}
-        />
-      )}
+      </TextHighlighter>
     </div>
   );
 }
@@ -330,6 +261,11 @@ export default function OutputColumns({
     B: '',
     C: '',
   });
+  const previousContentRef = useRef({
+    A: '',
+    B: '',
+    C: '',
+  });
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -374,6 +310,15 @@ export default function OutputColumns({
 
     fetchModels();
   }, []);
+
+  // Update previous content ref after rendering
+  useEffect(() => {
+    previousContentRef.current = {
+      A: originalResponses.A,
+      B: originalResponses.B,
+      C: originalResponses.C,
+    };
+  }, [originalResponses]);
 
   const handleModelChange = (column: 'A' | 'B' | 'C', modelId: string) => {
     console.log(`OutputColumns: Model changed for column ${column}: ${modelId}`);
@@ -422,12 +367,14 @@ export default function OutputColumns({
                   <span>Loading models...</span>
                 </div>
               ) : (
-                <ColumnModelSelector
-                  selectedModel={columnModels[column]}
-                  onModelChange={(modelId) => handleModelChange(column, modelId)}
-                  models={models}
-                  column={column}
-                />
+                <>
+                  <ColumnModelSelector
+                    selectedModel={columnModels[column]}
+                    onModelChange={(modelId) => handleModelChange(column, modelId)}
+                    models={models}
+                    column={column}
+                  />
+                </>
               )}
             </div>
           </div>
@@ -438,7 +385,7 @@ export default function OutputColumns({
               {isGenerating[column] && (
                 <div className="text-center text-blue-600 py-4">
                   <div className="flex items-center justify-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <TypingIndicator />
                     <span className="text-sm font-medium">Generating response...</span>
                   </div>
                 </div>

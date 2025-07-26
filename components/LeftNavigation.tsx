@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const navigationItems = [
   {
@@ -82,25 +83,69 @@ const navigationItems = [
 ];
 
 export default function LeftNavigation() {
+  const [isCollapsed, setIsCollapsed] = useState(true); // Default to collapsed
+
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   return (
     <motion.nav
-      className="w-64 bg-kitchen-white border-r border-kitchen-light-gray flex flex-col h-screen overflow-hidden"
+      className={`bg-kitchen-white border-r border-kitchen-light-gray flex flex-col h-screen overflow-hidden transition-all duration-300 ${
+        isCollapsed ? 'w-16' : 'w-64'
+      }`}
       initial={{ x: -100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
       {/* Logo/Brand */}
-      <div className="p-6 border-b border-kitchen-light-gray flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-kitchen-accent-blue to-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">3x</span>
+      <div
+        className={`border-b border-kitchen-light-gray flex-shrink-0 ${isCollapsed ? 'p-4' : 'p-6'}`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-kitchen-accent-blue to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-bold text-sm">3x</span>
+            </div>
+            <AnimatePresence>
+              {!isCollapsed && (
+                <motion.h2
+                  className="text-lg font-semibold text-kitchen-text"
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  3x Rule
+                </motion.h2>
+              )}
+            </AnimatePresence>
           </div>
-          <h2 className="text-lg font-semibold text-kitchen-text">3x Rule</h2>
+
+          {/* Toggle Button */}
+          <motion.button
+            onClick={toggleCollapse}
+            className="p-1 rounded-lg hover:bg-kitchen-light-gray transition-colors duration-200"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`}
+            >
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </motion.button>
         </div>
       </div>
 
       {/* Navigation Items */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className={`flex-1 overflow-y-auto ${isCollapsed ? 'p-2' : 'p-4'}`}>
         <ul className="space-y-2">
           {navigationItems.map((item) => (
             <motion.li key={item.id}>
@@ -109,12 +154,25 @@ export default function LeftNavigation() {
                   item.active
                     ? 'bg-kitchen-accent-blue text-white shadow-sm'
                     : 'text-kitchen-text-light hover:bg-kitchen-light-gray hover:text-kitchen-text'
-                }`}
+                } ${isCollapsed ? 'justify-center px-2' : ''}`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                title={isCollapsed ? item.label : undefined}
               >
                 <span className="flex-shrink-0">{item.icon}</span>
-                <span className="font-medium">{item.label}</span>
+                <AnimatePresence>
+                  {!isCollapsed && (
+                    <motion.span
+                      className="font-medium"
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: 'auto' }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </motion.button>
             </motion.li>
           ))}
@@ -122,15 +180,25 @@ export default function LeftNavigation() {
       </div>
 
       {/* Bottom Section */}
-      <div className="p-4 border-t border-kitchen-light-gray flex-shrink-0">
-        <div className="bg-kitchen-light-gray rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-kitchen-text mb-2">Quick Tips</h3>
-          <p className="text-xs text-kitchen-text-light leading-relaxed">
-            Select sentences from different outputs to create a refined response using the 3x Rule
-            methodology.
-          </p>
-        </div>
-      </div>
+      <AnimatePresence>
+        {!isCollapsed && (
+          <motion.div
+            className="p-4 border-t border-kitchen-light-gray flex-shrink-0"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="bg-kitchen-light-gray rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-kitchen-text mb-2">Quick Tips</h3>
+              <p className="text-xs text-kitchen-text-light leading-relaxed">
+                Select sentences from different outputs to create a refined response using the 3x
+                Rule methodology.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.nav>
   );
 }

@@ -20,11 +20,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract conversation ID for context management
-    const conversationId = body.conversationId || `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+    const conversationId =
+      body.conversationId || `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     // Get existing conversation context if available
     const existingConversation = conversationStore.get(conversationId);
-    
+
     // Merge context from existing conversation and new request
     const mergedContext = {
       ...existingConversation?.context,
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest) {
     }
 
     const conversation = conversationStore.get(conversationId);
-    
+
     if (!conversation) {
       return NextResponse.json(
         {
@@ -190,4 +191,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 },
     );
   }
-} 
+}

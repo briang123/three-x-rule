@@ -41,7 +41,8 @@ async function messageWithContext() {
       model: 'gemini-2.0-flash',
       context: {
         text: 'You are a helpful geography assistant. Always provide accurate information about countries and their capitals.',
-        systemPrompt: 'You are a knowledgeable geography expert. Provide detailed and accurate information.',
+        systemPrompt:
+          'You are a knowledgeable geography expert. Provide detailed and accurate information.',
       },
       temperature: 0.3,
     }),
@@ -165,7 +166,7 @@ async function streamingResponse() {
 
   while (true) {
     const { done, value } = await reader.read();
-    
+
     if (done) break;
 
     const chunk = decoder.decode(value);
@@ -216,12 +217,7 @@ async function messageWithImages() {
 
 // Example 7: Using different models
 async function differentModels() {
-  const models = [
-    'gemini-2.5-pro',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-pro',
-  ];
+  const models = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
 
   for (const model of models) {
     const response = await fetch('/api/chat', {
@@ -272,7 +268,7 @@ async function errorHandling() {
     });
 
     const result = await response.json();
-    
+
     if (!result.success) {
       console.error('API Error:', result.error);
     } else {
@@ -298,7 +294,7 @@ async function usingApiClient() {
     {
       temperature: 0.7,
       maxTokens: 100,
-    }
+    },
   );
 
   const basicResponse = await apiClient.sendMessage(basicRequest);
@@ -315,7 +311,7 @@ async function usingApiClient() {
       conversationId: 'my-conversation-123',
       temperature: 0.8,
       stream: false,
-    }
+    },
   );
 
   const advancedResponse = await apiClient.sendAdvancedMessage(advancedRequest);
@@ -364,4 +360,4 @@ To use these examples:
    - Streaming responses
    - Temperature and other generation parameters
    - Error handling and validation
-*/ 
+*/

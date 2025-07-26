@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Check if streaming is requested
     const shouldStream = body.stream === true;
-    
+
     if (shouldStream) {
       // Return streaming response
       return streamResponse(chatRequest);
@@ -77,15 +77,15 @@ async function streamResponse(chatRequest: ChatRequest) {
         // For now, we'll send the full response as a single chunk
         // In a real implementation, you'd want to use Gemini's streaming API
         const response = await geminiService.sendMessage(chatRequest);
-        
+
         const chunk = encoder.encode(
           `data: ${JSON.stringify({
             success: true,
             data: response,
             timestamp: new Date().toISOString(),
-          })}\n\n`
+          })}\n\n`,
         );
-        
+
         controller.enqueue(chunk);
         controller.close();
       } catch (error) {
@@ -94,9 +94,9 @@ async function streamResponse(chatRequest: ChatRequest) {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error',
             timestamp: new Date().toISOString(),
-          })}\n\n`
+          })}\n\n`,
         );
-        
+
         controller.enqueue(errorChunk);
         controller.close();
       }
@@ -107,7 +107,7 @@ async function streamResponse(chatRequest: ChatRequest) {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }
