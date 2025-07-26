@@ -7,6 +7,7 @@ import { ModelInfo } from '@/lib/api-client';
 import ReactMarkdown from 'react-markdown';
 import TextHighlighter, { useTextHighlighter, Highlight } from './TextHighlighter';
 import { TypingIndicator } from './TypingIndicator';
+import ChatInput from './ChatInput';
 import './TextHighlighter.css';
 
 // Copy to Clipboard Component
@@ -149,7 +150,6 @@ interface OutputColumnsProps {
   onDeleteColumn?: (column: string) => void;
   // Remix props
   remixResponse?: string;
-  isRemixGenerating?: boolean;
   showRemix?: boolean;
   onCloseRemix?: () => void;
   remixModel?: string;
@@ -159,6 +159,12 @@ interface OutputColumnsProps {
   showSocialPosts?: { [key: string]: boolean };
   onCloseSocialPosts?: (socialPostId: string) => void;
   socialPostsConfigs?: { [key: string]: any };
+  // ChatInput props
+  onSubmit: (prompt: string, attachments?: File[]) => void;
+  currentMessage?: string;
+  onRemix?: (modelId: string) => void;
+  remixDisabled?: boolean;
+  isRemixGenerating?: boolean;
 }
 
 // Simple Model Selector Component for Columns
@@ -266,7 +272,6 @@ export default function OutputColumns({
   onAddColumn,
   onDeleteColumn,
   remixResponse = '',
-  isRemixGenerating = false,
   showRemix = false,
   onCloseRemix,
   remixModel = '',
@@ -275,6 +280,11 @@ export default function OutputColumns({
   showSocialPosts = {},
   onCloseSocialPosts,
   socialPostsConfigs = {},
+  onSubmit,
+  currentMessage = '',
+  onRemix,
+  remixDisabled = false,
+  isRemixGenerating = false,
 }: OutputColumnsProps) {
   const handleAddSelection = useCallback(
     (text: string, source: string) => {
@@ -414,310 +424,44 @@ export default function OutputColumns({
   };
 
   return (
-    <div className="relative w-full h-full output-column-scroll">
-      <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto pb-6 min-h-full">
-        {columnKeys.map((column, index) => (
-          <motion.div
-            key={column}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 * index, ease: 'easeOut' }}
-            className="kitchen-card p-6 flex flex-col overflow-hidden w-full max-w-full flex-shrink-0 column-container"
-          >
-            <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold ${getColumnColor(column)} bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue`}
-                >
-                  {column}
-                </div>
-                {loading ? (
-                  <div className="px-3 py-1 bg-kitchen-light-gray border border-kitchen-light-gray rounded-lg text-sm text-kitchen-text-light flex items-center space-x-2">
-                    <div className="w-3 h-3 border border-kitchen-text-light border-t-transparent rounded-full animate-spin"></div>
-                    <span>Loading models...</span>
-                  </div>
-                ) : (
-                  <ColumnModelSelector
-                    selectedModel={columnModels[column] || ''}
-                    onModelChange={(modelId) => handleModelChange(column, modelId)}
-                    models={models}
-                    column={column}
-                  />
-                )}
-              </div>
-              {/* Delete Button: Only show if more than one column */}
-              {onDeleteColumn && columnKeys.length > 1 && (
-                <button
-                  onClick={() => onDeleteColumn(column)}
-                  className="ml-2 p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-red-500 dark:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-600"
-                  title="Delete column"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            {/* Responses Display */}
-            <div className="column-content pr-2">
-              <div className="space-y-3">
-                {isGenerating[column] && (
-                  <div className="text-center text-blue-600 py-4">
-                    <div className="flex items-center justify-center space-x-2">
-                      <TypingIndicator />
-                      <span className="text-sm font-medium">Generating response...</span>
-                    </div>
-                  </div>
-                )}
-
-                {columnResponses[column].length === 0 && !isGenerating[column] ? (
-                  <div className="text-center text-gray-500 py-8">
-                    <svg
-                      className="w-12 h-12 mx-auto mb-4 text-gray-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                      />
-                    </svg>
-                    <p>No responses yet. Enter a prompt above to generate content.</p>
-                  </div>
-                ) : (
-                  // Markdown View
-                  <div className="relative">
-                    <div className="absolute top-2 right-2 z-10">
-                      <CopyButton
-                        content={originalResponses[column] || columnResponses[column].join('\n\n')}
-                      />
-                    </div>
-                    <HighlightableText
-                      content={originalResponses[column] || columnResponses[column].join('\n\n')}
-                      onAddSelection={(text) => handleAddSelection(text, column)}
-                      column={column}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        ))}
-
-        {/* Add Column Button */}
-        {onAddColumn && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 * columnKeys.length, ease: 'easeOut' }}
-            className="kitchen-card p-6 flex flex-col items-center justify-center w-full max-w-full flex-shrink-0 border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer column-container"
-            onClick={onAddColumn}
-          >
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <svg
-                className="w-8 h-8 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-            </div>
-            <p className="text-gray-500 font-medium">Add Column</p>
-            <p className="text-gray-400 text-sm text-center mt-2">
-              Click to add another AI model comparison
-            </p>
-          </motion.div>
-        )}
-
-        {/* Remix Column */}
-        {showRemix && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="kitchen-card p-6 flex flex-col overflow-hidden w-full max-w-full flex-shrink-0 column-container"
-          >
-            <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-gradient-to-r from-purple-500 to-pink-500">
-                  <svg
-                    className={`w-5 h-5 ${isRemixGenerating ? 'animate-spin' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg font-semibold text-kitchen-text dark:text-kitchen-dark-text">
-                    Remix
-                  </span>
-                  <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full">
-                    {remixModel || 'Model'}
-                  </span>
-                </div>
-              </div>
-              {onCloseRemix && (
-                <button
-                  onClick={onCloseRemix}
-                  className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-red-500 dark:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-600"
-                  title="Close remix"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            {/* Remix Response Display */}
-            <div className="column-content pr-2">
-              <div className="space-y-3">
-                {isRemixGenerating && (
-                  <div className="text-center text-blue-600 py-4">
-                    <div className="flex items-center justify-center space-x-2">
-                      <TypingIndicator />
-                      <span className="text-sm font-medium">Generating remix...</span>
-                    </div>
-                  </div>
-                )}
-
-                {!remixResponse && !isRemixGenerating ? (
-                  <div className="text-center text-gray-500 py-8">
-                    <svg
-                      className="w-12 h-12 mx-auto mb-4 text-gray-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                    <p>Remix response will appear here.</p>
-                  </div>
-                ) : (
-                  // Markdown View for Remix
-                  <div className="relative">
-                    <div className="absolute top-2 right-2 z-10">
-                      <CopyButton content={remixResponse} />
-                    </div>
-                    <HighlightableText
-                      content={remixResponse}
-                      onAddSelection={(text) => handleAddSelection(text, 'R')}
-                      column="R"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Social Posts Columns */}
-        {Object.entries(showSocialPosts).map(([socialPostId, isVisible]) => {
-          if (!isVisible) return null;
-
-          const config = socialPostsConfigs[socialPostId];
-          const response = socialPostsResponses[socialPostId];
-          const isGenerating = isSocialPostsGenerating[socialPostId];
-
-          // Get platform-specific colors
-          const getPlatformColors = (platform: string) => {
-            const colors = {
-              twitter: 'from-blue-400 to-blue-600',
-              linkedin: 'from-blue-600 to-blue-800',
-              instagram: 'from-pink-400 to-purple-600',
-              facebook: 'from-blue-500 to-blue-700',
-              tiktok: 'from-pink-500 to-red-500',
-            };
-            return colors[platform as keyof typeof colors] || 'from-green-500 to-emerald-500';
-          };
-
-          return (
+    <div className="relative w-full h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto content-scroll-area">
+        <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto pb-32">
+          {columnKeys.map((column, index) => (
             <motion.div
-              key={socialPostId}
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className={`kitchen-card p-6 flex flex-col overflow-hidden flex-shrink-0 column-container border-2 border-green-500 dark:border-green-400 w-full max-w-full`}
+              key={column}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 * index, ease: 'easeOut' }}
+              className="kitchen-card p-6 flex flex-col overflow-hidden w-full max-w-full flex-shrink-0 column-container"
             >
               <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
                 <div className="flex items-center space-x-3">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-gradient-to-r ${getPlatformColors(config?.platform)}`}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold ${getColumnColor(column)} bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                      />
-                    </svg>
+                    {column}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg font-semibold text-kitchen-text dark:text-kitchen-dark-text">
-                      Social Posts
-                    </span>
-                    <span
-                      className={`text-xs bg-gradient-to-r ${getPlatformColors(config?.platform)} text-white px-2 py-1 rounded-full`}
-                    >
-                      {config?.platform || 'Platform'}
-                    </span>
-                    {config?.postType === 'article' && (
-                      <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
-                        Double-wide
-                      </span>
-                    )}
-                  </div>
+                  {loading ? (
+                    <div className="px-3 py-1 bg-kitchen-light-gray border border-kitchen-light-gray rounded-lg text-sm text-kitchen-text-light flex items-center space-x-2">
+                      <div className="w-3 h-3 border border-kitchen-text-light border-t-transparent rounded-full animate-spin"></div>
+                      <span>Loading models...</span>
+                    </div>
+                  ) : (
+                    <ColumnModelSelector
+                      selectedModel={columnModels[column] || ''}
+                      onModelChange={(modelId) => handleModelChange(column, modelId)}
+                      models={models}
+                      column={column}
+                    />
+                  )}
                 </div>
-                {onCloseSocialPosts && (
+                {/* Delete Button: Only show if more than one column */}
+                {onDeleteColumn && columnKeys.length > 1 && (
                   <button
-                    onClick={() => onCloseSocialPosts(socialPostId)}
-                    className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-red-500 dark:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-600"
-                    title="Close social posts"
+                    onClick={() => onDeleteColumn(column)}
+                    className="ml-2 p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-red-500 dark:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-600"
+                    title="Delete column"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -737,19 +481,19 @@ export default function OutputColumns({
                 )}
               </div>
 
-              {/* Social Posts Response Display */}
-              <div className="output-column-scroll pr-2 column-content">
+              {/* Responses Display */}
+              <div className="column-content pr-2">
                 <div className="space-y-3">
-                  {isGenerating && (
+                  {isGenerating[column] && (
                     <div className="text-center text-blue-600 py-4">
                       <div className="flex items-center justify-center space-x-2">
                         <TypingIndicator />
-                        <span className="text-sm font-medium">Generating social posts...</span>
+                        <span className="text-sm font-medium">Generating response...</span>
                       </div>
                     </div>
                   )}
 
-                  {!response && !isGenerating ? (
+                  {columnResponses[column].length === 0 && !isGenerating[column] ? (
                     <div className="text-center text-gray-500 py-8">
                       <svg
                         className="w-12 h-12 mx-auto mb-4 text-gray-300"
@@ -761,29 +505,317 @@ export default function OutputColumns({
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                         />
                       </svg>
-                      <p>Social posts will appear here.</p>
+                      <p>No responses yet. Enter a prompt above to generate content.</p>
                     </div>
                   ) : (
-                    // Markdown View for Social Posts
+                    // Markdown View
                     <div className="relative">
                       <div className="absolute top-2 right-2 z-10">
-                        <CopyButton content={response} />
+                        <CopyButton
+                          content={
+                            originalResponses[column] || columnResponses[column].join('\n\n')
+                          }
+                        />
                       </div>
                       <HighlightableText
-                        content={response}
-                        onAddSelection={(text) => handleAddSelection(text, 'S')}
-                        column="S"
+                        content={originalResponses[column] || columnResponses[column].join('\n\n')}
+                        onAddSelection={(text) => handleAddSelection(text, column)}
+                        column={column}
                       />
                     </div>
                   )}
                 </div>
               </div>
             </motion.div>
-          );
-        })}
+          ))}
+
+          {/* Add Column Button */}
+          {onAddColumn && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 * columnKeys.length, ease: 'easeOut' }}
+              className="kitchen-card p-6 flex flex-col items-center justify-center w-full max-w-full flex-shrink-0 border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer column-container"
+              onClick={onAddColumn}
+            >
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <svg
+                  className="w-8 h-8 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+              </div>
+              <p className="text-gray-500 font-medium">Add Column</p>
+              <p className="text-gray-400 text-sm text-center mt-2">
+                Click to add another AI model comparison
+              </p>
+            </motion.div>
+          )}
+
+          {/* Remix Column */}
+          {showRemix && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="kitchen-card p-6 flex flex-col overflow-hidden w-full max-w-full flex-shrink-0 column-container"
+            >
+              <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-gradient-to-r from-purple-500 to-pink-500">
+                    <svg
+                      className={`w-5 h-5 ${isRemixGenerating ? 'animate-spin' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg font-semibold text-kitchen-text dark:text-kitchen-dark-text">
+                      Remix
+                    </span>
+                    <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full">
+                      {remixModel || 'Model'}
+                    </span>
+                  </div>
+                </div>
+                {onCloseRemix && (
+                  <button
+                    onClick={onCloseRemix}
+                    className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-red-500 dark:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-600"
+                    title="Close remix"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Remix Response Display */}
+              <div className="column-content pr-2">
+                <div className="space-y-3">
+                  {isRemixGenerating && (
+                    <div className="text-center text-blue-600 py-4">
+                      <div className="flex items-center justify-center space-x-2">
+                        <TypingIndicator />
+                        <span className="text-sm font-medium">Generating remix...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {!remixResponse && !isRemixGenerating ? (
+                    <div className="text-center text-gray-500 py-8">
+                      <svg
+                        className="w-12 h-12 mx-auto mb-4 text-gray-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      <p>Remix response will appear here.</p>
+                    </div>
+                  ) : (
+                    // Markdown View for Remix
+                    <div className="relative">
+                      <div className="absolute top-2 right-2 z-10">
+                        <CopyButton content={remixResponse} />
+                      </div>
+                      <HighlightableText
+                        content={remixResponse}
+                        onAddSelection={(text) => handleAddSelection(text, 'R')}
+                        column="R"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Social Posts Columns */}
+          {Object.entries(showSocialPosts).map(([socialPostId, isVisible]) => {
+            if (!isVisible) return null;
+
+            const config = socialPostsConfigs[socialPostId];
+            const response = socialPostsResponses[socialPostId];
+            const isGenerating = isSocialPostsGenerating[socialPostId];
+
+            // Get platform-specific colors
+            const getPlatformColors = (platform: string) => {
+              const colors = {
+                twitter: 'from-blue-400 to-blue-600',
+                linkedin: 'from-blue-600 to-blue-800',
+                instagram: 'from-pink-400 to-purple-600',
+                facebook: 'from-blue-500 to-blue-700',
+                tiktok: 'from-pink-500 to-red-500',
+              };
+              return colors[platform as keyof typeof colors] || 'from-green-500 to-emerald-500';
+            };
+
+            return (
+              <motion.div
+                key={socialPostId}
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className={`kitchen-card p-6 flex flex-col overflow-hidden flex-shrink-0 column-container border-2 border-green-500 dark:border-green-400 w-full max-w-full`}
+              >
+                <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-gradient-to-r ${getPlatformColors(config?.platform)}`}
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-semibold text-kitchen-text dark:text-kitchen-dark-text">
+                        Social Posts
+                      </span>
+                      <span
+                        className={`text-xs bg-gradient-to-r ${getPlatformColors(config?.platform)} text-white px-2 py-1 rounded-full`}
+                      >
+                        {config?.platform || 'Platform'}
+                      </span>
+                      {config?.postType === 'article' && (
+                        <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                          Double-wide
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {onCloseSocialPosts && (
+                    <button
+                      onClick={() => onCloseSocialPosts(socialPostId)}
+                      className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-red-500 dark:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-600"
+                      title="Close social posts"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Social Posts Response Display */}
+                <div className="output-column-scroll pr-2 column-content">
+                  <div className="space-y-3">
+                    {isGenerating && (
+                      <div className="text-center text-blue-600 py-4">
+                        <div className="flex items-center justify-center space-x-2">
+                          <TypingIndicator />
+                          <span className="text-sm font-medium">Generating social posts...</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {!response && !isGenerating ? (
+                      <div className="text-center text-gray-500 py-8">
+                        <svg
+                          className="w-12 h-12 mx-auto mb-4 text-gray-300"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                          />
+                        </svg>
+                        <p>Social posts will appear here.</p>
+                      </div>
+                    ) : (
+                      // Markdown View for Social Posts
+                      <div className="relative">
+                        <div className="absolute top-2 right-2 z-10">
+                          <CopyButton content={response} />
+                        </div>
+                        <HighlightableText
+                          content={response}
+                          onAddSelection={(text) => handleAddSelection(text, 'S')}
+                          column="S"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+
+          {/* ChatInput as sticky footer within the scrollable container */}
+          <div className="sticky bottom-0 bg-gray-50/80 dark:bg-kitchen-dark-bg/80 border-gray-200 dark:border-kitchen-dark-border z-10 w-full left-0 right-0 backdrop-blur-md">
+            {/* Gradient fade overlay for softer edge */}
+            <div className="absolute inset-x-0 -top-8 h-8 bg-gradient-to-b from-transparent to-gray-50/80 dark:to-kitchen-dark-bg/80 pointer-events-none"></div>
+            <ChatInput
+              onSubmit={onSubmit}
+              currentMessage={currentMessage}
+              onRemix={onRemix}
+              remixDisabled={remixDisabled}
+              isRemixGenerating={isRemixGenerating}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

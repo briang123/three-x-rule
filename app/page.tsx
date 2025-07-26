@@ -649,7 +649,7 @@ export default function Home() {
         <TopBar onNewChat={handleNewChat} onSocialPosts={handleSocialPosts} />
         <div className="flex flex-1 overflow-hidden">
           <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex-1 overflow-hidden p-6">
+            <div className="flex-1 p-6 pb-0 h-full">
               <OutputColumns
                 onSentenceSelect={handleSentenceSelect}
                 selectedSentences={selectedSentences}
@@ -669,18 +669,16 @@ export default function Home() {
                 showSocialPosts={showSocialPosts}
                 onCloseSocialPosts={handleCloseSocialPosts}
                 socialPostsConfigs={socialPostsConfigs}
+                onSubmit={handleSubmit}
+                currentMessage={currentMessage}
+                onRemix={handleRemix}
+                remixDisabled={
+                  !Object.values(originalResponses).some((response) => response.trim() !== '') ||
+                  !currentMessage.trim()
+                }
+                isRemixGenerating={isRemixGenerating}
               />
             </div>
-            <ChatInput
-              onSubmit={handleSubmit}
-              currentMessage={currentMessage}
-              onRemix={handleRemix}
-              remixDisabled={
-                !Object.values(originalResponses).some((response) => response.trim() !== '') ||
-                !currentMessage.trim()
-              }
-              isRemixGenerating={isRemixGenerating}
-            />
           </div>
           {showRightPanel && (
             <RightSelectionsPanel

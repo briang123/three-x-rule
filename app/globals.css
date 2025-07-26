@@ -308,6 +308,91 @@
     height: 100% !important;
   }
 
+  /* Main page scrollable container */
+  .main-scroll-container {
+    overflow-y: auto !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #d1d5db #f1f3f4 !important;
+  }
+
+  .main-scroll-container::-webkit-scrollbar {
+    width: 8px !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .main-scroll-container::-webkit-scrollbar-track {
+    background: #f1f3f4 !important;
+    border-radius: 4px !important;
+  }
+
+  .dark .main-scroll-container::-webkit-scrollbar-track {
+    background: #334155 !important;
+  }
+
+  .main-scroll-container::-webkit-scrollbar-thumb {
+    background: #d1d5db !important;
+    border-radius: 4px !important;
+  }
+
+  .dark .main-scroll-container::-webkit-scrollbar-thumb {
+    background: #64748b !important;
+  }
+
+  .main-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af !important;
+  }
+
+  .dark .main-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8 !important;
+  }
+
+  /* Content scrollable area within OutputColumns */
+  .content-scroll-area {
+    overflow-y: auto !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #d1d5db #f1f3f4 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+  }
+
+  .content-scroll-area::-webkit-scrollbar {
+    width: 8px !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .content-scroll-area::-webkit-scrollbar-track {
+    background: #f1f3f4 !important;
+    border-radius: 4px !important;
+  }
+
+  .dark .content-scroll-area::-webkit-scrollbar-track {
+    background: #334155 !important;
+  }
+
+  .content-scroll-area::-webkit-scrollbar-thumb {
+    background: #d1d5db !important;
+    border-radius: 4px !important;
+  }
+
+  .dark .content-scroll-area::-webkit-scrollbar-thumb {
+    background: #64748b !important;
+  }
+
+  .content-scroll-area::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af !important;
+  }
+
+  .dark .content-scroll-area::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8 !important;
+  }
+
+  .dark .content-scroll-area {
+    height: 100% !important;
+    max-height: 100% !important;
+  }
+
   .dark .output-column-scroll {
     scrollbar-color: #64748b #334155 !important;
     max-height: 100% !important;

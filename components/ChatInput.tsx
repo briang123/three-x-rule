@@ -253,10 +253,8 @@ export default function ChatInput({
       transition={{ duration: 0.3 }}
     >
       <form onSubmit={handleSubmit} className="flex justify-center">
-        <div className="w-1/2 relative">
-          {/* Main input container */}
-          <div className="relative bg-white dark:bg-kitchen-dark-surface rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-            {/* Textarea */}
+        <div className="w-full relative">
+          <div className="relative bg-white dark:bg-kitchen-dark-surface rounded-xl border border-gray-200 dark:border-gray-700 p-8 shadow-sm">
             <textarea
               ref={textareaRef}
               value={prompt}
@@ -268,10 +266,7 @@ export default function ChatInput({
               maxLength={1000}
               disabled={isSubmitting}
             />
-
-            {/* File attachment button and file icons (bottom left) */}
             <div className="absolute bottom-3 left-3 flex items-center space-x-2">
-              {/* File attachment button with popover */}
               <div className="relative">
                 <button
                   type="button"
