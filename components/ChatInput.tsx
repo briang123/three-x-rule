@@ -75,7 +75,7 @@ export default function ChatInput({ onSubmit, currentMessage = '', onNewChat }: 
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Enter your prompt here... (e.g., 'Explain the benefits of the 3x Rule methodology')"
+              placeholder="drop in a prompt, and watch the magic unfold!"
               className="kitchen-input w-full resize-none"
               rows={2}
               maxLength={1000}

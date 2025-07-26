@@ -7,8 +7,8 @@ import { SelectedSentence } from '@/app/page';
 interface RightSelectionsPanelProps {
   selectedSentences: SelectedSentence[];
   onRemoveSentence: (id: string) => void;
-  onGenerateFinal: (prompt: string) => Promise<void>;
-  isGenerating: boolean;
+  onGenerateFinal?: (prompt: string) => Promise<void>;
+  isGenerating?: boolean;
 }
 
 export default function RightSelectionsPanel({
@@ -19,7 +19,7 @@ export default function RightSelectionsPanel({
 }: RightSelectionsPanelProps) {
   const [prompt, setPrompt] = useState('');
 
-  const getSourceColor = (source: 'A' | 'B' | 'C') => {
+  const getSourceColor = (source: string) => {
     switch (source) {
       case 'A':
         return 'bg-blue-500';
@@ -27,11 +27,13 @@ export default function RightSelectionsPanel({
         return 'bg-green-500';
       case 'C':
         return 'bg-purple-500';
+      default:
+        return 'bg-gray-500';
     }
   };
 
   const handleGenerateFinal = async () => {
-    if (!prompt.trim() || selectedSentences.length === 0) return;
+    if (!prompt.trim() || selectedSentences.length === 0 || !onGenerateFinal) return;
     await onGenerateFinal(prompt.trim());
     setPrompt('');
   };
@@ -122,7 +124,7 @@ export default function RightSelectionsPanel({
         )}
       </div>
       {/* Generate Final Response Section */}
-      {selectedSentences.length > 0 && (
+      {selectedSentences.length > 0 && onGenerateFinal && (
         <div className="p-6 border-t border-kitchen-light-gray flex-shrink-0">
           <h3 className="text-sm font-semibold text-kitchen-text mb-3">Generate Final Response</h3>
           <div className="space-y-3">

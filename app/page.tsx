@@ -1,54 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import TopBar from '@/components/TopBar';
 import LeftNavigation from '@/components/LeftNavigation';
 import OutputColumns from '@/components/OutputColumns';
 import RightSelectionsPanel from '@/components/RightSelectionsPanel';
 import ChatInput from '@/components/ChatInput';
-import FinalResponse from '@/components/FinalResponse';
 
 export interface SelectedSentence {
   id: string;
   text: string;
-  source: 'A' | 'B' | 'C';
-}
-
-export interface FinalResponseData {
-  id: string;
-  prompt: string;
-  selectedSentences: SelectedSentence[];
-  response: string;
-  timestamp: Date;
+  source: string;
 }
 
 export default function Home() {
   const [selectedSentences, setSelectedSentences] = useState<SelectedSentence[]>([]);
-  const [finalResponses, setFinalResponses] = useState<FinalResponseData[]>([]);
-  const [isGeneratingFinal, setIsGeneratingFinal] = useState(false);
-  const [columnModels, setColumnModels] = useState({
-    A: '',
-    B: '',
-    C: '',
+  const [showRightPanel, setShowRightPanel] = useState(false); // Add state to control right panel visibility
+  const [columnModels, setColumnModels] = useState<{ [key: string]: string }>({
+    '1': 'gemini-2.5-pro',
+    '2': 'gemini-2.5-flash',
+    '3': 'gemini-2.5-flash-lite',
   });
-  const [columnResponses, setColumnResponses] = useState({
-    A: [] as string[],
-    B: [] as string[],
-    C: [] as string[],
+  const [columnResponses, setColumnResponses] = useState<{ [key: string]: string[] }>({
+    '1': [],
+    '2': [],
+    '3': [],
   });
-  const [originalResponses, setOriginalResponses] = useState({
-    A: '',
-    B: '',
-    C: '',
+  const [originalResponses, setOriginalResponses] = useState<{ [key: string]: string }>({
+    '1': '',
+    '2': '',
+    '3': '',
   });
-  const [isGenerating, setIsGenerating] = useState({
-    A: false,
-    B: false,
-    C: false,
+  const [isGenerating, setIsGenerating] = useState<{ [key: string]: boolean }>({
+    '1': false,
+    '2': false,
+    '3': false,
   });
   const [currentMessage, setCurrentMessage] = useState('');
 
-  const handleSentenceSelect = (sentence: SelectedSentence) => {
+  const handleSentenceSelect = useCallback((sentence: SelectedSentence) => {
     setSelectedSentences((prev) => {
       const exists = prev.find((s) => s.id === sentence.id);
       if (exists) {
@@ -57,7 +47,7 @@ export default function Home() {
         return [...prev, sentence];
       }
     });
-  };
+  }, []);
 
   const handleSubmit = async (prompt: string, attachments?: File[]) => {
     console.log('Main page: handleSubmit called with prompt:', prompt);
@@ -66,10 +56,10 @@ export default function Home() {
     // Store the current message
     setCurrentMessage(prompt);
 
-    // Send the same prompt to all three columns with their respective models
+    // Send the same prompt to all columns with their respective models
     const promises = [];
 
-    for (const column of ['A', 'B', 'C'] as const) {
+    for (const column of Object.keys(columnModels)) {
       if (columnModels[column]) {
         console.log(
           `Main page: Adding promise for column ${column} with model ${columnModels[column]}`,
@@ -97,133 +87,208 @@ export default function Home() {
 
   const handleNewChat = () => {
     setSelectedSentences([]);
-    setFinalResponses([]);
-    setColumnResponses({
-      A: [],
-      B: [],
-      C: [],
+    setColumnResponses((prev) => {
+      const reset: { [key: string]: string[] } = {};
+      Object.keys(prev).forEach((key) => {
+        reset[key] = [];
+      });
+      return reset;
     });
-    setOriginalResponses({
-      A: '',
-      B: '',
-      C: '',
+    setOriginalResponses((prev) => {
+      const reset: { [key: string]: string } = {};
+      Object.keys(prev).forEach((key) => {
+        reset[key] = '';
+      });
+      return reset;
+    });
+    setIsGenerating((prev) => {
+      const reset: { [key: string]: boolean } = {};
+      Object.keys(prev).forEach((key) => {
+        reset[key] = false;
+      });
+      return reset;
     });
     setCurrentMessage('');
-    // Focus will be handled by the ChatInput component
   };
 
-  const handleColumnPromptSubmit = async (
-    column: 'A' | 'B' | 'C',
-    prompt: string,
-    attachments: File[],
-  ) => {
-    if (!columnModels[column]) {
-      console.error(`No model selected for column ${column}`);
+  const handleColumnPromptSubmit = async (column: string, prompt: string, attachments: File[]) => {
+    console.log(`Main page: handleColumnPromptSubmit called for column ${column}`);
+    console.log(`Main page: Using model ${columnModels[column]} for column ${column}`);
+
+    // Set generating state for this column
+    setIsGenerating((prev) => ({
+      ...prev,
+      [column]: true,
+    }));
+
+    // Clear previous responses for this column
+    setColumnResponses((prev) => ({
+      ...prev,
+      [column]: [],
+    }));
+    setOriginalResponses((prev) => ({
+      ...prev,
+      [column]: '',
+    }));
+
+    try {
+      // Prepare the request body as JSON
+      const requestBody = {
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        model: columnModels[column],
+        stream: true, // Enable streaming
+      };
+
+      console.log(`Main page: Sending request for column ${column}`);
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      let accumulatedResponse = '';
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+              console.log(`Main page: Stream completed for column ${column}`);
+              break;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.success && parsed.data && parsed.data.content) {
+                accumulatedResponse += parsed.data.content;
+                setColumnResponses((prev) => ({
+                  ...prev,
+                  [column]: [...(prev[column] || []), parsed.data.content],
+                }));
+              } else if (!parsed.success) {
+                console.error('API Error:', parsed.error);
+                throw new Error(parsed.error || 'API request failed');
+              }
+            } catch (e) {
+              console.error('Error parsing JSON:', e);
+            }
+          }
+        }
+      }
+
+      // Set the final accumulated response
+      setOriginalResponses((prev) => ({
+        ...prev,
+        [column]: accumulatedResponse,
+      }));
+
+      console.log(`Main page: Completed response for column ${column}:`, accumulatedResponse);
+    } catch (error) {
+      console.error(`Error in column ${column}:`, error);
+      setColumnResponses((prev) => ({
+        ...prev,
+        [column]: [...(prev[column] || []), 'Error: Failed to generate response'],
+      }));
+    } finally {
+      setIsGenerating((prev) => ({
+        ...prev,
+        [column]: false,
+      }));
+    }
+  };
+
+  const handleModelChange = useCallback((column: string, modelId: string) => {
+    console.log(`Main page: Model changed for column ${column}: ${modelId}`);
+    setColumnModels((prev) => ({
+      ...prev,
+      [column]: modelId,
+    }));
+  }, []);
+
+  const handleAddColumn = useCallback(() => {
+    const existingColumns = Object.keys(columnModels);
+
+    // Limit to maximum 6 columns
+    if (existingColumns.length >= 6) {
       return;
     }
 
-    console.log(`Starting generation for column ${column} with model: ${columnModels[column]}`);
-    setIsGenerating((prev) => ({ ...prev, [column]: true }));
+    const nextColumn = (existingColumns.length + 1).toString(); // '1', '2', ...
 
-    try {
-      // Import the API client
-      const { apiClient } = await import('@/lib/api-client');
+    setColumnModels((prev) => ({
+      ...prev,
+      [nextColumn]: '',
+    }));
 
-      console.log(`Sending request to API for column ${column}`);
-      const response = await apiClient.sendMessageWithAttachments(
-        prompt,
-        columnModels[column],
-        attachments,
-      );
+    setColumnResponses((prev) => ({
+      ...prev,
+      [nextColumn]: [],
+    }));
 
-      console.log(`API response for column ${column}:`, response);
+    setOriginalResponses((prev) => ({
+      ...prev,
+      [nextColumn]: '',
+    }));
 
-      if (response.success && response.data) {
-        // Store the original response for markdown view
-        setOriginalResponses((prev) => ({
-          ...prev,
-          [column]: response.data?.content || '',
-        }));
+    setIsGenerating((prev) => ({
+      ...prev,
+      [nextColumn]: false,
+    }));
+  }, [columnModels]);
 
-        // Split the response into sentences for better selection
-        const sentences = response.data.content
-          .split(/[.!?]+/)
-          .map((s) => s.trim())
-          .filter((s) => s.length > 10); // Filter out very short sentences
-
-        console.log(`Generated ${sentences.length} sentences for column ${column}:`, sentences);
-
-        setColumnResponses((prev) => ({
-          ...prev,
-          [column]: [...prev[column], ...sentences],
-        }));
-      } else {
-        console.error('Failed to generate response:', response.error);
-        // Add user feedback for errors - use a more user-friendly approach
-        console.error(`Error generating response for column ${column}: ${response.error}`);
-      }
-    } catch (error) {
-      console.error(`Error generating response for column ${column}:`, error);
-      // Add user feedback for errors - use a more user-friendly approach
-      console.error(
-        `Error generating response for column ${column}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-    } finally {
-      setIsGenerating((prev) => ({ ...prev, [column]: false }));
-    }
-  };
-
-  const handleModelChange = (column: 'A' | 'B' | 'C', modelId: string) => {
-    console.log(`Model changed for column ${column}: ${modelId}`);
-    setColumnModels((prev) => {
-      const newModels = {
-        ...prev,
-        [column]: modelId,
+  const handleDeleteColumn = useCallback(
+    (columnKey: string) => {
+      // Only allow delete if more than one column remains
+      const currentColumns = Object.keys(columnModels);
+      if (currentColumns.length <= 1) return;
+      // Remove the column and re-index all columns
+      const filteredKeys = currentColumns.filter((key) => key !== columnKey);
+      const remap = (obj: { [key: string]: any }) => {
+        const newObj: { [key: string]: any } = {};
+        filteredKeys.forEach((oldKey, idx) => {
+          newObj[(idx + 1).toString()] = obj[oldKey];
+        });
+        return newObj;
       };
-      console.log('Updated column models:', newModels);
-      return newModels;
-    });
-  };
-
-  const handleGenerateFinalResponse = async (prompt: string) => {
-    if (selectedSentences.length === 0) return;
-
-    setIsGeneratingFinal(true);
-    try {
-      // TODO: Implement AI final response generation
-      // For now, simulate the API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const newFinalResponse: FinalResponseData = {
-        id: Date.now().toString(),
-        prompt,
-        selectedSentences: [...selectedSentences],
-        response: `Based on your selected sentences, here's a refined response that combines the best elements from all three outputs. This approach demonstrates how the 3x Rule methodology can create more comprehensive and well-rounded content by leveraging multiple AI perspectives.`,
-        timestamp: new Date(),
-      };
-
-      setFinalResponses((prev) => [newFinalResponse, ...prev]);
-      setSelectedSentences([]); // Clear selections after generating
-    } catch (error) {
-      console.error('Error generating final response:', error);
-    } finally {
-      setIsGeneratingFinal(false);
-    }
-  };
+      setColumnModels((prev) => remap(prev));
+      setColumnResponses((prev) => remap(prev));
+      setOriginalResponses((prev) => remap(prev));
+      setIsGenerating((prev) => remap(prev));
+    },
+    [columnModels],
+  );
 
   return (
-    <div className="h-screen bg-kitchen-off-white flex overflow-hidden">
-      {/* Left Navigation - Full height from top to bottom */}
+    <div className="flex h-screen bg-gray-50">
       <LeftNavigation />
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar onNewChat={handleNewChat} />
         <div className="flex flex-1 overflow-hidden">
-          {/* Output Columns and Chat Input */}
-          <div className="flex-1 flex flex-col p-6">
-            {/* Fixed Height Output Columns */}
-            <div className="h-[calc(100vh-16rem)] mb-6">
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex-1 overflow-hidden p-6">
               <OutputColumns
                 onSentenceSelect={handleSentenceSelect}
                 selectedSentences={selectedSentences}
@@ -231,40 +296,20 @@ export default function Home() {
                 columnResponses={columnResponses}
                 originalResponses={originalResponses}
                 isGenerating={isGenerating}
+                onAddColumn={handleAddColumn}
+                onDeleteColumn={handleDeleteColumn}
               />
             </div>
-
-            {/* Message Box and Send Button */}
-            <ChatInput
-              onSubmit={handleSubmit}
-              currentMessage={currentMessage}
-              onNewChat={handleNewChat}
-            />
-
-            {/* Final Response Section - Scrollable if needed */}
-            {finalResponses.length > 0 && (
-              <div className="mt-6 overflow-y-auto flex-1">
-                <h2 className="text-xl font-semibold text-kitchen-text mb-4">Final Responses</h2>
-                <div className="space-y-4">
-                  {finalResponses.map((finalResponse) => (
-                    <FinalResponse key={finalResponse.id} data={finalResponse} />
-                  ))}
-                </div>
-              </div>
-            )}
+            <ChatInput onSubmit={handleSubmit} />
           </div>
-
-          {/* Right Selections Panel - Fixed height */}
-          <div className="h-[calc(100vh-4rem)] overflow-hidden">
+          {showRightPanel && (
             <RightSelectionsPanel
               selectedSentences={selectedSentences}
-              onRemoveSentence={(id) => {
+              onRemoveSentence={useCallback((id) => {
                 setSelectedSentences((prev) => prev.filter((s) => s.id !== id));
-              }}
-              onGenerateFinal={handleGenerateFinalResponse}
-              isGenerating={isGeneratingFinal}
+              }, [])}
             />
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -14,17 +14,14 @@ export default function TopBar({ onNewChat }: TopBarProps) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-start h-16">
           <div className="flex items-center space-x-4">
             {onNewChat && (
               <button onClick={onNewChat} className="kitchen-button text-sm px-4 py-2">
                 New Chat
               </button>
             )}
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-kitchen-text-light">AI-powered response refinement</span>
           </div>
         </div>
       </div>

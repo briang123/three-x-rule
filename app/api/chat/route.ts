@@ -74,8 +74,8 @@ async function streamResponse(chatRequest: ChatRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // For now, we'll send the full response as a single chunk
-        // In a real implementation, you'd want to use Gemini's streaming API
+        // Send the full response as a single chunk for now
+        // TODO: Implement proper streaming with Gemini's streaming API
         const response = await geminiService.sendMessage(chatRequest);
 
         const chunk = encoder.encode(
@@ -87,8 +87,13 @@ async function streamResponse(chatRequest: ChatRequest) {
         );
 
         controller.enqueue(chunk);
+
+        // Send the done signal
+        const doneChunk = encoder.encode('data: [DONE]\n\n');
+        controller.enqueue(doneChunk);
         controller.close();
       } catch (error) {
+        console.error('Streaming error:', error);
         const errorChunk = encoder.encode(
           `data: ${JSON.stringify({
             success: false,

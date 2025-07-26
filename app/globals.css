@@ -97,29 +97,37 @@
     @apply bg-kitchen-accent-blue text-white border-kitchen-accent-blue;
   }
 
-  /* Custom text selection colors for each column */
+  /* Disable text selection globally */
+  * {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+
+  /* Custom text selection colors for each column - disabled */
   .highlightable-text-a::selection {
-    background-color: rgba(59, 130, 246, 0.3);
+    background-color: transparent;
   }
 
   .highlightable-text-a::-moz-selection {
-    background-color: rgba(59, 130, 246, 0.3);
+    background-color: transparent;
   }
 
   .highlightable-text-b::selection {
-    background-color: rgba(34, 197, 94, 0.3);
+    background-color: transparent;
   }
 
   .highlightable-text-b::-moz-selection {
-    background-color: rgba(34, 197, 94, 0.3);
+    background-color: transparent;
   }
 
   .highlightable-text-c::selection {
-    background-color: rgba(168, 85, 247, 0.3);
+    background-color: transparent;
   }
 
   .highlightable-text-c::-moz-selection {
-    background-color: rgba(168, 85, 247, 0.3);
+    background-color: transparent;
   }
 
   /* Highlighted text styling */
@@ -236,5 +244,18 @@
 
   .output-column-scroll::-webkit-scrollbar-thumb:hover {
     background: #9ca3af !important;
+  }
+
+  /* Ensure consistent column heights */
+  .column-container {
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .column-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
   }
 }
