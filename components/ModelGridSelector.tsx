@@ -15,6 +15,30 @@ interface ModelGridSelectorProps {
   initialSelections?: ModelSelection[];
 }
 
+// Array of 20 different intro messages/greetings
+const introMessages = [
+  'Ready when you are.',
+  "What's your plan for today?",
+  "Let's create something amazing together.",
+  'Your AI companions are waiting.',
+  'Time to explore the possibilities.',
+  'What shall we build today?',
+  'Ready to dive into AI magic?',
+  'Your creative journey starts here.',
+  "Let's make something extraordinary.",
+  "What's on your mind?",
+  'Ready to unlock new insights?',
+  'Your ideas deserve the best AI.',
+  "Let's turn imagination into reality.",
+  'What story will you tell today?',
+  'Ready to explore the future?',
+  'Your next breakthrough awaits.',
+  "Let's discover what's possible.",
+  'What challenge shall we tackle?',
+  'Ready to push the boundaries?',
+  'Your creativity has no limits.',
+];
+
 export default function ModelGridSelector({
   onModelSelectionsChange,
   disabled = false,
@@ -24,6 +48,13 @@ export default function ModelGridSelector({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedModels, setSelectedModels] = useState<ModelSelection[]>(initialSelections);
+  const [currentGreeting, setCurrentGreeting] = useState<string>('');
+
+  // Set a random greeting when component mounts
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * introMessages.length);
+    setCurrentGreeting(introMessages[randomIndex]);
+  }, []);
 
   // Update selectedModels when initialSelections prop changes
   useEffect(() => {
@@ -134,6 +165,19 @@ export default function ModelGridSelector({
 
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
+      {/* Greeting */}
+      {currentGreeting && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <h1 className="text-4xl font-bold text-kitchen-text dark:text-kitchen-dark-text">
+            {currentGreeting}
+          </h1>
+        </motion.div>
+      )}
+
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-kitchen-text dark:text-kitchen-dark-text mb-2">
           Select AI Models
