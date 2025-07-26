@@ -38,6 +38,11 @@ export default function Home() {
   });
   const [currentMessage, setCurrentMessage] = useState('');
 
+  // Remix state
+  const [remixResponse, setRemixResponse] = useState<string>('');
+  const [isRemixGenerating, setIsRemixGenerating] = useState<boolean>(false);
+  const [showRemix, setShowRemix] = useState<boolean>(false);
+
   const handleSentenceSelect = useCallback((sentence: SelectedSentence) => {
     setSelectedSentences((prev) => {
       const exists = prev.find((s) => s.id === sentence.id);
@@ -110,6 +115,10 @@ export default function Home() {
       return reset;
     });
     setCurrentMessage('');
+    // Clear remix state
+    setRemixResponse('');
+    setIsRemixGenerating(false);
+    setShowRemix(false);
     console.log('Main page: currentMessage cleared');
   };
 
@@ -283,11 +292,131 @@ export default function Home() {
     [columnModels],
   );
 
+  const handleRemix = useCallback(
+    async (modelId: string) => {
+      // Check if we have any responses to remix
+      const hasResponses = Object.values(originalResponses).some(
+        (response) => response.trim() !== '',
+      );
+      if (!hasResponses) {
+        alert('No responses available to remix. Please generate some responses first.');
+        return;
+      }
+
+      // Check if we have a current message
+      if (!currentMessage.trim()) {
+        alert('No current message to remix. Please submit a prompt first.');
+        return;
+      }
+
+      console.log('Main page: handleRemix called with model:', modelId);
+
+      setIsRemixGenerating(true);
+      setShowRemix(true);
+      setRemixResponse('');
+
+      try {
+        // Combine all existing responses
+        const combinedResponses = Object.entries(originalResponses)
+          .filter(([_, response]) => response.trim() !== '')
+          .map(([column, response]) => `Column ${column}:\n${response}`)
+          .join('\n\n---\n\n');
+
+        // Create the remix prompt
+        const remixPrompt = `${currentMessage}\n\nCombine the best parts from all of the responses together and provide a synthesized and curated response.\n\nHere are the responses to combine:\n\n${combinedResponses}`;
+
+        console.log('Main page: Sending remix request with prompt:', remixPrompt);
+
+        // Prepare the request body
+        const requestBody = {
+          messages: [
+            {
+              role: 'user',
+              content: remixPrompt,
+            },
+          ],
+          model: modelId,
+          stream: true,
+        };
+
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('No response body');
+        }
+
+        let accumulatedResponse = '';
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') {
+                console.log('Main page: Remix stream completed');
+                break;
+              }
+
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.success && parsed.data && parsed.data.content) {
+                  accumulatedResponse += parsed.data.content;
+                  setRemixResponse(accumulatedResponse);
+                } else if (!parsed.success) {
+                  console.error('API Error:', parsed.error);
+                  throw new Error(parsed.error || 'API request failed');
+                }
+              } catch (e) {
+                console.error('Error parsing JSON:', e);
+              }
+            }
+          }
+        }
+
+        console.log('Main page: Remix completed:', accumulatedResponse);
+      } catch (error) {
+        console.error('Error in remix:', error);
+        setRemixResponse('Error: Failed to generate remix response');
+      } finally {
+        setIsRemixGenerating(false);
+      }
+    },
+    [originalResponses, currentMessage],
+  );
+
+  const handleCloseRemix = useCallback(() => {
+    setShowRemix(false);
+  }, []);
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-kitchen-dark-bg transition-colors duration-200">
       <LeftNavigation />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar onNewChat={handleNewChat} />
+        <TopBar
+          onNewChat={handleNewChat}
+          onRemix={handleRemix}
+          remixDisabled={
+            !Object.values(originalResponses).some((response) => response.trim() !== '') ||
+            !currentMessage.trim()
+          }
+        />
         <div className="flex flex-1 overflow-hidden">
           <div className="flex flex-1 flex-col overflow-hidden">
             <div className="flex-1 overflow-hidden p-6">
@@ -300,6 +429,10 @@ export default function Home() {
                 isGenerating={isGenerating}
                 onAddColumn={handleAddColumn}
                 onDeleteColumn={handleDeleteColumn}
+                remixResponse={remixResponse}
+                isRemixGenerating={isRemixGenerating}
+                showRemix={showRemix}
+                onCloseRemix={handleCloseRemix}
               />
             </div>
             <ChatInput onSubmit={handleSubmit} currentMessage={currentMessage} />

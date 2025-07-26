@@ -2,12 +2,15 @@
 
 import { motion } from 'framer-motion';
 import ThemeToggle from './ThemeToggle';
+import RemixDropdown from './RemixDropdown';
 
 interface TopBarProps {
   onNewChat?: () => void;
+  onRemix?: (modelId: string) => void;
+  remixDisabled?: boolean;
 }
 
-export default function TopBar({ onNewChat }: TopBarProps) {
+export default function TopBar({ onNewChat, onRemix, remixDisabled = false }: TopBarProps) {
   return (
     <motion.header
       className="bg-kitchen-white dark:bg-kitchen-dark-surface border-b border-kitchen-light-gray dark:border-kitchen-dark-border sticky top-0 z-50 transition-colors duration-200"
@@ -23,6 +26,7 @@ export default function TopBar({ onNewChat }: TopBarProps) {
                 New Chat
               </button>
             )}
+            {onRemix && <RemixDropdown onRemix={onRemix} disabled={remixDisabled} />}
           </div>
           <div className="flex items-center space-x-2">
             <ThemeToggle />
