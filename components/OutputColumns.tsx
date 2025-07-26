@@ -8,6 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import TextHighlighter, { useTextHighlighter, Highlight } from './TextHighlighter';
 import { TypingIndicator } from './TypingIndicator';
 import ChatInput from './ChatInput';
+import ModelGridSelector, { ModelSelection } from './ModelGridSelector';
 import './TextHighlighter.css';
 
 // Copy to Clipboard Component
@@ -165,102 +166,14 @@ interface OutputColumnsProps {
   onRemix?: (modelId: string) => void;
   remixDisabled?: boolean;
   isRemixGenerating?: boolean;
+  // New 3x3 grid props
+  onModelSelectionsChange?: (selections: ModelSelection[]) => void;
+  modelSelections?: ModelSelection[];
+  // Column models from parent component
+  columnModels?: { [key: string]: string };
 }
 
-// Simple Model Selector Component for Columns
-const ColumnModelSelector = React.memo(
-  ({
-    selectedModel,
-    onModelChange,
-    models,
-    column,
-  }: {
-    selectedModel: string;
-    onModelChange: (model: string) => void;
-    models: ModelInfo[];
-    column: string;
-  }) => {
-    const [isOpen, setIsOpen] = useState(false);
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target as Element;
-        if (!target.closest('.model-selector')) {
-          setIsOpen(false);
-        }
-      };
-
-      if (isOpen) {
-        document.addEventListener('mousedown', handleClickOutside);
-      }
-
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, [isOpen]);
-
-    if (models.length === 0) {
-      return (
-        <div className="px-3 py-1 bg-kitchen-light-gray border border-kitchen-light-gray rounded-lg text-sm text-kitchen-text-light">
-          No models available
-        </div>
-      );
-    }
-
-    return (
-      <div className="relative model-selector">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center space-x-2 px-3 py-1 bg-kitchen-white border border-kitchen-light-gray rounded-lg text-sm hover:border-kitchen-primary transition-colors"
-        >
-          <span className="text-kitchen-text">
-            {models.find((m) => m.id === selectedModel)?.name || 'Select Model'}
-          </span>
-          <svg
-            className={`w-4 h-4 text-kitchen-text transition-transform ${isOpen ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 mt-1 w-64 bg-kitchen-white border border-kitchen-light-gray rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto"
-          >
-            <div className="p-2 space-y-1">
-              {models.map((model) => (
-                <button
-                  key={model.id}
-                  onClick={() => {
-                    onModelChange(model.id);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-                    selectedModel === model.id
-                      ? 'bg-kitchen-primary/10 text-kitchen-primary'
-                      : 'hover:bg-kitchen-light-gray text-kitchen-text'
-                  }`}
-                >
-                  <div className="font-medium">{model.name}</div>
-                  <div className="text-xs text-kitchen-text-light truncate">
-                    {model.description}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </div>
-    );
-  },
-);
+// Note: Removed ColumnModelSelector component since we now use the 3x3 grid system
 
 export default function OutputColumns({
   onSentenceSelect,
@@ -285,6 +198,9 @@ export default function OutputColumns({
   onRemix,
   remixDisabled = false,
   isRemixGenerating = false,
+  onModelSelectionsChange,
+  modelSelections = [],
+  columnModels = {},
 }: OutputColumnsProps) {
   const handleAddSelection = useCallback(
     (text: string, source: string) => {
@@ -300,7 +216,6 @@ export default function OutputColumns({
 
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [columnModels, setColumnModels] = useState<{ [key: string]: string }>({});
   const [initialized, setInitialized] = useState(false);
   const [socialPostsBorderStates, setSocialPostsBorderStates] = useState<{
     [key: string]: boolean;
@@ -311,6 +226,20 @@ export default function OutputColumns({
   const socialPostsRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Determine if we should show the 3x3 grid or output columns
+  const hasAIContent = useMemo(() => {
+    // Check if there's any AI-generated content
+    const hasColumnContent = Object.values(originalResponses).some(
+      (response) => response.trim() !== '',
+    );
+    const hasRemixContent = remixResponse.trim() !== '';
+    const hasSocialContent = Object.values(socialPostsResponses).some(
+      (response) => response.trim() !== '',
+    );
+
+    return hasColumnContent || hasRemixContent || hasSocialContent;
+  }, [originalResponses, remixResponse, socialPostsResponses]);
+
   // Get all column keys from columnResponses prop
   const columnKeys = Object.keys(columnResponses);
 
@@ -318,9 +247,11 @@ export default function OutputColumns({
   const prevColumnModelsRef = useRef<{ [key: string]: string }>({});
   // Use ref to track column keys to prevent infinite re-renders
   const prevColumnKeysRef = useRef<string[]>([]);
+  const columnRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   // Track previous states for scroll triggers
   const prevShowRemixRef = useRef<boolean>(false);
   const prevShowSocialPostsRef = useRef<{ [key: string]: boolean }>({});
+  const prevHasAIContentRef = useRef<boolean>(false);
 
   // Effect to handle social posts border fade-out after content is received
   useEffect(() => {
@@ -413,6 +344,38 @@ export default function OutputColumns({
     prevShowSocialPostsRef.current = { ...showSocialPosts };
   }, [showSocialPosts, smoothScrollToElement]);
 
+  // Effect to scroll to new AI content when it first appears
+  useEffect(() => {
+    if (hasAIContent && !prevHasAIContentRef.current) {
+      // Small delay to ensure the content is rendered
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+          });
+        }
+      }, 200);
+    }
+    prevHasAIContentRef.current = hasAIContent;
+  }, [hasAIContent]);
+
+  // Effect to scroll to new columns when they are added
+  useEffect(() => {
+    const newColumns = columnKeys.filter((column) => !prevColumnKeysRef.current.includes(column));
+    if (newColumns.length > 0 && hasAIContent) {
+      // Scroll to the last new column
+      const lastNewColumn = newColumns[newColumns.length - 1];
+      const columnRef = columnRefs.current[lastNewColumn];
+      if (columnRef) {
+        setTimeout(() => {
+          smoothScrollToElement(columnRef);
+        }, 100);
+      }
+    }
+    prevColumnKeysRef.current = columnKeys;
+  }, [columnKeys, hasAIContent, smoothScrollToElement]);
+
   useEffect(() => {
     const fetchModels = async () => {
       try {
@@ -426,28 +389,7 @@ export default function OutputColumns({
         if (data.success) {
           setModels(data.data.models);
           console.log('OutputColumns: Set models:', data.data.models);
-
-          // Set default models for each column only once
-          if (data.data.models.length > 0 && !initialized) {
-            const defaultModels: { [key: string]: string } = {};
-            columnKeys.forEach((column, index) => {
-              defaultModels[column] =
-                data.data.models[index % data.data.models.length]?.id ||
-                data.data.models[0]?.id ||
-                '';
-            });
-            setColumnModels(defaultModels);
-            setInitialized(true);
-            console.log('OutputColumns: Set default column models:', defaultModels);
-
-            // Notify parent component of initial model assignments only once
-            if (onModelChange) {
-              console.log('OutputColumns: Notifying parent of initial model assignments');
-              Object.entries(defaultModels).forEach(([column, modelId]) => {
-                onModelChange(column, modelId);
-              });
-            }
-          }
+          setInitialized(true);
         } else {
           console.error('OutputColumns: Failed to fetch models:', data.error);
         }
@@ -459,53 +401,11 @@ export default function OutputColumns({
     };
 
     fetchModels();
-  }, [initialized]); // Only run when initialized changes, not when columnResponses changes
+  }, []); // Only run once on mount
 
-  // Handle new columns being added
-  useEffect(() => {
-    if (models.length > 0 && initialized) {
-      const newColumns = columnKeys.filter((column) => !(column in prevColumnModelsRef.current));
-      if (newColumns.length > 0) {
-        const updatedModels = { ...prevColumnModelsRef.current };
-        newColumns.forEach((column, index) => {
-          updatedModels[column] = models[index % models.length]?.id || models[0]?.id || '';
-        });
-        setColumnModels(updatedModels);
-        prevColumnModelsRef.current = updatedModels;
+  // Note: Removed old column model handling since we now use the 3x3 grid system
 
-        // Notify parent of new column model assignments
-        if (onModelChange) {
-          newColumns.forEach((column) => {
-            onModelChange(column, updatedModels[column]);
-          });
-        }
-      }
-    }
-  }, [columnKeys, models, initialized]);
-
-  // Sync the ref with columnModels state
-  useEffect(() => {
-    prevColumnModelsRef.current = columnModels;
-  }, [columnModels]);
-
-  const handleModelChange = useCallback(
-    (column: string, modelId: string) => {
-      console.log(`OutputColumns: Model changed for column ${column}: ${modelId}`);
-      setColumnModels((prev) => ({
-        ...prev,
-        [column]: modelId,
-      }));
-
-      // Notify parent component of model change
-      if (onModelChange) {
-        console.log(
-          `OutputColumns: Notifying parent of model change for column ${column}: ${modelId}`,
-        );
-        onModelChange(column, modelId);
-      }
-    },
-    [onModelChange],
-  );
+  // Note: Removed handleModelChange since we now use the 3x3 grid system
 
   const isSelected = (sentenceId: string) => {
     return selectedSentences.some((s) => s.id === sentenceId);
@@ -529,113 +429,143 @@ export default function OutputColumns({
     <div className="relative w-full h-full flex flex-col">
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto content-scroll-area">
         <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto pb-32">
-          {columnKeys.map((column, index) => (
+          {/* Show 3x3 grid when no AI content exists */}
+          {!hasAIContent && (
             <motion.div
-              key={column}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 * index, ease: 'easeOut' }}
-              className="kitchen-card p-6 flex flex-col overflow-hidden w-full max-w-full flex-shrink-0 column-container"
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="w-full"
             >
-              <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold ${getColumnColor(column)} bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue`}
-                  >
-                    {column}
-                  </div>
-                  {loading ? (
-                    <div className="px-3 py-1 bg-kitchen-light-gray border border-kitchen-light-gray rounded-lg text-sm text-kitchen-text-light flex items-center space-x-2">
-                      <div className="w-3 h-3 border border-kitchen-text-light border-t-transparent rounded-full animate-spin"></div>
-                      <span>Loading models...</span>
-                    </div>
-                  ) : (
-                    <ColumnModelSelector
-                      selectedModel={columnModels[column] || ''}
-                      onModelChange={(modelId) => handleModelChange(column, modelId)}
-                      models={models}
-                      column={column}
-                    />
-                  )}
-                </div>
-                {/* Delete Button: Only show if more than one column */}
-                {onDeleteColumn && columnKeys.length > 1 && (
-                  <button
-                    onClick={() => onDeleteColumn(column)}
-                    className="ml-2 p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-red-500 dark:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-600"
-                    title="Delete column"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      className="w-5 h-5"
+              <ModelGridSelector
+                onModelSelectionsChange={onModelSelectionsChange || (() => {})}
+                disabled={Object.values(isGenerating).some((generating) => generating)}
+                initialSelections={modelSelections}
+              />
+            </motion.div>
+          )}
+
+          {/* Show output columns when AI content exists */}
+          {hasAIContent &&
+            columnKeys.map((column, index) => (
+              <motion.div
+                key={column}
+                ref={(el) => {
+                  columnRefs.current[column] = el;
+                }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * index, ease: 'easeOut' }}
+                className="kitchen-card p-6 flex flex-col overflow-hidden w-full max-w-full flex-shrink-0 column-container"
+              >
+                <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold ${getColumnColor(column)} bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue`}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                )}
-              </div>
-
-              {/* Responses Display */}
-              <div className="column-content pr-2">
-                <div className="space-y-3">
-                  {isGenerating[column] && (
-                    <div className="text-center text-blue-600 py-4">
-                      <div className="flex items-center justify-center space-x-2">
-                        <TypingIndicator />
-                        <span className="text-sm font-medium">Generating response...</span>
-                      </div>
+                      {column}
                     </div>
-                  )}
-
-                  {columnResponses[column].length === 0 && !isGenerating[column] ? (
-                    <div className="text-center text-gray-500 py-8">
+                    {loading ? (
+                      <div className="px-3 py-1 bg-kitchen-light-gray border border-kitchen-light-gray rounded-lg text-sm text-kitchen-text-light flex items-center space-x-2">
+                        <div className="w-3 h-3 border border-kitchen-text-light border-t-transparent rounded-full animate-spin"></div>
+                        <span>Loading models...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        {/* Show model badge instead of dropdown when there's AI content */}
+                        {hasAIContent ? (
+                          <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full">
+                            {models.find((m) => m.id === columnModels[column])?.name || 'Model'}
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full">
+                            {models.find((m) => m.id === columnModels[column])?.name ||
+                              'Unknown Model'}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {/* Delete Button: Only show if more than one column */}
+                  {onDeleteColumn && columnKeys.length > 1 && (
+                    <button
+                      onClick={() => onDeleteColumn(column)}
+                      className="ml-2 p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-red-500 dark:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-600"
+                      title="Delete column"
+                    >
                       <svg
-                        className="w-12 h-12 mx-auto mb-4 text-gray-300"
+                        xmlns="http://www.w3.org/2000/svg"
                         fill="none"
-                        stroke="currentColor"
                         viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="w-5 h-5"
                       >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                          d="M6 18L18 6M6 6l12 12"
                         />
                       </svg>
-                      <p>No responses yet. Enter a prompt above to generate content.</p>
-                    </div>
-                  ) : (
-                    // Markdown View
-                    <div className="relative">
-                      <div className="absolute top-2 right-2 z-10">
-                        <CopyButton
+                    </button>
+                  )}
+                </div>
+
+                {/* Responses Display */}
+                <div className="column-content pr-2">
+                  <div className="space-y-3">
+                    {isGenerating[column] && (
+                      <div className="text-center text-blue-600 py-4">
+                        <div className="flex items-center justify-center space-x-2">
+                          <TypingIndicator />
+                          <span className="text-sm font-medium">Generating response...</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {columnResponses[column].length === 0 && !isGenerating[column] ? (
+                      <div className="text-center text-gray-500 py-8">
+                        <svg
+                          className="w-12 h-12 mx-auto mb-4 text-gray-300"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                          />
+                        </svg>
+                        <p>No responses yet. Enter a prompt above to generate content.</p>
+                      </div>
+                    ) : (
+                      // Markdown View
+                      <div className="relative">
+                        <div className="absolute top-2 right-2 z-10">
+                          <CopyButton
+                            content={
+                              originalResponses[column] || columnResponses[column].join('\n\n')
+                            }
+                          />
+                        </div>
+                        <HighlightableText
                           content={
                             originalResponses[column] || columnResponses[column].join('\n\n')
                           }
+                          onAddSelection={(text) => handleAddSelection(text, column)}
+                          column={column}
                         />
                       </div>
-                      <HighlightableText
-                        content={originalResponses[column] || columnResponses[column].join('\n\n')}
-                        onAddSelection={(text) => handleAddSelection(text, column)}
-                        column={column}
-                      />
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
 
-          {/* Add Column Button */}
-          {onAddColumn && (
+          {/* Add Column Button - only show when there's AI content */}
+          {/* {hasAIContent && onAddColumn && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -663,7 +593,7 @@ export default function OutputColumns({
                 Click to add another AI model comparison
               </p>
             </motion.div>
-          )}
+          )} */}
 
           {/* Remix Column */}
           {showRemix && (
@@ -913,6 +843,22 @@ export default function OutputColumns({
               </motion.div>
             );
           })}
+
+          {/* 3x3 Grid at the end when there's AI content */}
+          {hasAIContent && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="w-full"
+            >
+              <ModelGridSelector
+                onModelSelectionsChange={onModelSelectionsChange || (() => {})}
+                disabled={Object.values(isGenerating).some((generating) => generating)}
+                initialSelections={modelSelections}
+              />
+            </motion.div>
+          )}
 
           {/* ChatInput as sticky footer within the scrollable container */}
           <div className="sticky bottom-0 bg-gray-50/80 dark:bg-kitchen-dark-bg/80 border-gray-200 dark:border-kitchen-dark-border z-10 w-full left-0 right-0 backdrop-blur-md">

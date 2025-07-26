@@ -7,6 +7,7 @@ import OutputColumns from '@/components/OutputColumns';
 import RightSelectionsPanel from '@/components/RightSelectionsPanel';
 import ChatInput from '@/components/ChatInput';
 import SocialPostsDrawer, { SocialPostConfig } from '@/components/SocialPostsDrawer';
+import { ModelSelection } from '@/components/ModelGridSelector';
 
 export interface SelectedSentence {
   id: string;
@@ -17,26 +18,11 @@ export interface SelectedSentence {
 export default function Home() {
   const [selectedSentences, setSelectedSentences] = useState<SelectedSentence[]>([]);
   const [showRightPanel, setShowRightPanel] = useState(false); // Add state to control right panel visibility
-  const [columnModels, setColumnModels] = useState<{ [key: string]: string }>({
-    '1': 'gemini-2.5-pro',
-    '2': 'gemini-2.5-flash',
-    '3': 'gemini-2.5-flash-lite',
-  });
-  const [columnResponses, setColumnResponses] = useState<{ [key: string]: string[] }>({
-    '1': [],
-    '2': [],
-    '3': [],
-  });
-  const [originalResponses, setOriginalResponses] = useState<{ [key: string]: string }>({
-    '1': '',
-    '2': '',
-    '3': '',
-  });
-  const [isGenerating, setIsGenerating] = useState<{ [key: string]: boolean }>({
-    '1': false,
-    '2': false,
-    '3': false,
-  });
+  const [modelSelections, setModelSelections] = useState<ModelSelection[]>([]);
+  const [columnModels, setColumnModels] = useState<{ [key: string]: string }>({});
+  const [columnResponses, setColumnResponses] = useState<{ [key: string]: string[] }>({});
+  const [originalResponses, setOriginalResponses] = useState<{ [key: string]: string }>({});
+  const [isGenerating, setIsGenerating] = useState<{ [key: string]: boolean }>({});
   const [currentMessage, setCurrentMessage] = useState('');
 
   // Remix state
@@ -67,22 +53,75 @@ export default function Home() {
     });
   }, []);
 
+  const handleModelSelectionsChange = useCallback((selections: ModelSelection[]) => {
+    console.log('handleModelSelectionsChange called with selections:', selections);
+    setModelSelections(selections);
+
+    // Generate columns based on model selections
+    const newColumnModels: { [key: string]: string } = {};
+    const newColumnResponses: { [key: string]: string[] } = {};
+    const newOriginalResponses: { [key: string]: string } = {};
+    const newIsGenerating: { [key: string]: boolean } = {};
+
+    let columnIndex = 1;
+    selections.forEach((selection) => {
+      console.log(`Processing selection: ${selection.modelId} with count ${selection.count}`);
+      for (let i = 0; i < selection.count; i++) {
+        const columnKey = columnIndex.toString();
+        newColumnModels[columnKey] = selection.modelId;
+        newColumnResponses[columnKey] = [];
+        newOriginalResponses[columnKey] = '';
+        newIsGenerating[columnKey] = false;
+        console.log(`Created column ${columnKey} with model ${selection.modelId}`);
+        columnIndex++;
+      }
+    });
+
+    console.log('Final newColumnModels:', newColumnModels);
+    setColumnModels(newColumnModels);
+    setColumnResponses(newColumnResponses);
+    setOriginalResponses(newOriginalResponses);
+    setIsGenerating(newIsGenerating);
+  }, []);
+
   const handleSubmit = async (prompt: string, attachments?: File[]) => {
     console.log('Main page: handleSubmit called with prompt:', prompt);
     console.log('Main page: Current column models:', columnModels);
+    console.log('Main page: Current modelSelections:', modelSelections);
+
+    // Check if any models are selected
+    if (modelSelections.length === 0) {
+      alert('Please select at least one model from the grid before submitting.');
+      return;
+    }
 
     // Store the current message
     setCurrentMessage(prompt);
 
+    // Generate columns dynamically from modelSelections to ensure we have the latest data
+    const dynamicColumnModels: { [key: string]: string } = {};
+    let columnIndex = 1;
+    modelSelections.forEach((selection) => {
+      for (let i = 0; i < selection.count; i++) {
+        const columnKey = columnIndex.toString();
+        dynamicColumnModels[columnKey] = selection.modelId;
+        columnIndex++;
+      }
+    });
+
+    console.log('Main page: Dynamic column models:', dynamicColumnModels);
+
     // Send the same prompt to all columns with their respective models
     const promises = [];
 
-    for (const column of Object.keys(columnModels)) {
-      if (columnModels[column]) {
+    for (const column of Object.keys(dynamicColumnModels)) {
+      if (dynamicColumnModels[column]) {
         console.log(
-          `Main page: Adding promise for column ${column} with model ${columnModels[column]}`,
+          `Main page: Adding promise for column ${column} with model ${dynamicColumnModels[column]}`,
         );
-        promises.push(handleColumnPromptSubmit(column, prompt, attachments));
+        promises.push(
+          handleColumnPromptSubmit(column, prompt, attachments || [], dynamicColumnModels[column]),
+        );
       } else {
         console.log(`Main page: No model selected for column ${column}`);
       }
@@ -142,9 +181,14 @@ export default function Home() {
     console.log('Main page: currentMessage cleared');
   };
 
-  const handleColumnPromptSubmit = async (column: string, prompt: string, attachments: File[]) => {
+  const handleColumnPromptSubmit = async (
+    column: string,
+    prompt: string,
+    attachments: File[],
+    model: string,
+  ) => {
     console.log(`Main page: handleColumnPromptSubmit called for column ${column}`);
-    console.log(`Main page: Using model ${columnModels[column]} for column ${column}`);
+    console.log(`Main page: Using model ${model} for column ${column}`);
 
     // Set generating state for this column
     setIsGenerating((prev) => ({
@@ -171,7 +215,7 @@ export default function Home() {
             content: prompt,
           },
         ],
-        model: columnModels[column],
+        model: model,
         stream: true, // Enable streaming
       };
 
@@ -676,7 +720,9 @@ export default function Home() {
                   !Object.values(originalResponses).some((response) => response.trim() !== '') ||
                   !currentMessage.trim()
                 }
-                isRemixGenerating={isRemixGenerating}
+                onModelSelectionsChange={handleModelSelectionsChange}
+                modelSelections={modelSelections}
+                columnModels={columnModels}
               />
             </div>
           </div>
