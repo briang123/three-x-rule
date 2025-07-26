@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ModelInfo } from '@/lib/api-client';
+import { ColourfulText } from './ColourfulText';
 
 export interface ModelSelection {
   modelId: string;
@@ -15,28 +16,28 @@ interface ModelGridSelectorProps {
   initialSelections?: ModelSelection[];
 }
 
-// Array of 20 different intro messages/greetings
+// Array of intro messages with highlighted words
 const introMessages = [
-  'Ready when you are.',
-  "What's your plan for today?",
-  "Let's create something amazing together.",
-  'Your AI companions are waiting.',
-  'Time to explore the possibilities.',
-  'What shall we build today?',
-  'Ready to dive into AI magic?',
-  'Your creative journey starts here.',
-  "Let's make something extraordinary.",
-  "What's on your mind?",
-  'Ready to unlock new insights?',
-  'Your ideas deserve the best AI.',
-  "Let's turn imagination into reality.",
-  'What story will you tell today?',
-  'Ready to explore the future?',
-  'Your next breakthrough awaits.',
-  "Let's discover what's possible.",
-  'What challenge shall we tackle?',
-  'Ready to push the boundaries?',
-  'Your creativity has no limits.',
+  { text: 'Ready when you are.', highlights: ['Ready'] },
+  { text: "What's your plan for today?", highlights: ['plan'] },
+  { text: "Let's create something amazing together.", highlights: ['create', 'amazing'] },
+  { text: 'Your AI companions are waiting.', highlights: ['AI', 'companions'] },
+  { text: 'Time to explore the possibilities.', highlights: ['explore', 'possibilities'] },
+  { text: 'What shall we build today?', highlights: ['build'] },
+  { text: 'Ready to dive into AI magic?', highlights: ['dive', 'magic'] },
+  { text: 'Your creative journey starts here.', highlights: ['creative', 'journey'] },
+  { text: "Let's make something extraordinary.", highlights: ['make', 'extraordinary'] },
+  { text: "What's on your mind?", highlights: ['mind'] },
+  { text: 'Ready to unlock new insights?', highlights: ['unlock', 'insights'] },
+  { text: 'Your ideas deserve the best AI.', highlights: ['ideas', 'best'] },
+  { text: "Let's turn imagination into reality.", highlights: ['imagination', 'reality'] },
+  { text: 'What story will you tell today?', highlights: ['story'] },
+  { text: 'Ready to explore the future?', highlights: ['explore', 'future'] },
+  { text: 'Your next breakthrough awaits.', highlights: ['breakthrough'] },
+  { text: "Let's discover what's possible.", highlights: ['discover', 'possible'] },
+  { text: 'What challenge shall we tackle?', highlights: ['challenge', 'tackle'] },
+  { text: 'Ready to push the boundaries?', highlights: ['push', 'boundaries'] },
+  { text: 'Your creativity has no limits.', highlights: ['creativity', 'limits'] },
 ];
 
 export default function ModelGridSelector({
@@ -48,7 +49,10 @@ export default function ModelGridSelector({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedModels, setSelectedModels] = useState<ModelSelection[]>(initialSelections);
-  const [currentGreeting, setCurrentGreeting] = useState<string>('');
+  const [currentGreeting, setCurrentGreeting] = useState<{ text: string; highlights: string[] }>({
+    text: '',
+    highlights: [],
+  });
 
   // Set a random greeting when component mounts
   useEffect(() => {
@@ -166,14 +170,18 @@ export default function ModelGridSelector({
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
       {/* Greeting */}
-      {currentGreeting && (
+      {currentGreeting.text && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-4xl font-bold text-kitchen-text dark:text-kitchen-dark-text">
-            {currentGreeting}
+          <h1 className="text-4xl font-bold py-2">
+            <ColourfulText
+              text={currentGreeting.text}
+              highlightedWords={currentGreeting.highlights}
+              useGradient={true}
+            />
           </h1>
         </motion.div>
       )}
