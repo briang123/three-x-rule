@@ -91,7 +91,7 @@ export default function LeftNavigation() {
 
   return (
     <motion.nav
-      className={`bg-kitchen-white border-r border-kitchen-light-gray flex flex-col h-screen overflow-hidden transition-all duration-300 ${
+      className={`bg-kitchen-white dark:bg-kitchen-dark-surface border-r border-kitchen-light-gray dark:border-kitchen-dark-border flex flex-col h-screen overflow-hidden transition-all duration-300 ${
         isCollapsed ? 'w-16' : 'w-64'
       }`}
       initial={{ x: -100, opacity: 0 }}
@@ -100,7 +100,7 @@ export default function LeftNavigation() {
     >
       {/* Logo/Brand */}
       <div
-        className={`border-b border-kitchen-light-gray flex-shrink-0 ${isCollapsed ? 'p-4' : 'p-6'}`}
+        className={`border-b border-kitchen-light-gray dark:border-kitchen-dark-border flex-shrink-0 ${isCollapsed ? 'p-4' : 'p-6'}`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -110,7 +110,7 @@ export default function LeftNavigation() {
             <AnimatePresence>
               {!isCollapsed && (
                 <motion.h2
-                  className="text-lg font-semibold text-kitchen-text"
+                  className="text-lg font-semibold text-kitchen-text dark:text-kitchen-dark-text"
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
@@ -125,7 +125,7 @@ export default function LeftNavigation() {
           {/* Toggle Button */}
           <motion.button
             onClick={toggleCollapse}
-            className="p-1 rounded-lg hover:bg-kitchen-light-gray transition-colors duration-200"
+            className="p-1 rounded-lg hover:bg-kitchen-light-gray dark:hover:bg-kitchen-dark-surface-light transition-colors duration-200 text-kitchen-text dark:text-kitchen-dark-text"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -152,8 +152,8 @@ export default function LeftNavigation() {
               <motion.button
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                   item.active
-                    ? 'bg-kitchen-accent-blue text-white shadow-sm'
-                    : 'text-kitchen-text-light hover:bg-kitchen-light-gray hover:text-kitchen-text'
+                    ? 'bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue text-white shadow-sm'
+                    : 'text-kitchen-text-light dark:text-kitchen-dark-text-light hover:bg-kitchen-light-gray dark:hover:bg-kitchen-dark-surface-light hover:text-kitchen-text dark:hover:text-kitchen-dark-text'
                 } ${isCollapsed ? 'justify-center px-2' : ''}`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -183,15 +183,15 @@ export default function LeftNavigation() {
       <AnimatePresence>
         {!isCollapsed && (
           <motion.div
-            className="p-4 border-t border-kitchen-light-gray flex-shrink-0"
+            className="p-4 border-t border-kitchen-light-gray dark:border-kitchen-dark-border flex-shrink-0"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="bg-kitchen-light-gray rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-kitchen-text mb-2">Quick Tips</h3>
-              <p className="text-xs text-kitchen-text-light leading-relaxed">
+            <div className="bg-kitchen-light-gray dark:bg-kitchen-dark-surface-light rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-kitchen-text dark:text-kitchen-dark-text mb-2">Quick Tips</h3>
+              <p className="text-xs text-kitchen-text-light dark:text-kitchen-dark-text-light leading-relaxed">
                 Select sentences from different outputs to create a refined response using the 3x
                 Rule methodology.
               </p>

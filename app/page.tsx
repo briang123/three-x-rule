@@ -86,6 +86,7 @@ export default function Home() {
   };
 
   const handleNewChat = () => {
+    console.log('Main page: handleNewChat called, clearing currentMessage');
     setSelectedSentences([]);
     setColumnResponses((prev) => {
       const reset: { [key: string]: string[] } = {};
@@ -109,6 +110,7 @@ export default function Home() {
       return reset;
     });
     setCurrentMessage('');
+    console.log('Main page: currentMessage cleared');
   };
 
   const handleColumnPromptSubmit = async (column: string, prompt: string, attachments: File[]) => {
@@ -282,7 +284,7 @@ export default function Home() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-kitchen-dark-bg transition-colors duration-200">
       <LeftNavigation />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar onNewChat={handleNewChat} />
@@ -300,7 +302,7 @@ export default function Home() {
                 onDeleteColumn={handleDeleteColumn}
               />
             </div>
-            <ChatInput onSubmit={handleSubmit} />
+            <ChatInput onSubmit={handleSubmit} currentMessage={currentMessage} />
           </div>
           {showRightPanel && (
             <RightSelectionsPanel

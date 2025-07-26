@@ -9,41 +9,6 @@ import TextHighlighter, { useTextHighlighter, Highlight } from './TextHighlighte
 import { TypingIndicator } from './TypingIndicator';
 import './TextHighlighter.css';
 
-const generationMessages = [
-  'The stage is yours. Choose a model, enter a prompt, get delighted!',
-  'Try the same prompt with a different model - you might be surprised.',
-  "Every model has its own voice. Let's hear another take.",
-  'Same prompt, new perspective. Spin it again.',
-  'Keep going - no two models think alike.',
-  'Stack the outputs. Compare, remix, or build something better.',
-  "The magic's in the mix. One prompt, many minds.",
-  'Different models, different vibes. Which reply stands out?',
-  "You're building a wall of ideas. What will you pull from each?",
-  'Let the models riff on your prompt. Pick your favorite parts.',
-  'Ten in - your prompt just sparked a creative swarm.',
-  "You're basically conducting a panel of AIs. Keep them talking.",
-  'This is where divergence becomes discovery.',
-  'Let each model take a shot - then blend the best.',
-  'Prompt once, learn from many. Try another model.',
-  'Another voice, another angle. What does *this* one see?',
-  "You're curating a collection - each output adds depth.",
-  'Think of these as alternate drafts. Which version resonates?',
-  'The remix potential is huge here. Keep them coming.',
-  'See how far a single prompt can stretch. One more model?',
-  "You've got a gallery of ideas now. Add another brushstroke.",
-  'Each new model is a lens. Same prompt, fresh focus.',
-  'This is collaborative AI - many minds, one seed idea.',
-  'What happens when you fuse the best lines from each?',
-  'Twenty-five versions deep. Your prompt has range!',
-];
-
-const getGenerationMessageForColumn = (index: number): string => {
-  if (index >= generationMessages.length) {
-    return generationMessages[generationMessages.length - 1];
-  }
-  return generationMessages[index];
-};
-
 // Copy to Clipboard Component
 function CopyButton({ content }: { content: string }) {
   const [copied, setCopied] = useState(false);
@@ -100,17 +65,21 @@ function HighlightableText({
   const { highlights, addHighlight, removeHighlight } = useTextHighlighter();
 
   const columnColors = {
-    '1': 'rgba(59, 130, 246, 0.3)', // blue
-    '2': 'rgba(34, 197, 94, 0.3)', // green
-    '3': 'rgba(168, 85, 247, 0.3)', // purple
-    '4': 'rgba(239, 68, 68, 0.3)', // red
-    '5': 'rgba(245, 158, 11, 0.3)', // orange
-    '6': 'rgba(16, 185, 129, 0.3)', // emerald
+    A: 'rgba(59, 130, 246, 0.3)', // blue
+    B: 'rgba(34, 197, 94, 0.3)', // green
+    C: 'rgba(168, 85, 247, 0.3)', // purple
+    D: 'rgba(239, 68, 68, 0.3)', // red
+    E: 'rgba(245, 158, 11, 0.3)', // orange
+    F: 'rgba(16, 185, 129, 0.3)', // emerald
   };
 
   const handleHighlightAdd = (highlight: Highlight) => {
-    // Disabled text selection functionality
-    return;
+    // Add to local highlights - extract the data without id and timestamp
+    const { id, timestamp, ...highlightData } = highlight;
+    addHighlight(highlightData);
+
+    // Add to selections for the parent component
+    onAddSelection(highlight.text);
   };
 
   const handleHighlightRemove = (highlightId: string) => {
@@ -120,14 +89,13 @@ function HighlightableText({
   return (
     <div className="relative">
       <TextHighlighter
-        highlights={[]}
-        onHighlightAdd={() => {}}
-        onHighlightRemove={() => {}}
+        highlights={highlights}
+        onHighlightAdd={handleHighlightAdd}
+        onHighlightRemove={handleHighlightRemove}
         highlightColor={
           columnColors[column as keyof typeof columnColors] || 'rgba(156, 163, 175, 0.3)'
         }
-        className={`bg-gray-50 rounded-lg p-4 border border-gray-200 select-none highlightable-text-${column}`}
-        disabled={true}
+        className={`bg-gray-50 rounded-lg p-4 border border-gray-200 select-text highlightable-text-${column.toLowerCase()}`}
       >
         <div className="text-sm text-gray-800 markdown-content">
           <ReactMarkdown
@@ -176,7 +144,7 @@ interface OutputColumnsProps {
     [key: string]: boolean;
   };
   onAddColumn?: () => void;
-  onDeleteColumn?: (columnKey: string) => void;
+  onDeleteColumn?: (column: string) => void;
 }
 
 // Simple Model Selector Component for Columns
@@ -261,7 +229,7 @@ const ColumnModelSelector = React.memo(
                   }`}
                 >
                   <div className="font-medium">{model.name}</div>
-                  <div className="text-xs text-kitchen-text-light whitespace-normal break-words">
+                  <div className="text-xs text-kitchen-text-light truncate">
                     {model.description}
                   </div>
                 </button>
@@ -440,12 +408,12 @@ export default function OutputColumns({
 
   const getColumnColor = (column: string) => {
     const colors = {
-      '1': 'bg-blue-500',
-      '2': 'bg-green-500',
-      '3': 'bg-purple-500',
-      '4': 'bg-red-500',
-      '5': 'bg-orange-500',
-      '6': 'bg-emerald-500',
+      A: 'bg-blue-500',
+      B: 'bg-green-500',
+      C: 'bg-purple-500',
+      D: 'bg-red-500',
+      E: 'bg-orange-500',
+      F: 'bg-emerald-500',
     };
     return colors[column as keyof typeof colors] || 'bg-gray-500';
   };
@@ -470,23 +438,29 @@ export default function OutputColumns({
               <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
                 <div className="flex items-center space-x-3">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold ${getColumnColor(column)}`}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold ${getColumnColor(column)} bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue`}
                   >
                     {column}
                   </div>
-                  {/* Model Selector */}
-                  <ColumnModelSelector
-                    selectedModel={columnModels[column] || ''}
-                    onModelChange={(modelId) => handleModelChange(column, modelId)}
-                    models={models}
-                    column={column}
-                  />
+                  {loading ? (
+                    <div className="px-3 py-1 bg-kitchen-light-gray border border-kitchen-light-gray rounded-lg text-sm text-kitchen-text-light flex items-center space-x-2">
+                      <div className="w-3 h-3 border border-kitchen-text-light border-t-transparent rounded-full animate-spin"></div>
+                      <span>Loading models...</span>
+                    </div>
+                  ) : (
+                    <ColumnModelSelector
+                      selectedModel={columnModels[column] || ''}
+                      onModelChange={(modelId) => handleModelChange(column, modelId)}
+                      models={models}
+                      column={column}
+                    />
+                  )}
                 </div>
                 {/* Delete Button: Only show if more than one column */}
                 {onDeleteColumn && columnKeys.length > 1 && (
                   <button
                     onClick={() => onDeleteColumn(column)}
-                    className="ml-2 p-2 rounded-full hover:bg-red-100 transition-colors text-red-500 focus:outline-none focus:ring-2 focus:ring-red-300"
+                    className="ml-2 p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-red-500 dark:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-600"
                     title="Delete column"
                   >
                     <svg
@@ -534,7 +508,7 @@ export default function OutputColumns({
                           d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                         />
                       </svg>
-                      <p>{getGenerationMessageForColumn(index)}</p>
+                      <p>No responses yet. Enter a prompt above to generate content.</p>
                     </div>
                   ) : (
                     // Markdown View
@@ -559,7 +533,7 @@ export default function OutputColumns({
           ))}
 
           {/* Add Column Button */}
-          {onAddColumn && columnKeys.length < 6 && (
+          {onAddColumn && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

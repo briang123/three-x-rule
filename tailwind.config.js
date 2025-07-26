@@ -5,6 +5,7 @@ module.exports = {
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -15,6 +16,15 @@ module.exports = {
         'kitchen-accent-blue': '#3b82f6',
         'kitchen-text': '#374151',
         'kitchen-text-light': '#6b7280',
+        // Dark mode colors
+        'kitchen-dark-bg': '#0f172a',
+        'kitchen-dark-surface': '#1e293b',
+        'kitchen-dark-surface-light': '#334155',
+        'kitchen-dark-border': '#475569',
+        'kitchen-dark-text': '#f1f5f9',
+        'kitchen-dark-text-light': '#94a3b8',
+        'kitchen-dark-muted-blue': '#1e3a8a',
+        'kitchen-dark-accent-blue': '#60a5fa',
       },
       fontFamily: {
         inter: ['Inter', 'system-ui', 'sans-serif'],

@@ -20,7 +20,25 @@ export async function POST(request: NextRequest) {
     const chatRequest: ChatRequest = {
       messages: body.messages,
       model: body.model || 'gemini-2.0-flash',
-      context: body.context,
+      context: {
+        ...body.context,
+        systemPrompt: (() => {
+          const now = new Date();
+          const dateString = now.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
+          // Try to get timezone from request, fallback to UTC
+          let userTimezone = 'UTC';
+          if (body.timezone) {
+            userTimezone = body.timezone;
+          } else if (typeof Intl !== 'undefined' && Intl.DateTimeFormat().resolvedOptions) {
+            userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+          }
+          const basePrompt = body.context?.systemPrompt || '';
+          return (
+            `Today's date and time: ${dateString}\nUser timezone: ${userTimezone}` +
+            (basePrompt ? `\n\n${basePrompt}` : '')
+          );
+        })(),
+      },
       temperature: body.temperature || 0.7,
       maxTokens: body.maxTokens,
       topP: body.topP,
