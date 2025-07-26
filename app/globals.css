@@ -1,0 +1,240 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-kitchen-off-white text-kitchen-text;
+  }
+
+  /* Force scrollbars to be visible on all operating systems */
+  .overflow-y-scroll::-webkit-scrollbar,
+  .overflow-y-auto::-webkit-scrollbar {
+    width: 8px !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .overflow-y-scroll::-webkit-scrollbar-track,
+  .overflow-y-auto::-webkit-scrollbar-track {
+    background: #f1f3f4;
+    border-radius: 4px;
+  }
+
+  .overflow-y-scroll::-webkit-scrollbar-thumb,
+  .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+  }
+
+  .overflow-y-scroll::-webkit-scrollbar-thumb:hover,
+  .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
+  /* Firefox scrollbar styles */
+  .overflow-y-scroll,
+  .overflow-y-auto {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f1f3f4;
+  }
+
+  /* Custom scrollbar styles */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f1f3f4;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
+  /* Firefox scrollbar styles */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f1f3f4;
+  }
+}
+
+@layer components {
+  .kitchen-card {
+    @apply bg-kitchen-white rounded-2xl shadow-sm border border-kitchen-light-gray;
+  }
+
+  .kitchen-button {
+    @apply bg-kitchen-accent-blue text-white px-6 py-3 rounded-xl font-medium 
+           hover:bg-blue-600 transition-all duration-200 
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+
+  .kitchen-input {
+    @apply bg-kitchen-white border border-kitchen-light-gray rounded-xl px-4 py-3
+           focus:outline-none focus:ring-2 focus:ring-kitchen-accent-blue focus:border-transparent
+           placeholder-kitchen-text-light;
+  }
+
+  .sentence-highlight {
+    @apply bg-kitchen-muted-blue border border-kitchen-accent-blue/30 rounded-lg px-2 py-1
+           cursor-pointer transition-all duration-200 hover:bg-blue-100;
+  }
+
+  .sentence-selected {
+    @apply bg-kitchen-accent-blue text-white border-kitchen-accent-blue;
+  }
+
+  /* Custom text selection colors for each column */
+  .highlightable-text-a::selection {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .highlightable-text-a::-moz-selection {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .highlightable-text-b::selection {
+    background-color: rgba(34, 197, 94, 0.3);
+  }
+
+  .highlightable-text-b::-moz-selection {
+    background-color: rgba(34, 197, 94, 0.3);
+  }
+
+  .highlightable-text-c::selection {
+    background-color: rgba(168, 85, 247, 0.3);
+  }
+
+  .highlightable-text-c::-moz-selection {
+    background-color: rgba(168, 85, 247, 0.3);
+  }
+
+  /* Highlighted text styling */
+  .highlighted-text-a {
+    background-color: rgba(59, 130, 246, 0.3);
+    border-radius: 2px;
+    padding: 1px 2px;
+  }
+
+  .highlighted-text-b {
+    background-color: rgba(34, 197, 94, 0.3);
+    border-radius: 2px;
+    padding: 1px 2px;
+  }
+
+  .highlighted-text-c {
+    background-color: rgba(168, 85, 247, 0.3);
+    border-radius: 2px;
+    padding: 1px 2px;
+  }
+
+  /* Markdown content styling */
+  .markdown-content {
+    line-height: 1.6;
+  }
+
+  .markdown-content p {
+    margin-bottom: 0.75rem;
+  }
+
+  .markdown-content p:last-child {
+    margin-bottom: 0;
+  }
+
+  .markdown-content strong {
+    font-weight: 600;
+  }
+
+  .markdown-content em {
+    font-style: italic;
+  }
+
+  .markdown-content code {
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-family: 'Courier New', monospace;
+  }
+
+  .markdown-content pre {
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+  }
+
+  .markdown-content pre code {
+    background: none;
+    padding: 0;
+  }
+
+  .markdown-content ul,
+  .markdown-content ol {
+    margin: 0.75rem 0;
+    padding-left: 0;
+    list-style-position: outside;
+  }
+
+  .markdown-content ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+  }
+
+  .markdown-content ol {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+  }
+
+  .markdown-content li {
+    margin-bottom: 0.25rem;
+  }
+
+  .markdown-content blockquote {
+    border-left: 4px solid rgba(0, 0, 0, 0.2);
+    padding-left: 1rem;
+    margin: 0.75rem 0;
+    font-style: italic;
+  }
+
+  /* Ensure output columns can scroll properly */
+  .output-column-scroll {
+    overflow-y: auto !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #d1d5db #f1f3f4 !important;
+  }
+
+  .output-column-scroll::-webkit-scrollbar {
+    width: 8px !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .output-column-scroll::-webkit-scrollbar-track {
+    background: #f1f3f4 !important;
+    border-radius: 4px !important;
+  }
+
+  .output-column-scroll::-webkit-scrollbar-thumb {
+    background: #d1d5db !important;
+    border-radius: 4px !important;
+  }
+
+  .output-column-scroll::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af !important;
+  }
+}
