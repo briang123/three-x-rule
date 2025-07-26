@@ -42,7 +42,7 @@ export default function ChatInput({
     try {
       await onSubmit(prompt.trim(), attachments);
       // Do not clear the prompt after submit
-      setAttachments([]);
+      // Do not clear attachments - they persist until manually removed
     } catch (error) {
       console.error('Error submitting prompt:', error);
     } finally {
@@ -59,11 +59,59 @@ export default function ChatInput({
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setAttachments((prev) => [...prev, ...files]);
+
+    // Validate files
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+
+    files.forEach((file) => {
+      // Check file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        errors.push(`${file.name} is too large. Maximum size is 10MB.`);
+        return;
+      }
+
+      // Check file type
+      const allowedTypes = [
+        'text/plain',
+        'text/markdown',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        errors.push(`${file.name} has an unsupported file type.`);
+        return;
+      }
+
+      validFiles.push(file);
+    });
+
+    // Show errors if any
+    if (errors.length > 0) {
+      alert('File upload errors:\n' + errors.join('\n'));
+    }
+
+    // Add valid files
+    if (validFiles.length > 0) {
+      setAttachments((prev) => [...prev, ...validFiles]);
+    }
+
+    // Clear the input value so the same file can be selected again
+    e.target.value = '';
   };
 
   const removeAttachment = (index: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const clearAllAttachments = () => {
+    setAttachments([]);
   };
 
   const openFileDialog = () => {
@@ -163,13 +211,29 @@ export default function ChatInput({
               multiple
               onChange={handleFileSelect}
               className="hidden"
-              accept=".txt,.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+              accept=".txt,.md,.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
             />
             {attachments.length > 0 && (
-              <span className="text-xs text-gray-500 dark:text-kitchen-dark-text-light">
-                {attachments.length} file(s) attached
-              </span>
+              <>
+                <span className="text-xs text-gray-500 dark:text-kitchen-dark-text-light">
+                  {attachments.length} file(s) attached
+                </span>
+                <button
+                  type="button"
+                  onClick={clearAllAttachments}
+                  disabled={isSubmitting}
+                  className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 transition-colors duration-200"
+                >
+                  Clear All
+                </button>
+              </>
             )}
+          </div>
+
+          {/* File type info */}
+          <div className="text-xs text-gray-500 dark:text-kitchen-dark-text-light">
+            Supported: Text files (.txt), Markdown (.md), PDFs, Word docs, and images (JPG, PNG,
+            GIF). Max 10MB per file. Attachments persist until manually removed.
           </div>
 
           {/* Attachment List */}
@@ -181,25 +245,43 @@ export default function ChatInput({
                   className="flex items-center justify-between p-2 bg-gray-50 dark:bg-kitchen-dark-surface-light rounded border border-gray-200 dark:border-kitchen-dark-border transition-colors duration-200"
                 >
                   <div className="flex items-center space-x-2">
-                    <svg
-                      className="w-4 h-4 text-gray-500 dark:text-kitchen-dark-text-light"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    <span className="text-sm text-gray-700 dark:text-kitchen-dark-text truncate">
-                      {file.name}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-kitchen-dark-text-light">
-                      ({(file.size / 1024).toFixed(1)} KB)
-                    </span>
+                    {file.type.startsWith('image/') ? (
+                      <svg
+                        className="w-4 h-4 text-blue-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="w-4 h-4 text-gray-500 dark:text-kitchen-dark-text-light"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    )}
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-700 dark:text-kitchen-dark-text truncate">
+                        {file.name}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-kitchen-dark-text-light">
+                        {file.type} • {(file.size / 1024).toFixed(1)} KB
+                      </span>
+                    </div>
                   </div>
                   <button
                     type="button"

@@ -82,7 +82,7 @@ export default function Home() {
         console.log(
           `Main page: Adding promise for column ${column} with model ${columnModels[column]}`,
         );
-        promises.push(handleColumnPromptSubmit(column, prompt, attachments || []));
+        promises.push(handleColumnPromptSubmit(column, prompt, attachments));
       } else {
         console.log(`Main page: No model selected for column ${column}`);
       }
@@ -176,16 +176,50 @@ export default function Home() {
       };
 
       console.log(`Main page: Sending request for column ${column}`);
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+      console.log(`Main page: Column ${column} - attachments:`, attachments);
+      console.log(`Main page: Column ${column} - attachments.length:`, attachments?.length);
+      console.log(`Main page: Column ${column} - attachments type:`, typeof attachments);
+
+      let response;
+
+      if (attachments && attachments.length > 0) {
+        console.log(
+          `Main page: Column ${column} - Using attachments endpoint with ${attachments.length} files`,
+        );
+        // Use the attachments endpoint
+        const formData = new FormData();
+        formData.append('jsonData', JSON.stringify(requestBody));
+
+        // Add files to form data
+        attachments.forEach((file, index) => {
+          console.log(
+            `Main page: Column ${column} - Adding file ${index}:`,
+            file.name,
+            file.type,
+            file.size,
+          );
+          formData.append(`file-${index}`, file);
+        });
+
+        response = await fetch('/api/chat/with-attachments', {
+          method: 'POST',
+          body: formData,
+        });
+      } else {
+        // Use the regular endpoint
+        response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+      }
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Main page: Column ${column} - API error response:`, errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       const reader = response.body?.getReader();
@@ -360,6 +394,7 @@ export default function Home() {
           stream: true,
         };
 
+        // For remix, we don't need to include attachments since we're working with existing responses
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: {
@@ -515,6 +550,7 @@ export default function Home() {
           stream: true,
         };
 
+        // For social posts, we don't need to include attachments since we're working with existing responses
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: {
