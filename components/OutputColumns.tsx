@@ -302,6 +302,9 @@ export default function OutputColumns({
   const [loading, setLoading] = useState(true);
   const [columnModels, setColumnModels] = useState<{ [key: string]: string }>({});
   const [initialized, setInitialized] = useState(false);
+  const [socialPostsBorderStates, setSocialPostsBorderStates] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   // Refs for smooth scrolling
   const remixRef = useRef<HTMLDivElement>(null);
@@ -318,6 +321,48 @@ export default function OutputColumns({
   // Track previous states for scroll triggers
   const prevShowRemixRef = useRef<boolean>(false);
   const prevShowSocialPostsRef = useRef<{ [key: string]: boolean }>({});
+
+  // Effect to handle social posts border fade-out after content is received
+  useEffect(() => {
+    Object.entries(socialPostsResponses).forEach(([socialPostId, response]) => {
+      // Only start fade-out timer if:
+      // 1. The social post is visible
+      // 2. There's actual content (not empty)
+      // 3. It's not currently generating
+      // 4. The border hasn't already faded
+      if (
+        showSocialPosts[socialPostId] &&
+        response &&
+        response.trim() !== '' &&
+        !isSocialPostsGenerating[socialPostId] &&
+        !socialPostsBorderStates[socialPostId]
+      ) {
+        // Start the fade-out timer after content is received
+        const timer = setTimeout(() => {
+          setSocialPostsBorderStates((prev) => ({
+            ...prev,
+            [socialPostId]: true, // true means faded out
+          }));
+        }, 10000); // 10 seconds
+
+        return () => clearTimeout(timer);
+      }
+    });
+  }, [socialPostsResponses, showSocialPosts, isSocialPostsGenerating, socialPostsBorderStates]);
+
+  // Clean up border states when social posts are removed
+  useEffect(() => {
+    const currentSocialPostIds = Object.keys(showSocialPosts);
+    setSocialPostsBorderStates((prev) => {
+      const newState = { ...prev };
+      Object.keys(newState).forEach((id) => {
+        if (!currentSocialPostIds.includes(id)) {
+          delete newState[id];
+        }
+      });
+      return newState;
+    });
+  }, [showSocialPosts]);
 
   // Smooth scroll function
   const smoothScrollToElement = useCallback((element: HTMLElement | null) => {
@@ -733,6 +778,7 @@ export default function OutputColumns({
             const config = socialPostsConfigs[socialPostId];
             const response = socialPostsResponses[socialPostId];
             const isGenerating = isSocialPostsGenerating[socialPostId];
+            const isBorderFaded = socialPostsBorderStates[socialPostId];
 
             // Get platform-specific colors
             const getPlatformColors = (platform: string) => {
@@ -755,7 +801,11 @@ export default function OutputColumns({
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
-                className={`kitchen-card p-6 flex flex-col overflow-hidden flex-shrink-0 column-container border-2 border-green-500 dark:border-green-400 w-full max-w-full`}
+                className={`kitchen-card p-6 flex flex-col overflow-hidden flex-shrink-0 column-container w-full max-w-full transition-all duration-1000 ease-in-out ${
+                  isBorderFaded
+                    ? 'border border-gray-200 dark:border-kitchen-dark-border'
+                    : 'border-2 border-green-500 dark:border-green-400'
+                }`}
               >
                 <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
                   <div className="flex items-center space-x-3">
