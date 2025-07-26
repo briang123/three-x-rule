@@ -2,14 +2,23 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import RemixDropdown from './RemixDropdown';
 
 interface ChatInputProps {
   onSubmit: (prompt: string, attachments?: File[]) => void;
   currentMessage?: string;
   onNewChat?: () => void;
+  onRemix?: (modelId: string) => void;
+  remixDisabled?: boolean;
 }
 
-export default function ChatInput({ onSubmit, currentMessage = '', onNewChat }: ChatInputProps) {
+export default function ChatInput({
+  onSubmit,
+  currentMessage = '',
+  onNewChat,
+  onRemix,
+  remixDisabled,
+}: ChatInputProps) {
   const [prompt, setPrompt] = useState(currentMessage);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,38 +101,41 @@ export default function ChatInput({ onSubmit, currentMessage = '', onNewChat }: 
             </div>
           </div>
 
-          <motion.button
-            type="submit"
-            disabled={!prompt.trim() || isSubmitting}
-            className="kitchen-button disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-            whileHover={{ scale: prompt.trim() && !isSubmitting ? 1.02 : 1 }}
-            whileTap={{ scale: prompt.trim() && !isSubmitting ? 0.98 : 1 }}
-          >
-            {isSubmitting ? (
-              <>
-                <motion.div
-                  className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                />
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="m22 2-7 20-4-9-9-4 20-7z" />
-                </svg>
-                <span>Submit</span>
-              </>
-            )}
-          </motion.button>
+          <div className="flex flex-col space-y-2">
+            {onRemix && <RemixDropdown onRemix={onRemix} disabled={remixDisabled} />}
+            <motion.button
+              type="submit"
+              disabled={!prompt.trim() || isSubmitting}
+              className="kitchen-button disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              whileHover={{ scale: prompt.trim() && !isSubmitting ? 1.02 : 1 }}
+              whileTap={{ scale: prompt.trim() && !isSubmitting ? 0.98 : 1 }}
+            >
+              {isSubmitting ? (
+                <>
+                  <motion.div
+                    className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="m22 2-7 20-4-9-9-4 20-7z" />
+                  </svg>
+                  <span>Submit</span>
+                </>
+              )}
+            </motion.button>
+          </div>
         </div>
 
         {/* File Attachments */}

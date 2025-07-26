@@ -72,6 +72,7 @@ function HighlightableText({
     E: 'rgba(245, 158, 11, 0.3)', // orange
     F: 'rgba(16, 185, 129, 0.3)', // emerald
     R: 'rgba(168, 85, 247, 0.3)', // purple for remix
+    S: 'rgba(34, 197, 94, 0.3)', // green for social posts
   };
 
   const handleHighlightAdd = (highlight: Highlight) => {
@@ -151,6 +152,13 @@ interface OutputColumnsProps {
   isRemixGenerating?: boolean;
   showRemix?: boolean;
   onCloseRemix?: () => void;
+  remixModel?: string;
+  // Social Posts props
+  socialPostsResponses?: { [key: string]: string };
+  isSocialPostsGenerating?: { [key: string]: boolean };
+  showSocialPosts?: { [key: string]: boolean };
+  onCloseSocialPosts?: (socialPostId: string) => void;
+  socialPostsConfigs?: { [key: string]: any };
 }
 
 // Simple Model Selector Component for Columns
@@ -261,6 +269,12 @@ export default function OutputColumns({
   isRemixGenerating = false,
   showRemix = false,
   onCloseRemix,
+  remixModel = '',
+  socialPostsResponses = {},
+  isSocialPostsGenerating = {},
+  showSocialPosts = {},
+  onCloseSocialPosts,
+  socialPostsConfigs = {},
 }: OutputColumnsProps) {
   const handleAddSelection = useCallback(
     (text: string, source: string) => {
@@ -425,6 +439,7 @@ export default function OutputColumns({
       E: 'bg-orange-500',
       F: 'bg-emerald-500',
       R: 'bg-gradient-to-r from-purple-500 to-pink-500',
+      S: 'bg-gradient-to-r from-green-500 to-emerald-500',
     };
     return colors[column as keyof typeof colors] || 'bg-gray-500';
   };
@@ -537,6 +552,145 @@ export default function OutputColumns({
               </div>
             </motion.div>
           )}
+
+          {/* Social Posts Columns */}
+          {Object.entries(showSocialPosts).map(([socialPostId, isVisible]) => {
+            if (!isVisible) return null;
+
+            const config = socialPostsConfigs[socialPostId];
+            const response = socialPostsResponses[socialPostId];
+            const isGenerating = isSocialPostsGenerating[socialPostId];
+
+            // Get platform-specific colors
+            const getPlatformColors = (platform: string) => {
+              const colors = {
+                twitter: 'from-blue-400 to-blue-600',
+                linkedin: 'from-blue-600 to-blue-800',
+                instagram: 'from-pink-400 to-purple-600',
+                facebook: 'from-blue-500 to-blue-700',
+                tiktok: 'from-pink-500 to-red-500',
+              };
+              return colors[platform as keyof typeof colors] || 'from-green-500 to-emerald-500';
+            };
+
+            return (
+              <motion.div
+                key={socialPostId}
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className={`kitchen-card p-6 flex flex-col overflow-hidden flex-shrink-0 column-container border-2 border-green-500 dark:border-green-400 ${
+                  config?.postType === 'article'
+                    ? 'min-w-[800px] max-w-[800px]'
+                    : 'min-w-[400px] max-w-[400px]'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-gradient-to-r ${getPlatformColors(config?.platform)}`}
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-semibold text-kitchen-text dark:text-kitchen-dark-text">
+                        Social Posts
+                      </span>
+                      <span
+                        className={`text-xs bg-gradient-to-r ${getPlatformColors(config?.platform)} text-white px-2 py-1 rounded-full`}
+                      >
+                        {config?.platform || 'Platform'}
+                      </span>
+                      {config?.postType === 'article' && (
+                        <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                          Double-wide
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {onCloseSocialPosts && (
+                    <button
+                      onClick={() => onCloseSocialPosts(socialPostId)}
+                      className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-red-500 dark:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-600"
+                      title="Close social posts"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Social Posts Response Display */}
+                <div className="output-column-scroll pr-2 column-content">
+                  <div className="space-y-3">
+                    {isGenerating && (
+                      <div className="text-center text-blue-600 py-4">
+                        <div className="flex items-center justify-center space-x-2">
+                          <TypingIndicator />
+                          <span className="text-sm font-medium">Generating social posts...</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {!response && !isGenerating ? (
+                      <div className="text-center text-gray-500 py-8">
+                        <svg
+                          className="w-12 h-12 mx-auto mb-4 text-gray-300"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                          />
+                        </svg>
+                        <p>Social posts will appear here.</p>
+                      </div>
+                    ) : (
+                      // Markdown View for Social Posts
+                      <div className="relative">
+                        <div className="absolute top-2 right-2 z-10">
+                          <CopyButton content={response} />
+                        </div>
+                        <HighlightableText
+                          content={response}
+                          onAddSelection={(text) => handleAddSelection(text, 'S')}
+                          column="S"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
 
           {columnKeys.map((column, index) => (
             <motion.div

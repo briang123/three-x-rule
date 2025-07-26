@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ModelInfo } from '@/lib/api-client';
 
@@ -14,6 +14,8 @@ export default function RemixDropdown({ onRemix, disabled = false }: RemixDropdo
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [openDirection, setOpenDirection] = useState<'up' | 'down'>('up');
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -95,10 +97,33 @@ export default function RemixDropdown({ onRemix, disabled = false }: RemixDropdo
   return (
     <div className="relative remix-dropdown">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        type="button"
+        onClick={() => {
+          if (!isOpen) {
+            // About to open, measure position
+            setTimeout(() => {
+              if (buttonRef.current) {
+                const rect = buttonRef.current.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const spaceAbove = rect.top;
+                // Estimate dropdown height (e.g. 320px)
+                const dropdownHeight = 320;
+                if (spaceBelow > dropdownHeight || spaceBelow > spaceAbove) {
+                  setOpenDirection('down');
+                } else {
+                  setOpenDirection('up');
+                }
+              }
+            }, 0);
+          }
+          setIsOpen(!isOpen);
+        }}
         disabled={disabled}
-        className={`kitchen-button text-sm px-4 py-2 ${
-          disabled ? 'opacity-50 cursor-not-allowed' : ''
+        className={`text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+          disabled
+            ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-500'
+            : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-md hover:shadow-lg transform hover:scale-105'
         }`}
       >
         <div className="flex items-center space-x-2">
@@ -124,10 +149,10 @@ export default function RemixDropdown({ onRemix, disabled = false }: RemixDropdo
 
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: openDirection === 'down' ? -10 : 10 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="absolute top-full left-0 mt-1 w-64 bg-kitchen-white dark:bg-kitchen-dark-surface border border-kitchen-light-gray dark:border-kitchen-dark-border rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto"
+          exit={{ opacity: 0, y: openDirection === 'down' ? -10 : 10 }}
+          className={`absolute left-0 w-64 bg-kitchen-white dark:bg-kitchen-dark-surface border border-kitchen-light-gray dark:border-kitchen-dark-border rounded-lg shadow-lg z-10 max-h-[calc(100vh-64px)] overflow-y-auto ${openDirection === 'down' ? 'top-full mt-1' : 'bottom-full mb-1'}`}
         >
           <div className="p-2">
             <div className="px-3 py-2 text-xs font-medium text-kitchen-text-light dark:text-kitchen-dark-text-light border-b border-kitchen-light-gray dark:border-kitchen-dark-border mb-2">
@@ -136,12 +161,13 @@ export default function RemixDropdown({ onRemix, disabled = false }: RemixDropdo
             <div className="space-y-1">
               {models.map((model) => (
                 <button
+                  type="button"
                   key={model.id}
                   onClick={() => handleRemix(model.id)}
                   className="w-full text-left px-3 py-2 rounded text-sm transition-colors hover:bg-kitchen-light-gray dark:hover:bg-kitchen-dark-surface-light text-kitchen-text dark:text-kitchen-dark-text"
                 >
                   <div className="font-medium">{model.name}</div>
-                  <div className="text-xs text-kitchen-text-light dark:text-kitchen-dark-text-light truncate">
+                  <div className="text-xs text-kitchen-text-light dark:text-kitchen-dark-text-light break-words">
                     {model.description}
                   </div>
                 </button>

@@ -6,6 +6,7 @@ import LeftNavigation from '@/components/LeftNavigation';
 import OutputColumns from '@/components/OutputColumns';
 import RightSelectionsPanel from '@/components/RightSelectionsPanel';
 import ChatInput from '@/components/ChatInput';
+import SocialPostsDrawer, { SocialPostConfig } from '@/components/SocialPostsDrawer';
 
 export interface SelectedSentence {
   id: string;
@@ -42,6 +43,18 @@ export default function Home() {
   const [remixResponse, setRemixResponse] = useState<string>('');
   const [isRemixGenerating, setIsRemixGenerating] = useState<boolean>(false);
   const [showRemix, setShowRemix] = useState<boolean>(false);
+  const [remixModel, setRemixModel] = useState<string>('');
+
+  // Social Posts state
+  const [showSocialPostsDrawer, setShowSocialPostsDrawer] = useState<boolean>(false);
+  const [socialPostsResponses, setSocialPostsResponses] = useState<{ [key: string]: string }>({});
+  const [isSocialPostsGenerating, setIsSocialPostsGenerating] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [showSocialPosts, setShowSocialPosts] = useState<{ [key: string]: boolean }>({});
+  const [socialPostsConfigs, setSocialPostsConfigs] = useState<{ [key: string]: SocialPostConfig }>(
+    {},
+  );
 
   const handleSentenceSelect = useCallback((sentence: SelectedSentence) => {
     setSelectedSentences((prev) => {
@@ -119,6 +132,13 @@ export default function Home() {
     setRemixResponse('');
     setIsRemixGenerating(false);
     setShowRemix(false);
+    setRemixModel('');
+
+    // Clear social posts state
+    setSocialPostsResponses({});
+    setIsSocialPostsGenerating({});
+    setShowSocialPosts({});
+    setSocialPostsConfigs({});
     console.log('Main page: currentMessage cleared');
   };
 
@@ -314,6 +334,7 @@ export default function Home() {
       setIsRemixGenerating(true);
       setShowRemix(true);
       setRemixResponse('');
+      setRemixModel(modelId);
 
       try {
         // Combine all existing responses
@@ -405,18 +426,191 @@ export default function Home() {
     setShowRemix(false);
   }, []);
 
+  const handleSocialPosts = useCallback(() => {
+    setShowSocialPostsDrawer(true);
+  }, []);
+
+  const handleSocialPostsGenerate = useCallback(
+    async (config: SocialPostConfig) => {
+      console.log('Main page: handleSocialPostsGenerate called with config:', config);
+
+      // Generate a unique ID for this social post column
+      const socialPostId = `social-${Date.now()}`;
+
+      // Initialize the column
+      setIsSocialPostsGenerating((prev) => ({ ...prev, [socialPostId]: true }));
+      setShowSocialPosts((prev) => ({ ...prev, [socialPostId]: true }));
+      setSocialPostsResponses((prev) => ({ ...prev, [socialPostId]: '' }));
+      setSocialPostsConfigs((prev) => ({ ...prev, [socialPostId]: config }));
+
+      try {
+        // Determine the prompt to use
+        const basePrompt = config.customPrompt || currentMessage;
+        if (!basePrompt.trim()) {
+          throw new Error('No prompt available for social posts generation');
+        }
+
+        // Create the social post prompt based on platform and type
+        let socialPrompt = `${basePrompt}\n\n`;
+
+        const platformPrompts = {
+          twitter: 'Create engaging X (Twitter) content that is',
+          linkedin: 'Create professional LinkedIn content that is',
+          instagram: 'Create Instagram content that is',
+          facebook: 'Create Facebook content that is',
+          tiktok: 'Create TikTok content that is',
+        };
+
+        const typePrompts = {
+          tweet: `${config.numberOfPosts} separate tweets (max ${config.characterLimit} characters each). Make each tweet engaging, informative, and include relevant hashtags. Format each tweet in its own block with "Tweet 1:", "Tweet 2:", etc.`,
+          thread: `a thread of ${config.numberOfPosts} tweets (max ${config.characterLimit} characters each). Each tweet should build on the previous one and include relevant hashtags. Format each tweet in its own block with "Tweet 1:", "Tweet 2:", etc.`,
+          article: `a comprehensive article (max ${config.characterLimit} characters). Structure it with clear headings, engaging content, and a strong conclusion.`,
+          post: `${config.numberOfPosts} separate social media posts (max ${config.characterLimit} characters each). Make each post engaging and include relevant hashtags. Format each post in its own block with "Post 1:", "Post 2:", etc.`,
+          caption: `${config.numberOfPosts} separate Instagram captions (max ${config.characterLimit} characters each). Make each caption engaging, include relevant hashtags, and use emojis appropriately. Format each caption in its own block with "Caption 1:", "Caption 2:", etc.`,
+        };
+
+        socialPrompt += `${platformPrompts[config.platform as keyof typeof platformPrompts]} ${typePrompts[config.postType as keyof typeof typePrompts]}`;
+
+        // If using selected columns or existing responses, include them
+        if (!config.customPrompt) {
+          let responsesToInclude: string[] = [];
+
+          // If specific columns are selected, use those
+          if (config.selectedColumns && config.selectedColumns.length > 0) {
+            responsesToInclude = config.selectedColumns
+              .filter(
+                (columnKey) =>
+                  originalResponses[columnKey] && originalResponses[columnKey].trim() !== '',
+              )
+              .map((columnKey) => `Column ${columnKey}:\n${originalResponses[columnKey]}`);
+          } else {
+            // Otherwise, use all existing responses
+            const hasResponses = Object.values(originalResponses).some(
+              (response) => response.trim() !== '',
+            );
+            if (hasResponses) {
+              responsesToInclude = Object.entries(originalResponses)
+                .filter(([_, response]) => response.trim() !== '')
+                .map(([column, response]) => `Column ${column}:\n${response}`);
+            }
+          }
+
+          if (responsesToInclude.length > 0) {
+            const combinedResponses = responsesToInclude.join('\n\n---\n\n');
+            socialPrompt += `\n\nUse the following content as reference:\n\n${combinedResponses}`;
+          }
+        }
+
+        console.log('Main page: Sending social posts request with prompt:', socialPrompt);
+
+        // Prepare the request body
+        const requestBody = {
+          messages: [
+            {
+              role: 'user',
+              content: socialPrompt,
+            },
+          ],
+          model: config.modelId,
+          stream: true,
+        };
+
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('No response body');
+        }
+
+        let accumulatedResponse = '';
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') {
+                console.log('Main page: Social posts stream completed');
+                break;
+              }
+
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.success && parsed.data && parsed.data.content) {
+                  accumulatedResponse += parsed.data.content;
+                  setSocialPostsResponses((prev) => ({
+                    ...prev,
+                    [socialPostId]: accumulatedResponse,
+                  }));
+                } else if (!parsed.success) {
+                  console.error('API Error:', parsed.error);
+                  throw new Error(parsed.error || 'API request failed');
+                }
+              } catch (e) {
+                console.error('Error parsing JSON:', e);
+              }
+            }
+          }
+        }
+
+        console.log('Main page: Social posts completed:', accumulatedResponse);
+      } catch (error) {
+        console.error('Error in social posts generation:', error);
+        setSocialPostsResponses((prev) => ({
+          ...prev,
+          [socialPostId]: 'Error: Failed to generate social posts',
+        }));
+      } finally {
+        setIsSocialPostsGenerating((prev) => ({ ...prev, [socialPostId]: false }));
+      }
+    },
+    [originalResponses, currentMessage],
+  );
+
+  const handleCloseSocialPosts = useCallback((socialPostId: string) => {
+    setShowSocialPosts((prev) => {
+      const newState = { ...prev };
+      delete newState[socialPostId];
+      return newState;
+    });
+    setSocialPostsResponses((prev) => {
+      const newState = { ...prev };
+      delete newState[socialPostId];
+      return newState;
+    });
+    setSocialPostsConfigs((prev) => {
+      const newState = { ...prev };
+      delete newState[socialPostId];
+      return newState;
+    });
+    setIsSocialPostsGenerating((prev) => {
+      const newState = { ...prev };
+      delete newState[socialPostId];
+      return newState;
+    });
+  }, []);
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-kitchen-dark-bg transition-colors duration-200">
       <LeftNavigation />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar
-          onNewChat={handleNewChat}
-          onRemix={handleRemix}
-          remixDisabled={
-            !Object.values(originalResponses).some((response) => response.trim() !== '') ||
-            !currentMessage.trim()
-          }
-        />
+        <TopBar onNewChat={handleNewChat} onSocialPosts={handleSocialPosts} />
         <div className="flex flex-1 overflow-hidden">
           <div className="flex flex-1 flex-col overflow-hidden">
             <div className="flex-1 overflow-hidden p-6">
@@ -433,9 +627,23 @@ export default function Home() {
                 isRemixGenerating={isRemixGenerating}
                 showRemix={showRemix}
                 onCloseRemix={handleCloseRemix}
+                remixModel={remixModel}
+                socialPostsResponses={socialPostsResponses}
+                isSocialPostsGenerating={isSocialPostsGenerating}
+                showSocialPosts={showSocialPosts}
+                onCloseSocialPosts={handleCloseSocialPosts}
+                socialPostsConfigs={socialPostsConfigs}
               />
             </div>
-            <ChatInput onSubmit={handleSubmit} currentMessage={currentMessage} />
+            <ChatInput
+              onSubmit={handleSubmit}
+              currentMessage={currentMessage}
+              onRemix={handleRemix}
+              remixDisabled={
+                !Object.values(originalResponses).some((response) => response.trim() !== '') ||
+                !currentMessage.trim()
+              }
+            />
           </div>
           {showRightPanel && (
             <RightSelectionsPanel
@@ -447,6 +655,14 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* Social Posts Drawer */}
+      <SocialPostsDrawer
+        isOpen={showSocialPostsDrawer}
+        onClose={() => setShowSocialPostsDrawer(false)}
+        onGenerate={handleSocialPostsGenerate}
+        availableColumns={originalResponses}
+      />
     </div>
   );
 }
