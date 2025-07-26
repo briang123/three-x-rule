@@ -105,6 +105,43 @@
   .dark .scrollbar-thin {
     scrollbar-color: #64748b #334155;
   }
+
+  /* Textarea scrollbar styles - ChatGPT-like */
+  textarea::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  textarea::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+  }
+
+  textarea::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+
+  textarea::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
+  .dark textarea::-webkit-scrollbar-thumb {
+    background: #64748b;
+  }
+
+  .dark textarea::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Firefox textarea scrollbar */
+  textarea {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+  }
+
+  .dark textarea {
+    scrollbar-color: #64748b transparent;
+  }
 }
 
 @layer components {
