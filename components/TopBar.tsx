@@ -1,7 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import ThemeToggle from './ThemeToggle';
 
 interface TopBarProps {
   onNewChat?: () => void;
@@ -29,9 +28,6 @@ export default function TopBar({ onNewChat, onSocialPosts }: TopBarProps) {
                 Social Posts
               </button>
             )}
-          </div>
-          <div className="flex items-center space-x-2">
-            <ThemeToggle />
           </div>
         </div>
       </div>
