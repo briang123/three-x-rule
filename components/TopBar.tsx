@@ -10,7 +10,7 @@ interface TopBarProps {
 export default function TopBar({ onNewChat, onSocialPosts }: TopBarProps) {
   return (
     <motion.header
-      className="bg-kitchen-white dark:bg-kitchen-dark-surface border-b border-kitchen-light-gray dark:border-kitchen-dark-border sticky top-0 z-50 transition-colors duration-200"
+      className="bg-transparent sticky top-0 z-50 transition-colors duration-200"
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
