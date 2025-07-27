@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import RemixDropdown from './RemixDropdown';
 
@@ -29,28 +29,31 @@ export default function ChatInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea function
-  const adjustTextareaHeight = () => {
+  // Auto-resize textarea function with performance optimizations
+  const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // Reset height to auto to get the correct scrollHeight
-    textarea.style.height = 'auto';
+    // Use requestAnimationFrame for smoother updates
+    requestAnimationFrame(() => {
+      // Reset height to auto to get the correct scrollHeight
+      textarea.style.height = 'auto';
 
-    // Calculate the height needed for the content
-    const scrollHeight = textarea.scrollHeight;
-    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight);
-    const maxHeight = lineHeight * 8; // 8 rows maximum
+      // Calculate the height needed for the content
+      const scrollHeight = textarea.scrollHeight;
+      const lineHeight = parseInt(getComputedStyle(textarea).lineHeight);
+      const maxHeight = lineHeight * 8; // 8 rows maximum
 
-    // Set the height, but cap it at 8 rows
-    if (scrollHeight <= maxHeight) {
-      textarea.style.height = `${scrollHeight}px`;
-      textarea.style.overflowY = 'hidden';
-    } else {
-      textarea.style.height = `${maxHeight}px`;
-      textarea.style.overflowY = 'auto';
-    }
-  };
+      // Set the height, but cap it at 8 rows
+      if (scrollHeight <= maxHeight) {
+        textarea.style.height = `${scrollHeight}px`;
+        textarea.style.overflowY = 'hidden';
+      } else {
+        textarea.style.height = `${maxHeight}px`;
+        textarea.style.overflowY = 'auto';
+      }
+    });
+  }, []);
 
   // Update prompt when currentMessage changes (for new chat)
   useEffect(() => {
@@ -64,7 +67,30 @@ export default function ChatInput({
   // Adjust textarea height when prompt changes
   useEffect(() => {
     adjustTextareaHeight();
-  }, [prompt]);
+  }, [prompt, adjustTextareaHeight]);
+
+  // Optimize animations during scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      // Add a class to optimize animations during scroll
+      const chatInputContainer = document.querySelector('.chat-input-container');
+      if (chatInputContainer) {
+        chatInputContainer.classList.add('scrolling');
+
+        // Remove the class after scroll ends
+        clearTimeout((window as any).scrollTimeout);
+        (window as any).scrollTimeout = setTimeout(() => {
+          chatInputContainer.classList.remove('scrolling');
+        }, 150);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout((window as any).scrollTimeout);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,10 +301,16 @@ export default function ChatInput({
 
   return (
     <motion.div
-      className="p-4 transition-colors duration-200"
+      className="p-4 transition-all duration-300 ease-out transform-gpu will-change-transform chat-input-container"
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{
+        duration: 0.4,
+        ease: [0.25, 0.46, 0.45, 0.94],
+        type: 'spring',
+        stiffness: 100,
+        damping: 20,
+      }}
     >
       <form onSubmit={handleSubmit} className="flex justify-center">
         <div className="w-full relative">
@@ -289,7 +321,7 @@ export default function ChatInput({
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything..."
-              className="w-full bg-transparent border-none outline-none resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pr-15 min-h-[3rem] pb-8"
+              className="w-full bg-transparent border-none outline-none resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pr-15 min-h-[3rem] pb-8 transition-all duration-200 ease-out"
               maxLength={1000}
               disabled={isSubmitting}
             />
@@ -319,8 +351,14 @@ export default function ChatInput({
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
-                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 z-20"
+                      transition={{
+                        duration: 0.2,
+                        ease: [0.25, 0.46, 0.45, 0.94],
+                        type: 'spring',
+                        stiffness: 300,
+                        damping: 25,
+                      }}
+                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 z-20 transform-gpu"
                     >
                       <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs rounded-lg p-3 shadow-xl border border-gray-200 dark:border-gray-700 w-[32rem] backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
                         <div className="font-medium text-sm mb-2">Supported Files</div>
@@ -449,8 +487,14 @@ export default function ChatInput({
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.2, ease: 'easeOut' }}
-                        className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 z-20"
+                        transition={{
+                          duration: 0.2,
+                          ease: [0.25, 0.46, 0.45, 0.94],
+                          type: 'spring',
+                          stiffness: 300,
+                          damping: 25,
+                        }}
+                        className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 z-20 transform-gpu"
                       >
                         <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs rounded-lg p-3 shadow-xl border border-gray-200 dark:border-gray-700 w-[28rem] backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
                           <div className="flex items-start space-x-2 mb-2">

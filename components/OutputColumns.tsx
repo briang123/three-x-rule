@@ -225,6 +225,7 @@ export default function OutputColumns({
   const remixRef = useRef<HTMLDivElement>(null);
   const socialPostsRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Determine if we should show the 3x3 grid or output columns
   const hasAIContent = useMemo(() => {
@@ -376,6 +377,39 @@ export default function OutputColumns({
     prevColumnKeysRef.current = columnKeys;
   }, [columnKeys, hasAIContent, smoothScrollToElement]);
 
+  // Optimize scroll performance
+  useEffect(() => {
+    const handleScroll = () => {
+      // Add a class to optimize animations during scroll
+      const chatInputContainer = document.querySelector('.chat-input-container');
+      if (chatInputContainer) {
+        chatInputContainer.classList.add('scrolling');
+
+        // Remove the class after scroll ends
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+        scrollTimeoutRef.current = setTimeout(() => {
+          chatInputContainer.classList.remove('scrolling');
+        }, 150);
+      }
+    };
+
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    }
+
+    return () => {
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', handleScroll);
+      }
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const fetchModels = async () => {
       try {
@@ -427,7 +461,10 @@ export default function OutputColumns({
 
   return (
     <div className="relative w-full h-full flex flex-col">
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto content-scroll-area">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto content-scroll-area smooth-scroll"
+      >
         <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto pb-32">
           {/* Show 3x3 grid when no AI content exists */}
           {!hasAIContent && (
@@ -860,9 +897,9 @@ export default function OutputColumns({
           )}
 
           {/* ChatInput as sticky footer within the scrollable container */}
-          <div className="sticky bottom-0 bg-gray-50/80 dark:bg-kitchen-dark-bg/80 border-gray-200 dark:border-kitchen-dark-border z-10 w-full left-0 right-0 backdrop-blur-md">
+          <div className="sticky bottom-0 bg-gray-50/80 dark:bg-kitchen-dark-bg/80 border-gray-200 dark:border-kitchen-dark-border z-10 w-full left-0 right-0 backdrop-blur-optimized chat-input-container transform-gpu will-change-transform transition-all duration-300 ease-out">
             {/* Gradient fade overlay for softer edge */}
-            <div className="absolute inset-x-0 -top-8 h-8 bg-gradient-to-b from-transparent to-gray-50/80 dark:to-kitchen-dark-bg/80 pointer-events-none"></div>
+            <div className="absolute inset-x-0 -top-8 h-8 bg-gradient-to-b from-transparent to-gray-50/80 dark:to-kitchen-dark-bg/80 pointer-events-none transition-opacity duration-300"></div>
             <ChatInput
               onSubmit={onSubmit}
               currentMessage={currentMessage}

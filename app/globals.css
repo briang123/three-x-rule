@@ -478,6 +478,52 @@
     flex: 1;
     min-height: 0;
   }
+
+  /* Smooth scrolling optimizations for chat input */
+  .chat-input-container {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: transform, opacity;
+  }
+
+  /* Hardware acceleration for smooth animations */
+  .transform-gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  /* Smooth scroll behavior for the main container */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Optimized backdrop blur for better performance */
+  .backdrop-blur-optimized {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transform: translateZ(0);
+  }
+
+  /* Optimize animations during scroll */
+  .chat-input-container.scrolling {
+    transition: none !important;
+  }
+
+  .chat-input-container.scrolling * {
+    transition: none !important;
+  }
+
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    .chat-input-container,
+    .chat-input-container * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
 }
 
 .text-highlighter-container {

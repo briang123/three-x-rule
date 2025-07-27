@@ -23,46 +23,6 @@ const navigationItems = [
     active: true,
   },
   {
-    id: 'history',
-    label: 'History',
-    icon: (
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path d="M12 8v4l3 3" />
-        <path d="M3.05 11a9 9 0 1 1 .5 3.5" />
-        <path d="M2 2v5h5" />
-      </svg>
-    ),
-    active: false,
-  },
-  {
-    id: 'templates',
-    label: 'Templates',
-    icon: (
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14,2 14,8 20,8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-        <polyline points="10,9 9,9 8,9" />
-      </svg>
-    ),
-    active: false,
-  },
-  {
     id: 'settings',
     label: 'Settings',
     icon: (
@@ -79,6 +39,7 @@ const navigationItems = [
       </svg>
     ),
     active: false,
+    disabled: true,
   },
 ];
 
@@ -153,11 +114,14 @@ export default function LeftNavigation() {
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                   item.active
                     ? 'bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue text-white shadow-sm'
-                    : 'text-kitchen-text-light dark:text-kitchen-dark-text-light hover:bg-kitchen-light-gray dark:hover:bg-kitchen-dark-surface-light hover:text-kitchen-text dark:hover:text-kitchen-dark-text'
+                    : item.disabled
+                      ? 'text-kitchen-text-light/50 dark:text-kitchen-dark-text-light/50 cursor-not-allowed opacity-50'
+                      : 'text-kitchen-text-light dark:text-kitchen-dark-text-light hover:bg-kitchen-light-gray dark:hover:bg-kitchen-dark-surface-light hover:text-kitchen-text dark:hover:text-kitchen-dark-text'
                 } ${isCollapsed ? 'justify-center px-2' : ''}`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={item.disabled ? {} : { scale: 1.02 }}
+                whileTap={item.disabled ? {} : { scale: 0.98 }}
                 title={isCollapsed ? item.label : undefined}
+                disabled={item.disabled}
               >
                 <span className="flex-shrink-0">{item.icon}</span>
                 <AnimatePresence>
@@ -190,11 +154,26 @@ export default function LeftNavigation() {
             transition={{ duration: 0.2 }}
           >
             <div className="bg-kitchen-light-gray dark:bg-kitchen-dark-surface-light rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-kitchen-text dark:text-kitchen-dark-text mb-2">Quick Tips</h3>
-              <p className="text-xs text-kitchen-text-light dark:text-kitchen-dark-text-light leading-relaxed">
-                Select sentences from different outputs to create a refined response using the 3x
-                Rule methodology.
-              </p>
+              <h3 className="text-sm font-semibold text-kitchen-text dark:text-kitchen-dark-text mb-2">
+                The 3x Rule
+              </h3>
+              <div className="text-xs text-kitchen-text-light dark:text-kitchen-dark-text-light leading-relaxed space-y-2">
+                <p>
+                  The "3x Rule" is an AI-powered methodology that helps achieve superior results
+                  from generative AI:
+                </p>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>Submit the same prompt multiple times (typically 3x)</li>
+                  <li>Compare the generated responses</li>
+                  <li>
+                    Feed the responses into another AI that combines the best parts into a single,
+                    high-quality output
+                  </li>
+                </ol>
+                <p className="text-xs text-kitchen-accent-blue dark:text-kitchen-dark-accent-blue font-medium">
+                  💡 From here you can generate social media posts if you like!
+                </p>
+              </div>
             </div>
           </motion.div>
         )}
