@@ -8,6 +8,7 @@ import RightSelectionsPanel from '@/components/RightSelectionsPanel';
 import ChatInput from '@/components/ChatInput';
 import SocialPostsDrawer, { SocialPostConfig } from '@/components/SocialPostsDrawer';
 import { ModelSelection } from '@/components/ModelGridSelector';
+import AuroraBackground from '@/components/AuroraBackground';
 
 export interface SelectedSentence {
   id: string;
@@ -24,6 +25,14 @@ export default function Home() {
   const [originalResponses, setOriginalResponses] = useState<{ [key: string]: string }>({});
   const [isGenerating, setIsGenerating] = useState<{ [key: string]: boolean }>({});
   const [currentMessage, setCurrentMessage] = useState('');
+
+  // Aurora configuration state
+  const [auroraConfig, setAuroraConfig] = useState({
+    colorStops: ['#1e74a9', '#97128c', '#05ecf0'] as [string, string, string],
+    speed: 0.2,
+    blend: 0.47,
+    amplitude: 1.0,
+  });
 
   // Remix state
   const [remixResponse, setRemixResponse] = useState<string>('');
@@ -687,63 +696,70 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-kitchen-dark-bg transition-colors duration-200">
-      <LeftNavigation />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar onNewChat={handleNewChat} onSocialPosts={handleSocialPosts} />
-        <div className="flex flex-1 overflow-hidden">
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex-1 p-6 pb-0 h-full">
-              <OutputColumns
-                onSentenceSelect={handleSentenceSelect}
-                selectedSentences={selectedSentences}
-                onModelChange={handleModelChange}
-                columnResponses={columnResponses}
-                originalResponses={originalResponses}
-                isGenerating={isGenerating}
-                onAddColumn={handleAddColumn}
-                onDeleteColumn={handleDeleteColumn}
-                remixResponse={remixResponse}
-                isRemixGenerating={isRemixGenerating}
-                showRemix={showRemix}
-                onCloseRemix={handleCloseRemix}
-                remixModel={remixModel}
-                socialPostsResponses={socialPostsResponses}
-                isSocialPostsGenerating={isSocialPostsGenerating}
-                showSocialPosts={showSocialPosts}
-                onCloseSocialPosts={handleCloseSocialPosts}
-                socialPostsConfigs={socialPostsConfigs}
-                onSubmit={handleSubmit}
-                currentMessage={currentMessage}
-                onRemix={handleRemix}
-                remixDisabled={
-                  !Object.values(originalResponses).some((response) => response.trim() !== '') ||
-                  !currentMessage.trim()
-                }
-                onModelSelectionsChange={handleModelSelectionsChange}
-                modelSelections={modelSelections}
-                columnModels={columnModels}
-              />
+    <AuroraBackground
+      colorStops={auroraConfig.colorStops}
+      speed={auroraConfig.speed}
+      blend={auroraConfig.blend}
+      amplitude={auroraConfig.amplitude}
+    >
+      <div className="flex h-screen transition-colors duration-200">
+        <LeftNavigation />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <TopBar onNewChat={handleNewChat} onSocialPosts={handleSocialPosts} />
+          <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex-1 p-6 pb-0 h-full">
+                <OutputColumns
+                  onSentenceSelect={handleSentenceSelect}
+                  selectedSentences={selectedSentences}
+                  onModelChange={handleModelChange}
+                  columnResponses={columnResponses}
+                  originalResponses={originalResponses}
+                  isGenerating={isGenerating}
+                  onAddColumn={handleAddColumn}
+                  onDeleteColumn={handleDeleteColumn}
+                  remixResponse={remixResponse}
+                  isRemixGenerating={isRemixGenerating}
+                  showRemix={showRemix}
+                  onCloseRemix={handleCloseRemix}
+                  remixModel={remixModel}
+                  socialPostsResponses={socialPostsResponses}
+                  isSocialPostsGenerating={isSocialPostsGenerating}
+                  showSocialPosts={showSocialPosts}
+                  onCloseSocialPosts={handleCloseSocialPosts}
+                  socialPostsConfigs={socialPostsConfigs}
+                  onSubmit={handleSubmit}
+                  currentMessage={currentMessage}
+                  onRemix={handleRemix}
+                  remixDisabled={
+                    !Object.values(originalResponses).some((response) => response.trim() !== '') ||
+                    !currentMessage.trim()
+                  }
+                  onModelSelectionsChange={handleModelSelectionsChange}
+                  modelSelections={modelSelections}
+                  columnModels={columnModels}
+                />
+              </div>
             </div>
+            {showRightPanel && (
+              <RightSelectionsPanel
+                selectedSentences={selectedSentences}
+                onRemoveSentence={useCallback((id) => {
+                  setSelectedSentences((prev) => prev.filter((s) => s.id !== id));
+                }, [])}
+              />
+            )}
           </div>
-          {showRightPanel && (
-            <RightSelectionsPanel
-              selectedSentences={selectedSentences}
-              onRemoveSentence={useCallback((id) => {
-                setSelectedSentences((prev) => prev.filter((s) => s.id !== id));
-              }, [])}
-            />
-          )}
         </div>
-      </div>
 
-      {/* Social Posts Drawer */}
-      <SocialPostsDrawer
-        isOpen={showSocialPostsDrawer}
-        onClose={() => setShowSocialPostsDrawer(false)}
-        onGenerate={handleSocialPostsGenerate}
-        availableColumns={originalResponses}
-      />
-    </div>
+        {/* Social Posts Drawer */}
+        <SocialPostsDrawer
+          isOpen={showSocialPostsDrawer}
+          onClose={() => setShowSocialPostsDrawer(false)}
+          onGenerate={handleSocialPostsGenerate}
+          availableColumns={originalResponses}
+        />
+      </div>
+    </AuroraBackground>
   );
 }
