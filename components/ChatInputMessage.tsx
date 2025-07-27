@@ -2,21 +2,37 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import ConfirmationModal from './ConfirmationModal';
 
 interface ChatInputMessageProps {
-  onSubmit: (prompt: string) => void;
+  onSubmit: (prompt: string, modelId?: string) => void;
   currentMessage?: string;
   isSubmitting?: boolean;
+  selectedModelId?: string;
+  onModelSelect?: (modelId: string) => void;
+  onModelSelectionsUpdate?: (modelId: string) => void;
+  onDirectSubmit?: (prompt: string, modelId: string) => void;
+  modelSelections?: Array<{ modelId: string; count: number }>;
 }
 
 const ChatInputMessage = ({
   onSubmit,
   currentMessage = '',
   isSubmitting = false,
+  selectedModelId,
+  onModelSelect,
+  onModelSelectionsUpdate,
+  onDirectSubmit,
+  modelSelections = [],
 }: ChatInputMessageProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [text, setText] = useState(currentMessage);
   const [shouldAnimate, setShouldAnimate] = useState(true);
+  const [showModelConfirmation, setShowModelConfirmation] = useState(false);
+  const [pendingSubmission, setPendingSubmission] = useState<{
+    prompt: string;
+    modelId: string;
+  } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Calculate the container height based on content and focus state
@@ -91,7 +107,52 @@ const ChatInputMessage = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || isSubmitting) return;
+
+    // Check if any models are selected in the model selections
+    const hasModelSelected = modelSelections.length > 0;
+
+    // If no model is selected, show confirmation modal for default model
+    if (!hasModelSelected) {
+      const defaultModelId = 'gemini-2.5-flash-lite';
+      const defaultModelName = 'Gemini 2.5 Flash Lite';
+
+      setPendingSubmission({ prompt: text.trim(), modelId: defaultModelId });
+      setShowModelConfirmation(true);
+      return;
+    }
+
+    // If model is selected, submit directly using the regular onSubmit
     onSubmit(text.trim());
+  };
+
+  const handleModelConfirmation = () => {
+    if (pendingSubmission) {
+      // First, update the model selections in the parent component
+      if (onModelSelectionsUpdate) {
+        onModelSelectionsUpdate(pendingSubmission.modelId);
+      }
+
+      // Then select the model in the parent component
+      if (onModelSelect) {
+        onModelSelect(pendingSubmission.modelId);
+      }
+
+      // Use direct submit to bypass the model selection check
+      if (onDirectSubmit) {
+        onDirectSubmit(pendingSubmission.prompt, pendingSubmission.modelId);
+      } else {
+        // Fallback to regular submit
+        onSubmit(pendingSubmission.prompt, pendingSubmission.modelId);
+      }
+
+      setPendingSubmission(null);
+    }
+    setShowModelConfirmation(false);
+  };
+
+  const handleModelConfirmationCancel = () => {
+    setPendingSubmission(null);
+    setShowModelConfirmation(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -233,6 +294,19 @@ const ChatInputMessage = ({
           </div>
         </div>
       </form>
+
+      {/* Model Selection Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showModelConfirmation}
+        onConfirm={handleModelConfirmation}
+        onCancel={handleModelConfirmationCancel}
+        title="Use Default Model?"
+        message="No model selected. Would you like to use Gemini 2.5 Flash Lite as the default model for this message?"
+        confirmText="Yes, use Gemini 2.5 Flash Lite"
+        cancelText="Cancel"
+        confirmButtonStyle="primary"
+        position="above-input"
+      />
     </motion.div>
   );
 };

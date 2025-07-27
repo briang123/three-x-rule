@@ -93,6 +93,44 @@ export default function Home() {
     setIsGenerating(newIsGenerating);
   }, []);
 
+  const handleModelSelectionsUpdate = useCallback(
+    (modelId: string) => {
+      console.log('handleModelSelectionsUpdate called with modelId:', modelId);
+      // Create a single model selection for the default model
+      const newSelections: ModelSelection[] = [
+        {
+          modelId: modelId,
+          count: 1,
+        },
+      ];
+      handleModelSelectionsChange(newSelections);
+    },
+    [handleModelSelectionsChange],
+  );
+
+  const handleModelSelect = useCallback((modelId: string) => {
+    console.log('handleModelSelect called with modelId:', modelId);
+    // This function can be used for any additional model selection logic
+    // For now, it's just a placeholder that can be extended later
+  }, []);
+
+  const handleDirectSubmit = useCallback(async (prompt: string, modelId: string) => {
+    console.log('handleDirectSubmit called with prompt:', prompt, 'modelId:', modelId);
+
+    // Store the current message
+    setCurrentMessage(prompt);
+
+    // Create a single column with the specified model
+    const directColumnModels: { [key: string]: string } = { '1': modelId };
+
+    // Send the prompt directly to the API
+    try {
+      await handleColumnPromptSubmit('1', prompt, [], modelId);
+    } catch (error) {
+      console.error('Error in direct submit:', error);
+    }
+  }, []);
+
   const handleSubmit = async (prompt: string, attachments?: File[]) => {
     console.log('Main page: handleSubmit called with prompt:', prompt);
     console.log('Main page: Current column models:', columnModels);
@@ -816,6 +854,9 @@ export default function Home() {
                   onModelSelectionsChange={handleModelSelectionsChange}
                   modelSelections={modelSelections}
                   columnModels={columnModels}
+                  onModelSelect={handleModelSelect}
+                  onModelSelectionsUpdate={handleModelSelectionsUpdate}
+                  onDirectSubmit={handleDirectSubmit}
                 />
               </div>
             </div>

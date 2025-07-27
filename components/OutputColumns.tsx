@@ -288,6 +288,10 @@ interface OutputColumnsProps {
   modelSelections?: ModelSelection[];
   // Column models from parent component
   columnModels?: { [key: string]: string };
+  // Model selection callbacks
+  onModelSelect?: (modelId: string) => void;
+  onModelSelectionsUpdate?: (modelId: string) => void;
+  onDirectSubmit?: (prompt: string, modelId: string) => void;
 }
 
 // Note: Removed ColumnModelSelector component since we now use the 3x3 grid system
@@ -318,6 +322,9 @@ export default function OutputColumns({
   onModelSelectionsChange,
   modelSelections = [],
   columnModels = {},
+  onModelSelect,
+  onModelSelectionsUpdate,
+  onDirectSubmit,
 }: OutputColumnsProps) {
   const handleAddSelection = useCallback(
     (text: string, source: string) => {
@@ -1117,6 +1124,10 @@ export default function OutputColumns({
               onSubmit={(prompt) => onSubmit(prompt)}
               currentMessage={currentMessage}
               isSubmitting={false}
+              onModelSelect={onModelSelect}
+              onModelSelectionsUpdate={onModelSelectionsUpdate}
+              onDirectSubmit={onDirectSubmit}
+              modelSelections={modelSelections}
             />
           </div>
         </div>
