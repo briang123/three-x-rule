@@ -26,48 +26,125 @@ export default function ChatInput({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showFileSupport, setShowFileSupport] = useState(false);
   const [hoveredFile, setHoveredFile] = useState<number | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [shouldAnimate, setShouldAnimate] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-resize textarea function with performance optimizations
-  const adjustTextareaHeight = useCallback(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
+  // Calculate the container height based on content and focus state (Claude's approach)
+  const calculateContainerHeight = () => {
+    const lineHeight = 24; // 1.5rem = 24px
+    const bottomPadding = 8; // pb-8 = 2rem = 32px, but we account for line spacing
 
-    // Use requestAnimationFrame for smoother updates
-    requestAnimationFrame(() => {
-      // Reset height to auto to get the correct scrollHeight
-      textarea.style.height = 'auto';
+    // Calculate number of lines
+    const lines = prompt ? prompt.split('\n').length : 0;
+    const estimatedLines = Math.max(lines, prompt ? Math.ceil(prompt.length / 80) : 0);
 
-      // Calculate the height needed for the content
-      const scrollHeight = textarea.scrollHeight;
-      const lineHeight = parseInt(getComputedStyle(textarea).lineHeight);
-      const maxHeight = lineHeight * 8; // 8 rows maximum
+    if (!isFocused && !prompt) {
+      return lineHeight + bottomPadding; // 1 row
+    } else if (isFocused && !prompt) {
+      return lineHeight * 3 + bottomPadding; // 3 rows
+    } else {
+      // With content: grow up to 8 rows
+      const contentLines = Math.max(estimatedLines, 3); // Minimum 3 when focused
+      const maxLines = Math.min(contentLines, 8);
+      return lineHeight * maxLines + bottomPadding;
+    }
+  };
 
-      // Set the height, but cap it at 8 rows
-      if (scrollHeight <= maxHeight) {
-        textarea.style.height = `${scrollHeight}px`;
-        textarea.style.overflowY = 'hidden';
-      } else {
-        textarea.style.height = `${maxHeight}px`;
-        textarea.style.overflowY = 'auto';
+  // Calculate textarea height (should fill the container minus bottom padding)
+  const calculateTextareaHeight = () => {
+    const containerHeight = calculateContainerHeight();
+    return containerHeight - 8; // Account for bottom padding
+  };
+
+  const containerHeight = calculateContainerHeight();
+  const textareaHeight = calculateTextareaHeight();
+
+  // Debug logging
+  console.log('Container state:', {
+    isFocused,
+    hasContent: !!prompt.trim(),
+    shouldAnimate,
+    containerHeight,
+    textareaHeight,
+    promptLength: prompt.length,
+    promptLines: prompt ? prompt.split('\n').length : 0,
+    estimatedLines: prompt ? Math.max(prompt.split('\n').length, Math.ceil(prompt.length / 80)) : 0,
+  });
+
+  const animationProps = shouldAnimate
+    ? {
+        animate: { height: containerHeight },
+        transition: {
+          duration: 0.2,
+          ease: 'easeInOut',
+        },
       }
-    });
-  }, []);
+    : {};
 
   // Update prompt when currentMessage changes (for new chat)
   useEffect(() => {
     console.log('ChatInput: currentMessage changed to:', currentMessage);
     setPrompt(currentMessage);
+    // Restore automatic focus to start at 3 rows by default
     if (currentMessage === '' && textareaRef.current) {
       textareaRef.current.focus();
     }
   }, [currentMessage]);
 
-  // Adjust textarea height when prompt changes
+  // Debug useEffect to track focus state changes
   useEffect(() => {
-    adjustTextareaHeight();
-  }, [prompt, adjustTextareaHeight]);
+    console.log('isFocused state changed to:', isFocused);
+  }, [isFocused]);
+
+  // Handle focus and blur events
+  const handleFocus = () => {
+    setIsFocused(true);
+    setShouldAnimate(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    if (!prompt) {
+      setShouldAnimate(true);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setPrompt(newText);
+
+    // Disable animations when typing (after first character)
+    if (prompt.length === 0 && newText.length === 1) {
+      setShouldAnimate(false);
+    }
+
+    // Re-enable animations when text is cleared
+    if (newText === '') {
+      setShouldAnimate(true);
+    }
+  };
+
+  // Auto-resize textarea when not animating
+  useEffect(() => {
+    if (!shouldAnimate && textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const maxHeight = 24 * 8; // 8 rows max
+      textareaRef.current.style.height = Math.min(scrollHeight, maxHeight) + 'px';
+    }
+  }, [prompt, shouldAnimate]);
+
+  // Update container height immediately when content changes (even without animation)
+  useEffect(() => {
+    if (!shouldAnimate && textareaRef.current) {
+      // Force container to update its height based on new content
+      const newContainerHeight = calculateContainerHeight();
+      textareaRef.current.parentElement!.style.height = `${newContainerHeight}px`;
+    }
+  }, [prompt, shouldAnimate]);
 
   // Optimize animations during scroll
   useEffect(() => {
@@ -314,17 +391,46 @@ export default function ChatInput({
     >
       <form onSubmit={handleSubmit} className="flex justify-center">
         <div className="w-full relative">
-          <div className="relative bg-white dark:bg-kitchen-dark-surface rounded-xl border border-gray-200 dark:border-gray-700 p-8 pb-14 shadow-sm">
-            <textarea
-              ref={textareaRef}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask anything..."
-              className="w-full bg-transparent border-none outline-none resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pr-15 min-h-[3rem] pb-8 transition-all duration-200 ease-out"
-              maxLength={1000}
-              disabled={isSubmitting}
-            />
+          <motion.div
+            className="relative bg-white dark:bg-kitchen-dark-surface rounded-xl border border-gray-200 dark:border-gray-700 p-8 pb-14 shadow-sm"
+            animate={{
+              paddingTop: isFocused ? '2rem' : '2rem',
+              paddingBottom: isFocused ? '3.5rem' : '3.5rem',
+            }}
+            transition={{
+              duration: 0.3,
+              ease: [0.25, 0.46, 0.45, 0.94],
+            }}
+          >
+            <motion.div
+              className="relative"
+              style={{ height: `${containerHeight}px` }}
+              animate={shouldAnimate ? { height: containerHeight } : {}}
+              transition={{
+                duration: shouldAnimate ? 0.2 : 0,
+                ease: 'easeInOut',
+              }}
+            >
+              <textarea
+                ref={textareaRef}
+                value={prompt}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                placeholder="Ask anything..."
+                className="w-full bg-transparent border-none outline-none resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pr-15 pb-8"
+                style={{
+                  height: shouldAnimate ? `${textareaHeight}px` : 'auto',
+                  lineHeight: '1.5rem',
+                  overflowY: containerHeight >= 24 * 8 + 8 ? 'auto' : 'hidden',
+                  maxHeight: '12rem',
+                }}
+                maxLength={1000}
+                disabled={isSubmitting}
+              />
+            </motion.div>
+
             <div className="absolute bottom-3 left-3 flex items-center space-x-2">
               <div className="relative">
                 <button
@@ -574,7 +680,7 @@ export default function ChatInput({
                 )}
               </motion.button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Hidden file input */}
           <input

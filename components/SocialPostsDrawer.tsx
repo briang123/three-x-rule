@@ -23,11 +23,12 @@ interface SocialPostsDrawerProps {
 }
 
 const PLATFORMS = [
-  { id: 'twitter', name: 'X (Twitter)', icon: '🐦' },
-  { id: 'linkedin', name: 'LinkedIn', icon: '💼' },
-  { id: 'instagram', name: 'Instagram', icon: '📸' },
-  { id: 'facebook', name: 'Facebook', icon: '📘' },
-  { id: 'tiktok', name: 'TikTok', icon: '🎵' },
+  { id: 'twitter', name: 'X', icon: '/logos/twitter.svg' },
+  { id: 'linkedin', name: 'LinkedIn', icon: '/logos/linkedin.svg' },
+  { id: 'instagram', name: 'Instagram', icon: '/logos/instagram.svg' },
+  { id: 'facebook', name: 'Facebook', icon: '/logos/facebook.svg' },
+  { id: 'tiktok', name: 'TikTok', icon: '/logos/tiktok.svg' },
+  { id: 'youtube', name: 'YouTube', icon: '/logos/youtube.svg' },
 ];
 
 const POST_TYPES = [
@@ -36,6 +37,8 @@ const POST_TYPES = [
   { id: 'article', name: 'Article', characterLimit: 5000, isThreaded: false },
   { id: 'post', name: 'Post', characterLimit: 1000, isThreaded: false },
   { id: 'caption', name: 'Caption', characterLimit: 2200, isThreaded: false },
+  { id: 'video', name: 'Video', characterLimit: 5000, isThreaded: false },
+  { id: 'short', name: 'Short', characterLimit: 1000, isThreaded: false },
 ];
 
 export default function SocialPostsDrawer({
@@ -159,22 +162,32 @@ export default function SocialPostsDrawer({
               {/* Platform Selection */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-kitchen-text dark:text-kitchen-dark-text mb-3">
-                  Platform
+                  Choose Platform
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   {PLATFORMS.map((platform) => (
                     <button
                       key={platform.id}
                       onClick={() => setConfig((prev) => ({ ...prev, platform: platform.id }))}
-                      className={`p-3 rounded-lg border transition-all ${
+                      className={`p-6 rounded-lg border transition-all bg-white dark:bg-kitchen-dark-surface ${
                         config.platform === platform.id
-                          ? 'border-kitchen-accent-blue dark:border-kitchen-dark-accent-blue bg-kitchen-accent-blue/5 dark:bg-kitchen-dark-surface-light'
-                          : 'border-kitchen-light-gray dark:border-kitchen-dark-border hover:border-kitchen-accent-blue/50'
+                          ? 'border-kitchen-accent-blue dark:border-kitchen-dark-accent-blue bg-kitchen-accent-blue/5 dark:bg-kitchen-dark-surface-light shadow-lg'
+                          : 'border-kitchen-light-gray dark:border-kitchen-dark-border hover:border-kitchen-accent-blue/50 hover:shadow-md'
                       }`}
                     >
                       <div className="text-center">
-                        <div className="text-2xl mb-1">{platform.icon}</div>
-                        <div className="text-xs font-medium">{platform.name}</div>
+                        <div className="flex justify-center">
+                          <img
+                            src={platform.icon}
+                            alt={platform.name}
+                            className="w-10 h-10"
+                            style={{ minWidth: '40px', minHeight: '40px' }}
+                            onError={(e) =>
+                              console.error(`Failed to load image: ${platform.icon}`, e)
+                            }
+                            onLoad={() => console.log(`Successfully loaded: ${platform.icon}`)}
+                          />
+                        </div>
                       </div>
                     </button>
                   ))}

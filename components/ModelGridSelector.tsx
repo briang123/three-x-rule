@@ -40,6 +40,156 @@ const introMessages = [
   { text: 'Your creativity has no limits.', highlights: ['creativity', 'limits'] },
 ];
 
+// Animation variants for staggered entrance
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const greetingVariants = {
+  hidden: {
+    opacity: 0,
+    y: -30,
+    scale: 0.95,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.6,
+      ease: [0.25, 0.46, 0.45, 0.94], // Custom easing for smooth motion
+    },
+  },
+};
+
+const headerVariants = {
+  hidden: {
+    opacity: 0,
+    y: -20,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  },
+};
+
+const modelCardVariants = {
+  hidden: {
+    opacity: 0,
+    y: 30,
+    scale: 0.9,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.5,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  },
+};
+
+const summaryVariants = {
+  hidden: {
+    opacity: 0,
+    y: 20,
+    scale: 0.95,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.4,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  },
+};
+
+// Animation variants for notification section transitions
+const notificationVariants = {
+  hidden: {
+    opacity: 0,
+    y: -10,
+    scale: 0.98,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.4,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: 10,
+    scale: 0.98,
+    transition: {
+      duration: 0.2,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  },
+};
+
+// Animation for selected models sliding down from model position
+const selectedModelsSlideVariants = {
+  hidden: {
+    opacity: 0,
+    y: -20,
+    scale: 0.95,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.5,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  },
+};
+
+// Animation for warning message fading out
+const warningFadeVariants = {
+  hidden: {
+    opacity: 0,
+    y: -10,
+    scale: 0.98,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.4,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -5,
+    scale: 0.98,
+    transition: {
+      duration: 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  },
+};
+
 export default function ModelGridSelector({
   onModelSelectionsChange,
   disabled = false,
@@ -53,6 +203,7 @@ export default function ModelGridSelector({
     text: '',
     highlights: [],
   });
+  const [isVisible, setIsVisible] = useState(false);
 
   // Set a random greeting when component mounts
   useEffect(() => {
@@ -82,6 +233,8 @@ export default function ModelGridSelector({
         console.error('Error fetching models:', err);
       } finally {
         setLoading(false);
+        // Trigger animations after loading completes with longer delay for notification
+        setTimeout(() => setIsVisible(true), 100);
       }
     };
 
@@ -168,14 +321,15 @@ export default function ModelGridSelector({
   const gridItems = models;
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6">
+    <motion.div
+      className="w-full max-w-6xl mx-auto p-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate={isVisible ? 'visible' : 'hidden'}
+    >
       {/* Greeting */}
       {currentGreeting.text && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
+        <motion.div variants={greetingVariants} className="text-center mb-8">
           <h1 className="text-4xl font-bold py-2">
             <ColourfulText
               text={currentGreeting.text}
@@ -186,7 +340,7 @@ export default function ModelGridSelector({
         </motion.div>
       )}
 
-      <div className="text-center mb-8">
+      <motion.div variants={headerVariants} className="text-center mb-8">
         <h2 className="text-2xl font-bold text-kitchen-text dark:text-kitchen-dark-text mb-2">
           Select AI Models
         </h2>
@@ -194,15 +348,19 @@ export default function ModelGridSelector({
           Choose the models you want to compare and set how many response variations to generate for
           each model.
         </p>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate={isVisible ? 'visible' : 'hidden'}
+      >
         {gridItems.map((model, index) => (
           <motion.div
             key={model.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
+            variants={modelCardVariants}
+            custom={index}
             className="relative cursor-pointer"
           >
             <div
@@ -312,61 +470,115 @@ export default function ModelGridSelector({
             </div>
           </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Summary */}
-      {selectedModels.length > 0 ? (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-kitchen-light-gray dark:bg-kitchen-dark-surface-light rounded-lg p-4"
-        >
-          <h3 className="font-semibold text-kitchen-text dark:text-kitchen-dark-text mb-2">
-            Selected Models ({selectedModels.reduce((sum, s) => sum + s.count, 0)} total models)
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {selectedModels.map((selection) => {
-              const model = models.find((m) => m.id === selection.modelId);
-              return (
-                <span
-                  key={selection.modelId}
-                  className="inline-flex items-center space-x-1 bg-kitchen-accent-blue/10 dark:bg-kitchen-dark-accent-blue/20 text-kitchen-accent-blue dark:text-kitchen-dark-accent-blue px-2 py-1 rounded-full text-sm"
-                >
-                  <span>{model?.name}</span>
-                  <span className="bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    {selection.count}
-                  </span>
-                </span>
-              );
-            })}
-          </div>
-        </motion.div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-kitchen-dark-surface-light border border-kitchen-dark-accent-blue/30 rounded-lg p-4"
-        >
-          <div className="flex items-center space-x-2">
-            <svg
-              className="w-5 h-5 text-kitchen-dark-accent-blue"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-            <span className="text-kitchen-dark-text text-sm">
-              Select at least one model to start generating content
-            </span>
-          </div>
-        </motion.div>
-      )}
-    </div>
+      <motion.div
+        key={selectedModels.length > 0 ? 'summary' : 'warning'}
+        variants={notificationVariants}
+        initial="hidden"
+        animate={isVisible ? 'visible' : 'hidden'}
+        exit="exit"
+        className="mb-8"
+      >
+        {selectedModels.length > 0 ? (
+          <motion.div
+            variants={selectedModelsSlideVariants}
+            className="bg-kitchen-light-gray dark:bg-kitchen-dark-surface-light rounded-lg p-4"
+          >
+            <h3 className="font-semibold text-kitchen-text dark:text-kitchen-dark-text mb-2">
+              Selected Models ({selectedModels.reduce((sum, s) => sum + s.count, 0)} total models)
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {selectedModels.map((selection, index) => {
+                const model = models.find((m) => m.id === selection.modelId);
+                return (
+                  <motion.span
+                    key={selection.modelId}
+                    initial={{ opacity: 0, scale: 0.8, y: -5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.8,
+                      y: -5,
+                      transition: {
+                        duration: 0.2,
+                        ease: [0.25, 0.46, 0.45, 0.94],
+                      },
+                    }}
+                    transition={{
+                      duration: 0.3,
+                      delay: index * 0.1,
+                      ease: [0.25, 0.46, 0.45, 0.94],
+                    }}
+                    className="inline-flex items-center space-x-1 bg-kitchen-accent-blue/10 dark:bg-kitchen-dark-accent-blue/20 text-kitchen-accent-blue dark:text-kitchen-dark-accent-blue px-2 py-1 rounded-full text-sm"
+                  >
+                    <span>{model?.name}</span>
+                    <motion.span
+                      className="bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{
+                        scale: 0,
+                        transition: {
+                          duration: 0.15,
+                          ease: [0.25, 0.46, 0.45, 0.94],
+                        },
+                      }}
+                      transition={{
+                        duration: 0.2,
+                        delay: index * 0.1 + 0.1,
+                        ease: [0.25, 0.46, 0.45, 0.94],
+                      }}
+                    >
+                      {selection.count}
+                    </motion.span>
+                  </motion.span>
+                );
+              })}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            variants={warningFadeVariants}
+            className="bg-kitchen-dark-surface-light border border-kitchen-dark-accent-blue/30 rounded-lg p-4"
+          >
+            <div className="flex items-center space-x-2">
+              <motion.svg
+                className="w-5 h-5 text-kitchen-dark-accent-blue"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{
+                  duration: 0.4,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                }}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </motion.svg>
+              <motion.span
+                className="text-kitchen-dark-text text-sm"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  duration: 0.3,
+                  delay: 0.1,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                }}
+              >
+                Select at least one model to start generating content
+              </motion.span>
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
+    </motion.div>
   );
 }

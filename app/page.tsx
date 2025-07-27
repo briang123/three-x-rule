@@ -312,6 +312,8 @@ export default function Home() {
               }
             } catch (e) {
               console.error('Error parsing JSON:', e);
+              // Don't throw here, just continue processing other chunks
+              // The error will be handled by the outer catch block if it's a critical error
             }
           }
         }
@@ -326,9 +328,33 @@ export default function Home() {
       console.log(`Main page: Completed response for column ${column}:`, accumulatedResponse);
     } catch (error) {
       console.error(`Error in column ${column}:`, error);
+
+      // Create user-friendly error message based on error type
+      let errorMessage = 'An error occurred while generating the response.';
+
+      if (error instanceof Error) {
+        if (
+          error.message.includes('429') ||
+          error.message.includes('quota') ||
+          error.message.includes('Too Many Requests')
+        ) {
+          errorMessage =
+            'Rate limit exceeded. This model has reached its daily quota. Please try again later or use a different model.';
+        } else if (error.message.includes('401') || error.message.includes('unauthorized')) {
+          errorMessage = 'Authentication error. Please check your API configuration.';
+        } else if (
+          error.message.includes('500') ||
+          error.message.includes('internal server error')
+        ) {
+          errorMessage = 'Server error. Please try again in a few moments.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        }
+      }
+
       setColumnResponses((prev) => ({
         ...prev,
-        [column]: [...(prev[column] || []), 'Error: Failed to generate response'],
+        [column]: [...(prev[column] || []), errorMessage],
       }));
     } finally {
       setIsGenerating((prev) => ({
@@ -494,6 +520,8 @@ export default function Home() {
                 }
               } catch (e) {
                 console.error('Error parsing JSON:', e);
+                // Don't throw here, just continue processing other chunks
+                // The error will be handled by the outer catch block if it's a critical error
               }
             }
           }
@@ -502,7 +530,31 @@ export default function Home() {
         console.log('Main page: Remix completed:', accumulatedResponse);
       } catch (error) {
         console.error('Error in remix:', error);
-        setRemixResponse('Error: Failed to generate remix response');
+
+        // Create user-friendly error message based on error type
+        let errorMessage = 'An error occurred while generating the remix response.';
+
+        if (error instanceof Error) {
+          if (
+            error.message.includes('429') ||
+            error.message.includes('quota') ||
+            error.message.includes('Too Many Requests')
+          ) {
+            errorMessage =
+              'Rate limit exceeded. The remix model has reached its daily quota. Please try again later or use a different model for remix.';
+          } else if (error.message.includes('401') || error.message.includes('unauthorized')) {
+            errorMessage = 'Authentication error. Please check your API configuration.';
+          } else if (
+            error.message.includes('500') ||
+            error.message.includes('internal server error')
+          ) {
+            errorMessage = 'Server error. Please try again in a few moments.';
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+          }
+        }
+
+        setRemixResponse(errorMessage);
       } finally {
         setIsRemixGenerating(false);
       }
@@ -653,6 +705,8 @@ export default function Home() {
                 }
               } catch (e) {
                 console.error('Error parsing JSON:', e);
+                // Don't throw here, just continue processing other chunks
+                // The error will be handled by the outer catch block if it's a critical error
               }
             }
           }
@@ -661,9 +715,33 @@ export default function Home() {
         console.log('Main page: Social posts completed:', accumulatedResponse);
       } catch (error) {
         console.error('Error in social posts generation:', error);
+
+        // Create user-friendly error message based on error type
+        let errorMessage = 'An error occurred while generating social posts.';
+
+        if (error instanceof Error) {
+          if (
+            error.message.includes('429') ||
+            error.message.includes('quota') ||
+            error.message.includes('Too Many Requests')
+          ) {
+            errorMessage =
+              'Rate limit exceeded. This model has reached its daily quota. Please try again later or use a different model.';
+          } else if (error.message.includes('401') || error.message.includes('unauthorized')) {
+            errorMessage = 'Authentication error. Please check your API configuration.';
+          } else if (
+            error.message.includes('500') ||
+            error.message.includes('internal server error')
+          ) {
+            errorMessage = 'Server error. Please try again in a few moments.';
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+          }
+        }
+
         setSocialPostsResponses((prev) => ({
           ...prev,
-          [socialPostId]: 'Error: Failed to generate social posts',
+          [socialPostId]: errorMessage,
         }));
       } finally {
         setIsSocialPostsGenerating((prev) => ({ ...prev, [socialPostId]: false }));
