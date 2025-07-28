@@ -51,6 +51,10 @@ export default function Home() {
     {},
   );
 
+  // AI Selection toggle state
+  const [showAISelection, setShowAISelection] = useState<boolean>(true);
+  const [resetModelSelector, setResetModelSelector] = useState<boolean>(false);
+
   const handleSentenceSelect = useCallback((sentence: SelectedSentence) => {
     setSelectedSentences((prev) => {
       const exists = prev.find((s) => s.id === sentence.id);
@@ -225,7 +229,19 @@ export default function Home() {
     setIsSocialPostsGenerating({});
     setShowSocialPosts({});
     setSocialPostsConfigs({});
-    console.log('Main page: currentMessage cleared');
+
+    // Reset model selections and show AI selection
+    setModelSelections([]);
+    setColumnModels({});
+    setShowAISelection(true);
+
+    // Trigger model selector reset
+    setResetModelSelector(true);
+    // Reset the flag after a short delay
+    setTimeout(() => setResetModelSelector(false), 100);
+
+    console.log('Main page: currentMessage cleared and AI selection reset');
+    console.log('Main page: showAISelection set to true, resetModelSelector set to true');
   };
 
   const handleColumnPromptSubmit = async (
@@ -811,6 +827,13 @@ export default function Home() {
     });
   }, []);
 
+  const handleToggleAISelection = useCallback(() => {
+    setShowAISelection((prev) => {
+      console.log('Toggling AI selection from', prev, 'to', !prev);
+      return !prev;
+    });
+  }, []);
+
   return (
     <AuroraBackground
       colorStops={auroraConfig.colorStops}
@@ -857,6 +880,13 @@ export default function Home() {
                   onModelSelect={handleModelSelect}
                   onModelSelectionsUpdate={handleModelSelectionsUpdate}
                   onDirectSubmit={handleDirectSubmit}
+                  onRestoreModelSelection={() => {
+                    // Reset any state if needed when model selection is restored
+                    console.log('Model selection restored');
+                  }}
+                  showAISelection={showAISelection}
+                  onToggleAISelection={handleToggleAISelection}
+                  resetModelSelector={resetModelSelector}
                 />
               </div>
             </div>

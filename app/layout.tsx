@@ -9,13 +9,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                document.documentElement.classList.add('dark');
+                try {
+                  document.documentElement.classList.add('dark');
+                } catch (e) {
+                  console.log('Error adding dark class:', e);
+                }
               })();
             `,
           }}

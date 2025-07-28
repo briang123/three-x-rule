@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { SelectedSentence } from '@/app/page';
 import { ModelInfo } from '@/lib/api-client';
@@ -292,6 +292,10 @@ interface OutputColumnsProps {
   onModelSelect?: (modelId: string) => void;
   onModelSelectionsUpdate?: (modelId: string) => void;
   onDirectSubmit?: (prompt: string, modelId: string) => void;
+  onRestoreModelSelection?: () => void;
+  showAISelection?: boolean;
+  onToggleAISelection?: () => void;
+  resetModelSelector?: boolean;
 }
 
 // Note: Removed ColumnModelSelector component since we now use the 3x3 grid system
@@ -325,7 +329,19 @@ export default function OutputColumns({
   onModelSelect,
   onModelSelectionsUpdate,
   onDirectSubmit,
+  onRestoreModelSelection,
+  showAISelection = true,
+  onToggleAISelection,
+  resetModelSelector = false,
 }: OutputColumnsProps) {
+  // Orchestration state
+  const [isModelSelectorCollapsed, setIsModelSelectorCollapsed] = useState(false);
+  const [showModelBadges, setShowModelBadges] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
+  // Position tracking refs
+  const modelSelectorRef = useRef<HTMLDivElement>(null);
+  const toolsRowRef = useRef<HTMLDivElement>(null);
   const handleAddSelection = useCallback(
     (text: string, source: string) => {
       const selectionId = `${source}-${Date.now()}`;
@@ -337,6 +353,70 @@ export default function OutputColumns({
     },
     [onSentenceSelect],
   );
+
+  // Orchestration handlers
+  const handleSubmitWithOrchestration = useCallback(
+    async (prompt: string) => {
+      console.log('handleSubmitWithOrchestration called');
+      console.log('modelSelections.length:', modelSelections.length);
+      console.log('hasSubmitted:', hasSubmitted);
+
+      // Only start orchestration if models are already selected and not already submitted
+      if (!hasSubmitted && modelSelections.length > 0) {
+        console.log('Starting orchestration...');
+
+        // Start orchestration
+        setHasSubmitted(true);
+        setIsModelSelectorCollapsed(true);
+
+        // Show model badges after a delay
+        setTimeout(() => {
+          console.log('Showing model badges...');
+          setShowModelBadges(true);
+        }, 500);
+      }
+
+      // Call the original onSubmit
+      await onSubmit(prompt);
+    },
+    [hasSubmitted, modelSelections.length, onSubmit],
+  );
+
+  const handleRestoreModelSelection = useCallback(() => {
+    setShowModelBadges(false);
+    setIsModelSelectorCollapsed(false);
+    setHasSubmitted(false);
+    if (onRestoreModelSelection) {
+      onRestoreModelSelection();
+    }
+  }, [onRestoreModelSelection]);
+
+  // Handle orchestration when models are confirmed from modal
+  const handleModelConfirmedOrchestration = useCallback(() => {
+    console.log('handleModelConfirmedOrchestration called');
+    console.log('modelSelections.length:', modelSelections.length);
+
+    // Always start orchestration if not already submitted, regardless of current modelSelections
+    // because the model selection might not be updated yet when this is called
+    if (!hasSubmitted) {
+      console.log('Starting orchestration after model confirmation...');
+
+      // Start orchestration
+      setHasSubmitted(true);
+      setIsModelSelectorCollapsed(true);
+
+      // Show model badges after a delay
+      setTimeout(() => {
+        console.log('Showing model badges after confirmation...');
+        setShowModelBadges(true);
+      }, 500);
+    }
+  }, [hasSubmitted]);
+
+  const handleModelSelectorAnimationComplete = useCallback(() => {
+    // This will be called when the ModelGridSelector animation completes
+    console.log('Model selector animation completed');
+  }, []);
 
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -364,6 +444,44 @@ export default function OutputColumns({
 
     return hasColumnContent || hasRemixContent || hasSocialContent;
   }, [originalResponses, remixResponse, socialPostsResponses]);
+
+  // Auto-hide AI selection when content is received
+  useEffect(() => {
+    if (hasAIContent && showAISelection && onToggleAISelection) {
+      console.log('Auto-hiding AI selection because content is received');
+      onToggleAISelection();
+    }
+  }, [hasAIContent, showAISelection, onToggleAISelection]);
+
+  // Reset model selector state when resetModelSelector prop changes
+  useEffect(() => {
+    if (resetModelSelector) {
+      console.log('Resetting model selector state');
+      setIsModelSelectorCollapsed(false);
+      setShowModelBadges(false);
+      setHasSubmitted(false);
+    }
+  }, [resetModelSelector]);
+
+  // Reset model selector when showAISelection becomes true
+  useEffect(() => {
+    if (showAISelection) {
+      console.log('showAISelection is true, resetting model selector');
+      setIsModelSelectorCollapsed(false);
+      setShowModelBadges(false);
+      setHasSubmitted(false);
+    }
+  }, [showAISelection]);
+
+  // Debug logging for AI selection state
+  useEffect(() => {
+    console.log('AI Selection Debug:', {
+      hasAIContent,
+      showAISelection,
+      isModelSelectorCollapsed,
+      resetModelSelector,
+    });
+  }, [hasAIContent, showAISelection, isModelSelectorCollapsed, resetModelSelector]);
 
   // Get all column keys from columnResponses prop
   const columnKeys = Object.keys(columnResponses);
@@ -587,23 +705,31 @@ export default function OutputColumns({
     <div className="relative w-full h-full flex flex-col">
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto content-scroll-area smooth-scroll"
+        className="flex-1 overflow-y-auto content-scroll-area smooth-scroll pb-32"
       >
-        <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto pb-32">
+        <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto">
           {/* Show 3x3 grid when no AI content exists */}
           {!hasAIContent && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="w-full"
-            >
-              <ModelGridSelector
-                onModelSelectionsChange={onModelSelectionsChange || (() => {})}
-                disabled={Object.values(isGenerating).some((generating) => generating)}
-                initialSelections={modelSelections}
-              />
-            </motion.div>
+            <AnimatePresence mode="wait">
+              {!isModelSelectorCollapsed && (
+                <motion.div
+                  key="model-selector"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -50, scale: 0.95 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  className="w-full"
+                >
+                  <ModelGridSelector
+                    onModelSelectionsChange={onModelSelectionsChange || (() => {})}
+                    disabled={Object.values(isGenerating).some((generating) => generating)}
+                    initialSelections={modelSelections}
+                    isCollapsed={isModelSelectorCollapsed}
+                    onAnimationComplete={handleModelSelectorAnimationComplete}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           )}
 
           {/* Show output columns when AI content exists */}
@@ -1100,37 +1226,51 @@ export default function OutputColumns({
             );
           })}
 
-          {/* 3x3 Grid at the end when there's AI content */}
-          {hasAIContent && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="w-full"
-            >
-              <ModelGridSelector
-                onModelSelectionsChange={onModelSelectionsChange || (() => {})}
-                disabled={Object.values(isGenerating).some((generating) => generating)}
-                initialSelections={modelSelections}
-              />
-            </motion.div>
+          {/* 3x3 Grid at the end when there's AI content or when AI selection should be shown */}
+          {(hasAIContent || showAISelection) && (
+            <AnimatePresence mode="wait">
+              {!isModelSelectorCollapsed && (
+                <motion.div
+                  ref={modelSelectorRef}
+                  key="model-selector-end"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -50, scale: 0.95 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  className="w-full"
+                >
+                  <ModelGridSelector
+                    onModelSelectionsChange={onModelSelectionsChange || (() => {})}
+                    disabled={Object.values(isGenerating).some((generating) => generating)}
+                    initialSelections={modelSelections}
+                    isCollapsed={isModelSelectorCollapsed}
+                    onAnimationComplete={handleModelSelectorAnimationComplete}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           )}
-
-          {/* ChatInput as sticky footer within the scrollable container */}
-          <div className="sticky bottom-0 bg-gray-50/80 dark:bg-kitchen-dark-bg/80 border-gray-200 dark:border-kitchen-dark-border z-10 w-full left-0 right-0 backdrop-blur-optimized chat-input-container transform-gpu will-change-transform transition-all duration-300 ease-out">
-            {/* Gradient fade overlay for softer edge */}
-            <div className="absolute inset-x-0 -top-8 h-8 bg-gradient-to-b from-transparent to-gray-50/80 dark:to-kitchen-dark-bg/80 pointer-events-none transition-opacity duration-300"></div>
-            <ChatInputMessage
-              onSubmit={(prompt) => onSubmit(prompt)}
-              currentMessage={currentMessage}
-              isSubmitting={false}
-              onModelSelect={onModelSelect}
-              onModelSelectionsUpdate={onModelSelectionsUpdate}
-              onDirectSubmit={onDirectSubmit}
-              modelSelections={modelSelections}
-            />
-          </div>
         </div>
+      </div>
+
+      {/* ChatInput as fixed footer outside the scrollable container */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gray-50/80 dark:bg-kitchen-dark-bg/80 border-t border-gray-200 dark:border-kitchen-dark-border z-50 backdrop-blur-optimized chat-input-container transform-gpu will-change-transform transition-all duration-300 ease-out">
+        {/* Gradient fade overlay for softer edge */}
+        <div className="absolute inset-x-0 -top-8 h-8 bg-gradient-to-b from-transparent to-gray-50/80 dark:to-kitchen-dark-bg/80 pointer-events-none transition-opacity duration-300"></div>
+        <ChatInputMessage
+          onSubmit={(prompt) => handleSubmitWithOrchestration(prompt)}
+          currentMessage={currentMessage}
+          isSubmitting={false}
+          onModelSelect={onModelSelect}
+          onModelSelectionsUpdate={onModelSelectionsUpdate}
+          onDirectSubmit={onDirectSubmit}
+          modelSelections={modelSelections}
+          showModelBadges={showModelBadges}
+          onRestoreModelSelection={handleRestoreModelSelection}
+          onModelConfirmedOrchestration={handleModelConfirmedOrchestration}
+          availableModels={models}
+          toolsRowRef={toolsRowRef}
+        />
       </div>
     </div>
   );

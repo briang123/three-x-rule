@@ -3,6 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ConfirmationModal from './ConfirmationModal';
+import AnimatedModelBadges from './AnimatedModelBadges';
+import { ModelInfo } from '@/lib/api-client';
 
 interface ChatInputMessageProps {
   onSubmit: (prompt: string, modelId?: string) => void;
@@ -13,6 +15,13 @@ interface ChatInputMessageProps {
   onModelSelectionsUpdate?: (modelId: string) => void;
   onDirectSubmit?: (prompt: string, modelId: string) => void;
   modelSelections?: Array<{ modelId: string; count: number }>;
+  showModelBadges?: boolean;
+  onRestoreModelSelection?: () => void;
+  availableModels?: ModelInfo[];
+  toolsRowRef?: React.RefObject<HTMLDivElement>;
+  onModelConfirmedOrchestration?: () => void;
+  showAISelection?: boolean;
+  onToggleAISelection?: () => void;
 }
 
 const ChatInputMessage = ({
@@ -24,6 +33,13 @@ const ChatInputMessage = ({
   onModelSelectionsUpdate,
   onDirectSubmit,
   modelSelections = [],
+  showModelBadges = false,
+  onRestoreModelSelection,
+  availableModels = [],
+  toolsRowRef: externalToolsRowRef,
+  onModelConfirmedOrchestration,
+  showAISelection = true,
+  onToggleAISelection,
 }: ChatInputMessageProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [text, setText] = useState(currentMessage);
@@ -34,6 +50,8 @@ const ChatInputMessage = ({
     modelId: string;
   } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const localToolsRowRef = useRef<HTMLDivElement>(null);
+  const toolsRowRef = externalToolsRowRef || localToolsRowRef;
 
   // Calculate the container height based on content and focus state
   const calculateContainerHeight = () => {
@@ -75,6 +93,12 @@ const ChatInputMessage = ({
       setShouldAnimate(true);
     }
   };
+
+  // Update text when currentMessage changes (for new chat)
+  useEffect(() => {
+    console.log('ChatInputMessage: currentMessage changed to:', currentMessage);
+    setText(currentMessage);
+  }, [currentMessage]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
@@ -135,6 +159,11 @@ const ChatInputMessage = ({
       // Then select the model in the parent component
       if (onModelSelect) {
         onModelSelect(pendingSubmission.modelId);
+      }
+
+      // Trigger orchestration after model confirmation
+      if (onModelConfirmedOrchestration) {
+        onModelConfirmedOrchestration();
       }
 
       // Use direct submit to bypass the model selection check
@@ -205,7 +234,7 @@ const ChatInputMessage = ({
           </motion.div>
 
           {/* Bottom Left Controls */}
-          <div className="absolute bottom-3 left-3 flex items-center space-x-2">
+          <div ref={toolsRowRef} className="absolute bottom-3 left-3 flex items-center space-x-2">
             <div className="relative">
               <button
                 type="button"
@@ -221,6 +250,69 @@ const ChatInputMessage = ({
                 </svg>
               </button>
             </div>
+
+            {/* Animated Model Badges */}
+            <AnimatedModelBadges
+              modelSelections={modelSelections}
+              models={availableModels}
+              onRestore={onToggleAISelection || (() => {})}
+              isVisible={!showAISelection && modelSelections.length > 0}
+              isModelSelectorOpen={showAISelection}
+            />
+
+            {/* Select Models Button - show when AI selection is closed AND no models selected */}
+            {!showAISelection && modelSelections.length === 0 && onToggleAISelection && (
+              <motion.button
+                type="button"
+                onClick={onToggleAISelection}
+                className="flex items-center space-x-1 px-2 py-1 rounded-full text-xs transition-colors duration-200 bg-blue-500 hover:bg-blue-600 text-white"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{
+                  duration: 0.3,
+                  delay: 0.1,
+                  ease: 'easeOut',
+                }}
+                title="Select AI Models"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                <span className="font-medium">Select Models</span>
+              </motion.button>
+            )}
+
+            {/* Reopen AI Selection Button - show when AI selection is closed AND models are selected */}
+            {!showAISelection && modelSelections.length > 0 && onToggleAISelection && (
+              <motion.button
+                type="button"
+                onClick={onToggleAISelection}
+                className="flex items-center space-x-1 px-2 py-1 rounded-full text-xs transition-colors duration-200 bg-blue-500 hover:bg-blue-600 text-white"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{
+                  duration: 0.3,
+                  delay: 0.1,
+                  ease: 'easeOut',
+                }}
+                title="Reopen AI selection"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                <span className="font-medium">AI Selection</span>
+              </motion.button>
+            )}
           </div>
 
           {/* Bottom Right Controls */}

@@ -158,4 +158,7 @@ yarn-error.log*
 .vercel
 
 # Stores VSCode versions used for testing VSCode extensions
-.vscode-test 
+.vscode-test
+
+# Windows null device files
+nul 

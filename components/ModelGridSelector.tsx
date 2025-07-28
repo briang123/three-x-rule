@@ -14,6 +14,9 @@ interface ModelGridSelectorProps {
   onModelSelectionsChange: (selections: ModelSelection[]) => void;
   disabled?: boolean;
   initialSelections?: ModelSelection[];
+  isCollapsed?: boolean;
+  onAnimationComplete?: () => void;
+  onClose?: () => void;
 }
 
 // Array of intro messages with highlighted words
@@ -194,6 +197,9 @@ export default function ModelGridSelector({
   onModelSelectionsChange,
   disabled = false,
   initialSelections = [],
+  isCollapsed = false,
+  onAnimationComplete,
+  onClose,
 }: ModelGridSelectorProps) {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -252,6 +258,16 @@ export default function ModelGridSelector({
       onModelSelectionsChange(selectedModels);
     }
   }, [selectedModels, onModelSelectionsChange]);
+
+  // Handle collapse animation - always call this hook
+  useEffect(() => {
+    if (isCollapsed && onAnimationComplete) {
+      const timer = setTimeout(() => {
+        onAnimationComplete();
+      }, 600); // Wait for animation to complete
+      return () => clearTimeout(timer);
+    }
+  }, [isCollapsed, onAnimationComplete]);
 
   const handleModelToggle = (modelId: string) => {
     if (disabled) return;
@@ -320,6 +336,11 @@ export default function ModelGridSelector({
   // Only show available models, no empty slots
   const gridItems = models;
 
+  // Early return after all hooks
+  if (isCollapsed) {
+    return null;
+  }
+
   return (
     <motion.div
       className="w-full max-w-6xl mx-auto p-6"
@@ -340,7 +361,7 @@ export default function ModelGridSelector({
         </motion.div>
       )}
 
-      <motion.div variants={headerVariants} className="text-center mb-8">
+      <motion.div variants={headerVariants} className="text-center mb-8 relative">
         <h2 className="text-2xl font-bold text-kitchen-text dark:text-kitchen-dark-text mb-2">
           Select AI Models
         </h2>
@@ -348,6 +369,27 @@ export default function ModelGridSelector({
           Choose the models you want to compare and set how many response variations to generate for
           each model.
         </p>
+        <motion.button
+          onClick={() => {
+            if (onClose) {
+              onClose();
+            }
+          }}
+          className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center text-kitchen-text-light dark:text-kitchen-dark-text-light hover:text-kitchen-text dark:hover:text-kitchen-dark-text transition-colors duration-200 rounded-full hover:bg-kitchen-light-gray dark:hover:bg-kitchen-dark-surface-light"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          title="Close AI selection"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </motion.button>
       </motion.div>
 
       <motion.div
