@@ -228,3 +228,31 @@ AI Should:
 6. Changes should stay focused on the problem at hand and not deviate
 7. Should ask clarifying questions before moving forward
 8. Should create documentation explaining issues and resolutions
+
+## Screenshots
+
+### Top Nav Buttons
+
+![Top Nav Buttons](<Screenshot 2025-07-28 145400.png>)
+
+### Left Nav Bar
+
+![Collapsed Left Nav](<Screenshot 2025-07-28 145459.png>)
+
+![Expanded Left Nav](<Screenshot 2025-07-28 145630.png>)
+
+### Select AI Models section
+
+![AI Model Selection](<Screenshot 2025-07-28 145122.png>)
+
+![Selected AI Models in AI Model Selection](<Screenshot 2025-07-28 150106.png>)
+
+### Chat Input Message (Default View)
+
+![Default Chat Message](<Screenshot 2025-07-28 145237.png>)
+
+![No Models Selected Chat Message](<Screenshot 2025-07-28 145940.png>)
+
+### Submitting Prompt
+
+![No Previously Selected Model when Submitting](<Screenshot 2025-07-28 150239.png>)
