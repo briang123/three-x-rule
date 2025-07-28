@@ -830,9 +830,17 @@ export default function Home() {
   const handleToggleAISelection = useCallback(() => {
     setShowAISelection((prev) => {
       const newValue = !prev;
+      // If we're closing the AI selection (going from true to false), clear the model selections
+      if (prev && !newValue) {
+        setModelSelections([]);
+        setColumnModels({});
+        setColumnResponses({});
+        setOriginalResponses({});
+        setIsGenerating({});
+      }
       return newValue;
     });
-  }, [showAISelection]);
+  }, []);
 
   return (
     <AuroraBackground

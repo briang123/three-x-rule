@@ -1275,6 +1275,8 @@ export default function OutputColumns({
           onModelConfirmedOrchestration={handleModelConfirmedOrchestration}
           availableModels={models}
           toolsRowRef={toolsRowRef}
+          showAISelection={showAISelection}
+          onToggleAISelection={onToggleAISelection}
         />
       </div>
     </div>
