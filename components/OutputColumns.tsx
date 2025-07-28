@@ -296,6 +296,8 @@ interface OutputColumnsProps {
   showAISelection?: boolean;
   onToggleAISelection?: () => void;
   resetModelSelector?: boolean;
+  // Close callback for AI selection
+  onCloseAISelection?: () => void;
 }
 
 // Note: Removed ColumnModelSelector component since we now use the 3x3 grid system
@@ -333,6 +335,7 @@ export default function OutputColumns({
   showAISelection = true,
   onToggleAISelection,
   resetModelSelector = false,
+  onCloseAISelection,
 }: OutputColumnsProps) {
   // Orchestration state
   const [isModelSelectorCollapsed, setIsModelSelectorCollapsed] = useState(false);
@@ -708,8 +711,8 @@ export default function OutputColumns({
         className="flex-1 overflow-y-auto content-scroll-area smooth-scroll pb-32"
       >
         <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto">
-          {/* Show 3x3 grid when no AI content exists */}
-          {!hasAIContent && (
+          {/* Show 3x3 grid when no AI content exists and AI selection should be shown */}
+          {!hasAIContent && showAISelection && (
             <AnimatePresence mode="wait">
               {!isModelSelectorCollapsed && (
                 <motion.div
@@ -726,6 +729,7 @@ export default function OutputColumns({
                     initialSelections={modelSelections}
                     isCollapsed={isModelSelectorCollapsed}
                     onAnimationComplete={handleModelSelectorAnimationComplete}
+                    onClose={onCloseAISelection}
                   />
                 </motion.div>
               )}
@@ -1226,8 +1230,8 @@ export default function OutputColumns({
             );
           })}
 
-          {/* 3x3 Grid at the end when there's AI content or when AI selection should be shown */}
-          {(hasAIContent || showAISelection) && (
+          {/* 3x3 Grid at the end when there's AI content and AI selection should be shown */}
+          {hasAIContent && showAISelection && (
             <AnimatePresence mode="wait">
               {!isModelSelectorCollapsed && (
                 <motion.div
@@ -1245,6 +1249,7 @@ export default function OutputColumns({
                     initialSelections={modelSelections}
                     isCollapsed={isModelSelectorCollapsed}
                     onAnimationComplete={handleModelSelectorAnimationComplete}
+                    onClose={onCloseAISelection}
                   />
                 </motion.div>
               )}

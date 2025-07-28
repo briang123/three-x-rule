@@ -829,10 +829,10 @@ export default function Home() {
 
   const handleToggleAISelection = useCallback(() => {
     setShowAISelection((prev) => {
-      console.log('Toggling AI selection from', prev, 'to', !prev);
-      return !prev;
+      const newValue = !prev;
+      return newValue;
     });
-  }, []);
+  }, [showAISelection]);
 
   return (
     <AuroraBackground
@@ -887,6 +887,7 @@ export default function Home() {
                   showAISelection={showAISelection}
                   onToggleAISelection={handleToggleAISelection}
                   resetModelSelector={resetModelSelector}
+                  onCloseAISelection={handleToggleAISelection}
                 />
               </div>
             </div>
