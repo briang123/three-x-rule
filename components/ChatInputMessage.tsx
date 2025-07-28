@@ -96,7 +96,6 @@ const ChatInputMessage = ({
 
   // Update text when currentMessage changes (for new chat)
   useEffect(() => {
-    console.log('ChatInputMessage: currentMessage changed to:', currentMessage);
     setText(currentMessage);
   }, [currentMessage]);
 
@@ -251,68 +250,44 @@ const ChatInputMessage = ({
               </button>
             </div>
 
-            {/* Animated Model Badges */}
+            {/* Animated Model Badges - show when models are selected */}
             <AnimatedModelBadges
               modelSelections={modelSelections}
               models={availableModels}
               onRestore={onToggleAISelection || (() => {})}
-              isVisible={!showAISelection && modelSelections.length > 0}
+              isVisible={showModelBadges && !showAISelection}
               isModelSelectorOpen={showAISelection}
             />
 
-            {/* Select Models Button - show when AI selection is closed AND no models selected */}
-            {!showAISelection && modelSelections.length === 0 && onToggleAISelection && (
-              <motion.button
-                type="button"
-                onClick={onToggleAISelection}
-                className="flex items-center space-x-1 px-2 py-1 rounded-full text-xs transition-colors duration-200 bg-blue-500 hover:bg-blue-600 text-white"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{
-                  duration: 0.3,
-                  delay: 0.1,
-                  ease: 'easeOut',
-                }}
-                title="Select AI Models"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                <span className="font-medium">Select Models</span>
-              </motion.button>
-            )}
-
-            {/* Reopen AI Selection Button - show when AI selection is closed AND models are selected */}
-            {!showAISelection && modelSelections.length > 0 && onToggleAISelection && (
-              <motion.button
-                type="button"
-                onClick={onToggleAISelection}
-                className="flex items-center space-x-1 px-2 py-1 rounded-full text-xs transition-colors duration-200 bg-blue-500 hover:bg-blue-600 text-white"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{
-                  duration: 0.3,
-                  delay: 0.1,
-                  ease: 'easeOut',
-                }}
-                title="Reopen AI selection"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                <span className="font-medium">AI Selection</span>
-              </motion.button>
-            )}
+            {/* Select Models Button - show ONLY when AI selection is closed AND no models selected AND not showing badges */}
+            {!showAISelection &&
+              modelSelections.length === 0 &&
+              !showModelBadges &&
+              onToggleAISelection && (
+                <motion.button
+                  type="button"
+                  onClick={onToggleAISelection}
+                  className="flex items-center space-x-1 px-2 py-1 rounded-full text-xs transition-colors duration-200 bg-blue-500 hover:bg-blue-600 text-white"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{
+                    duration: 0.3,
+                    delay: 0.1,
+                    ease: 'easeOut',
+                  }}
+                  title="Select AI Models"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  <span className="font-medium">Select Models</span>
+                </motion.button>
+              )}
           </div>
 
           {/* Bottom Right Controls */}

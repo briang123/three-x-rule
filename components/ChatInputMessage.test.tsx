@@ -24,9 +24,20 @@ jest.mock('./ConfirmationModal', () => {
 
 // Mock the AnimatedModelBadges component
 jest.mock('./AnimatedModelBadges', () => {
-  return function MockAnimatedModelBadges({ isVisible }: any) {
+  return function MockAnimatedModelBadges({ isVisible, modelSelections, onRestore }: any) {
     if (!isVisible) return null;
-    return <div data-testid="animated-model-badges">Model Badges</div>;
+    return (
+      <div data-testid="animated-model-badges">
+        {modelSelections.map((selection: any) => (
+          <span key={selection.modelId} data-testid={`model-badge-${selection.modelId}`}>
+            {selection.modelId} {selection.count}
+          </span>
+        ))}
+        <button onClick={onRestore} data-testid="change-models-button">
+          Change Models
+        </button>
+      </div>
+    );
   };
 });
 
@@ -82,7 +93,13 @@ describe('ChatInputMessage', () => {
   });
 
   it('should handle form submission', () => {
-    render(<ChatInputMessage onSubmit={mockOnSubmit} currentMessage="" />);
+    render(
+      <ChatInputMessage
+        onSubmit={mockOnSubmit}
+        currentMessage=""
+        modelSelections={[{ modelId: 'gemini-2.5-flash-lite', count: 1 }]}
+      />,
+    );
 
     const textarea = screen.getByPlaceholderText('Ask anything...') as HTMLTextAreaElement;
     const submitButtons = screen.getAllByRole('button');
@@ -168,18 +185,190 @@ describe('ChatInputMessage', () => {
     expect(selectModelsButton).toBeInTheDocument();
   });
 
-  it('should show "AI Selection" button when AI selection is closed and models are selected', () => {
+  it('should show model badges when AI selection is closed and models are selected', () => {
     render(
       <ChatInputMessage
         onSubmit={mockOnSubmit}
         currentMessage=""
         modelSelections={[{ modelId: 'gemini-2.5-flash-lite', count: 1 }]}
         showAISelection={false}
+        showModelBadges={true}
         onToggleAISelection={mockOnToggleAISelection}
       />,
     );
 
-    const aiSelectionButton = screen.getByText('AI Selection');
-    expect(aiSelectionButton).toBeInTheDocument();
+    expect(screen.getByTestId('animated-model-badges')).toBeInTheDocument();
+    expect(screen.getByTestId('model-badge-gemini-2.5-flash-lite')).toBeInTheDocument();
+  });
+});
+
+describe('ChatInputMessage - Model Badges Integration', () => {
+  const defaultProps = {
+    currentMessage: '',
+    onSubmit: jest.fn(),
+    onModelSelectionsChange: jest.fn(),
+    modelSelections: [],
+    models: [],
+    showModelBadges: false,
+    showAISelection: false,
+    onToggleAISelection: jest.fn(),
+    onModelConfirmedOrchestration: jest.fn(),
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should show model badges when showModelBadges is true and showAISelection is false', () => {
+    const mockModelSelections = [{ modelId: 'gemini-2.5-flash-lite', count: 1 }];
+
+    render(
+      <ChatInputMessage
+        {...defaultProps}
+        showModelBadges={true}
+        showAISelection={false}
+        modelSelections={mockModelSelections}
+      />,
+    );
+
+    expect(screen.getByTestId('animated-model-badges')).toBeInTheDocument();
+    expect(screen.getByTestId('model-badge-gemini-2.5-flash-lite')).toBeInTheDocument();
+  });
+
+  it('should not show model badges when showAISelection is true', () => {
+    const mockModelSelections = [{ modelId: 'gemini-2.5-flash-lite', count: 1 }];
+
+    render(
+      <ChatInputMessage
+        {...defaultProps}
+        showModelBadges={true}
+        showAISelection={true}
+        modelSelections={mockModelSelections}
+      />,
+    );
+
+    expect(screen.queryByTestId('animated-model-badges')).not.toBeInTheDocument();
+  });
+
+  it('should not show model badges when showModelBadges is false', () => {
+    const mockModelSelections = [{ modelId: 'gemini-2.5-flash-lite', count: 1 }];
+
+    render(
+      <ChatInputMessage
+        {...defaultProps}
+        showModelBadges={false}
+        showAISelection={false}
+        modelSelections={mockModelSelections}
+      />,
+    );
+
+    expect(screen.queryByTestId('animated-model-badges')).not.toBeInTheDocument();
+  });
+
+  it('should show "Select Models" button when no models selected and AI selection is closed', () => {
+    render(
+      <ChatInputMessage
+        {...defaultProps}
+        showModelBadges={false}
+        showAISelection={false}
+        modelSelections={[]}
+        onToggleAISelection={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Select Models')).toBeInTheDocument();
+  });
+
+  it('should not show "Select Models" button when models are selected', () => {
+    const mockModelSelections = [{ modelId: 'gemini-2.5-flash-lite', count: 1 }];
+
+    render(
+      <ChatInputMessage
+        {...defaultProps}
+        showModelBadges={true}
+        showAISelection={false}
+        modelSelections={mockModelSelections}
+        onToggleAISelection={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByText('Select Models')).not.toBeInTheDocument();
+  });
+
+  it('should not show "Select Models" button when AI selection is open', () => {
+    render(
+      <ChatInputMessage
+        {...defaultProps}
+        showModelBadges={false}
+        showAISelection={true}
+        modelSelections={[]}
+        onToggleAISelection={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByText('Select Models')).not.toBeInTheDocument();
+  });
+
+  it('should call onToggleAISelection when "Select Models" button is clicked', () => {
+    const mockOnToggleAISelection = jest.fn();
+    render(
+      <ChatInputMessage
+        {...defaultProps}
+        showModelBadges={false}
+        showAISelection={false}
+        modelSelections={[]}
+        onToggleAISelection={mockOnToggleAISelection}
+      />,
+    );
+
+    const selectButton = screen.getByText('Select Models');
+    fireEvent.click(selectButton);
+
+    expect(mockOnToggleAISelection).toHaveBeenCalledTimes(1);
+  });
+
+  it('should pass correct props to AnimatedModelBadges', () => {
+    const mockModelSelections = [
+      { modelId: 'gemini-2.5-flash-lite', count: 1 },
+      { modelId: 'claude-3-5-sonnet', count: 2 },
+    ];
+    const mockAvailableModels = [
+      {
+        id: 'gemini-2.5-flash-lite',
+        name: 'Gemini 2.5 Flash Lite',
+        description: 'Fast and efficient model',
+        maxInputTokens: 1000000,
+        maxOutputTokens: 8192,
+        supportsImages: true,
+        supportsVideo: false,
+        supportsAudio: false,
+      },
+      {
+        id: 'claude-3-5-sonnet',
+        name: 'Claude 3.5 Sonnet',
+        description: 'Advanced reasoning model',
+        maxInputTokens: 200000,
+        maxOutputTokens: 4096,
+        supportsImages: true,
+        supportsVideo: false,
+        supportsAudio: false,
+      },
+    ];
+    const mockOnRestore = jest.fn();
+
+    render(
+      <ChatInputMessage
+        {...defaultProps}
+        showModelBadges={true}
+        showAISelection={false}
+        modelSelections={mockModelSelections}
+        availableModels={mockAvailableModels}
+        onRestoreModelSelection={mockOnRestore}
+      />,
+    );
+
+    expect(screen.getByTestId('animated-model-badges')).toBeInTheDocument();
+    expect(screen.getByTestId('model-badge-gemini-2.5-flash-lite')).toBeInTheDocument();
+    expect(screen.getByTestId('model-badge-claude-3-5-sonnet')).toBeInTheDocument();
   });
 });

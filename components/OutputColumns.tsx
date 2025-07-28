@@ -359,30 +359,15 @@ export default function OutputColumns({
 
   // Orchestration handlers
   const handleSubmitWithOrchestration = useCallback(
-    async (prompt: string) => {
-      console.log('handleSubmitWithOrchestration called');
-      console.log('modelSelections.length:', modelSelections.length);
-      console.log('hasSubmitted:', hasSubmitted);
-
-      // Only start orchestration if models are already selected and not already submitted
-      if (!hasSubmitted && modelSelections.length > 0) {
-        console.log('Starting orchestration...');
+    async (prompt: string, attachments?: File[]) => {
+      if (!hasSubmitted) {
+        setHasSubmitted(true);
 
         // Start orchestration
-        setHasSubmitted(true);
-        setIsModelSelectorCollapsed(true);
-
-        // Show model badges after a delay
-        setTimeout(() => {
-          console.log('Showing model badges...');
-          setShowModelBadges(true);
-        }, 500);
+        onSubmit(prompt, attachments);
       }
-
-      // Call the original onSubmit
-      await onSubmit(prompt);
     },
-    [hasSubmitted, modelSelections.length, onSubmit],
+    [hasSubmitted, onSubmit],
   );
 
   const handleRestoreModelSelection = useCallback(() => {
@@ -396,25 +381,11 @@ export default function OutputColumns({
 
   // Handle orchestration when models are confirmed from modal
   const handleModelConfirmedOrchestration = useCallback(() => {
-    console.log('handleModelConfirmedOrchestration called');
-    console.log('modelSelections.length:', modelSelections.length);
+    setHasSubmitted(true);
 
-    // Always start orchestration if not already submitted, regardless of current modelSelections
-    // because the model selection might not be updated yet when this is called
-    if (!hasSubmitted) {
-      console.log('Starting orchestration after model confirmation...');
-
-      // Start orchestration
-      setHasSubmitted(true);
-      setIsModelSelectorCollapsed(true);
-
-      // Show model badges after a delay
-      setTimeout(() => {
-        console.log('Showing model badges after confirmation...');
-        setShowModelBadges(true);
-      }, 500);
-    }
-  }, [hasSubmitted]);
+    // Start orchestration after model confirmation
+    // The actual prompt and modelId will be handled by the pending orchestration mechanism
+  }, []);
 
   const handleModelSelectorAnimationComplete = useCallback(() => {
     // This will be called when the ModelGridSelector animation completes
@@ -476,15 +447,13 @@ export default function OutputColumns({
     }
   }, [showAISelection]);
 
-  // Debug logging for AI selection state
+  // Show model badges when modelSelections are updated and AI selection is closed
   useEffect(() => {
-    console.log('AI Selection Debug:', {
-      hasAIContent,
-      showAISelection,
-      isModelSelectorCollapsed,
-      resetModelSelector,
-    });
-  }, [hasAIContent, showAISelection, isModelSelectorCollapsed, resetModelSelector]);
+    if (modelSelections.length > 0 && !showAISelection && hasSubmitted) {
+      console.log('Model selections updated, showing model badges');
+      setShowModelBadges(true);
+    }
+  }, [modelSelections, showAISelection, hasSubmitted]);
 
   // Get all column keys from columnResponses prop
   const columnKeys = Object.keys(columnResponses);

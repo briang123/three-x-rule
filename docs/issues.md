@@ -16,8 +16,12 @@
 
 ## Open Issues
 
-- [ ] When I have selected models and submit my prompt to ai, the model (qty) badges are not appearing in the tools row when it should be.
+- [x] When I have selected models and submit my prompt to ai, the model (qty) badges are not appearing in the tools row when it should be.
+  - **Fixed**: Resolved timing issue where model selections were being cleared when AI selection was auto-hidden
+  - **Root Cause**: The `handleToggleAISelection` function was clearing model selections when AI selection was auto-hidden after content was received
+  - **Solution**: Modified the function to only clear selections when manually closing (not auto-hiding) and implemented pending orchestration mechanism to handle asynchronous state updates
   - **Documentation**: [Model Badges Fix](MODEL_BADGES_FIX.md)
+  - **Tests**: Added comprehensive test suite for `AnimatedModelBadges` and `ChatInputMessage` components
 - [ ] When I submit where total of all selected ai models qty > 1 and get responses back, the "Remix" button is disabled when it should be enabled
 - [ ] The chat input message container should not have a top border and the background should be transparent
 - [ ] Unable to click the "+" button to attach a file

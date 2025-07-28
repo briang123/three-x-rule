@@ -253,6 +253,20 @@ AI Should:
 
 ![No Models Selected Chat Message](<Screenshot 2025-07-28 145940.png>)
 
+![One Model Selected Chat Message](<Screenshot 2025-07-28 153503.png>)
+
+![3 Models Selected Chat Message](<Screenshot 2025-07-28 153807.png>)
+
 ### Submitting Prompt
 
 ![No Previously Selected Model when Submitting](<Screenshot 2025-07-28 150239.png>)
+
+### AI Content Type Responses
+
+#### General
+
+![General Content Type](<Screenshot 2025-07-28 154203.png>)
+
+#### Remix
+
+#### Social Posts

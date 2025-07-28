@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import TopBar from '@/components/TopBar';
 import LeftNavigation from '@/components/LeftNavigation';
 import OutputColumns from '@/components/OutputColumns';
@@ -70,9 +70,7 @@ export default function Home() {
   }, []);
 
   const handleModelSelectionsChange = useCallback((selections: ModelSelection[]) => {
-    console.log('handleModelSelectionsChange called with selections:', selections);
     setModelSelections(selections);
-
     // Generate columns based on model selections
     const newColumnModels: { [key: string]: string } = {};
     const newColumnResponses: { [key: string]: string[] } = {};
@@ -81,28 +79,30 @@ export default function Home() {
 
     let columnIndex = 1;
     selections.forEach((selection) => {
-      console.log(`Processing selection: ${selection.modelId} with count ${selection.count}`);
       for (let i = 0; i < selection.count; i++) {
         const columnKey = columnIndex.toString();
         newColumnModels[columnKey] = selection.modelId;
         newColumnResponses[columnKey] = [];
         newOriginalResponses[columnKey] = '';
         newIsGenerating[columnKey] = false;
-        console.log(`Created column ${columnKey} with model ${selection.modelId}`);
         columnIndex++;
       }
     });
 
-    console.log('Final newColumnModels:', newColumnModels);
     setColumnModels(newColumnModels);
     setColumnResponses(newColumnResponses);
     setOriginalResponses(newOriginalResponses);
     setIsGenerating(newIsGenerating);
   }, []);
 
+  // Add effect to handle orchestration after model selections are updated
+  const [pendingOrchestration, setPendingOrchestration] = useState<{
+    prompt: string;
+    modelId: string;
+  } | null>(null);
+
   const handleModelSelectionsUpdate = useCallback(
     (modelId: string) => {
-      console.log('handleModelSelectionsUpdate called with modelId:', modelId);
       // Create a single model selection for the default model
       const newSelections: ModelSelection[] = [
         {
@@ -116,27 +116,44 @@ export default function Home() {
   );
 
   const handleModelSelect = useCallback((modelId: string) => {
-    console.log('handleModelSelect called with modelId:', modelId);
     // This function can be used for any additional model selection logic
     // For now, it's just a placeholder that can be extended later
   }, []);
 
-  const handleDirectSubmit = useCallback(async (prompt: string, modelId: string) => {
-    console.log('handleDirectSubmit called with prompt:', prompt, 'modelId:', modelId);
+  const handleDirectSubmit = useCallback(
+    async (prompt: string, modelId: string) => {
+      // Store the current message
+      setCurrentMessage(prompt);
 
-    // Store the current message
-    setCurrentMessage(prompt);
+      // If model selections are empty, we need to wait for them to be updated
+      if (modelSelections.length === 0) {
+        setPendingOrchestration({ prompt, modelId });
+        return;
+      }
 
-    // Create a single column with the specified model
-    const directColumnModels: { [key: string]: string } = { '1': modelId };
+      // Create a single column with the specified model
+      const directColumnModels: { [key: string]: string } = { '1': modelId };
 
-    // Send the prompt directly to the API
-    try {
-      await handleColumnPromptSubmit('1', prompt, [], modelId);
-    } catch (error) {
-      console.error('Error in direct submit:', error);
+      // Send the prompt directly to the API
+      try {
+        await handleColumnPromptSubmit('1', prompt, [], modelId);
+      } catch (error) {
+        console.error('Error in direct submit:', error);
+      }
+    },
+    [modelSelections.length],
+  );
+
+  // Add effect to handle orchestration after model selections are updated
+  useEffect(() => {
+    if (pendingOrchestration && modelSelections.length > 0) {
+      const { prompt, modelId } = pendingOrchestration;
+      setPendingOrchestration(null);
+
+      // Start the orchestration with the updated model selections
+      handleDirectSubmit(prompt, modelId);
     }
-  }, []);
+  }, [modelSelections, pendingOrchestration, handleDirectSubmit]);
 
   const handleSubmit = async (prompt: string, attachments?: File[]) => {
     console.log('Main page: handleSubmit called with prompt:', prompt);
@@ -835,9 +852,10 @@ export default function Home() {
   const handleToggleAISelection = useCallback(() => {
     setShowAISelection((prev) => {
       const newValue = !prev;
-      // If we're closing the AI selection (going from true to false), clear the model selections
-      if (prev && !newValue) {
-        setModelSelections([]);
+      // Only clear model selections if we're manually closing (not auto-hiding)
+      // Auto-hiding happens when content is received, and we want to keep the selections
+      if (prev && !newValue && modelSelections.length === 0) {
+        // Only clear if there are no model selections (manual close)
         setColumnModels({});
         setColumnResponses({});
         setOriginalResponses({});
@@ -845,7 +863,7 @@ export default function Home() {
       }
       return newValue;
     });
-  }, []);
+  }, [modelSelections.length]);
 
   return (
     <AuroraBackground
