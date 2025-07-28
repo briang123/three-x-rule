@@ -21,7 +21,7 @@ Ask the same question 3 different times. Get 3 different outputs. Pick the best 
 
 ## Overview
 
-We are building a web app in Next.js using Tailwind css and Framer Motion to solve the problem of getting the best response by leveraging multiple ai models so the best parts can be reasoned about.
+We are building a web app in Next.js with Typescript using Tailwind css and Framer Motion to solve the problem of getting the best response by leveraging multiple ai models so the best parts can be reasoned about.
 
 ## Defaults
 
@@ -108,8 +108,6 @@ Response should include the following:
 - should include color branded badge with ai model id
 - should allow user to change the length and format of social posts from within container (ie. shorter, longer, redo, etc)
 
-#### Formatt
-
 ## Use Cases
 
 use case 1: Initial page load (Most common)
@@ -171,3 +169,36 @@ use case 6: User wants to create social posts
 5. social posts drawer closes
 6. ai api request sent with prompt to selected model
 7. ai response appended and properly formated based on content type (ie. tweet, post, etc.)
+
+## Project Structure
+
+// TODO: AI TO PROVIDE
+
+## Refactoring Code and UI
+
+- Refactorings should be small and testable
+- Should refactor to custom hooks to keep project DRY
+- Common UI should refactor to common functional components
+- We may want to refactor state to use global state management tool
+- Use constants where applicable
+- User helper and utility functions where applicable
+
+## Testing
+
+1. Install testing frameworks Jest and Playwright and create npm scripts to support the various test runners.
+2. Jest unit tests should be inline next to the files they're testing
+3. Playwright tests should be in a root folder /e2e
+4. Should have utils, lib, selectors, constants files to support the tests
+
+## Debugging
+
+AI Should:
+
+1. Try to test its own changes without user interaction
+2. Review codebase to understand context
+3. Add console logs to help troubleshoot issues (clean them up after)
+4. Go into auto-run mode when making changes and testing until resolved or dev jumps in
+5. Create tests after feature is approved and working (Will help identify regressions)
+6. Changes should stay focused on the problem at-hand and not deviate
+7. Should ask clarifying questions before moving forward
+8. Should create documentation explaining issues and resolutions
