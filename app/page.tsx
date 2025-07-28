@@ -26,6 +26,9 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState<{ [key: string]: boolean }>({});
   const [currentMessage, setCurrentMessage] = useState('');
 
+  // Add a key to force re-render when New Chat is clicked
+  const [chatKey, setChatKey] = useState(0);
+
   // Aurora configuration state
   const [auroraConfig, setAuroraConfig] = useState({
     colorStops: ['#1e74a9', '#97128c', '#05ecf0'] as [string, string, string],
@@ -218,6 +221,8 @@ export default function Home() {
       return reset;
     });
     setCurrentMessage('');
+    // Increment chatKey to force re-render
+    setChatKey((prev) => prev + 1);
     // Clear remix state
     setRemixResponse('');
     setIsRemixGenerating(false);
@@ -857,6 +862,7 @@ export default function Home() {
             <div className="flex flex-1 flex-col overflow-hidden">
               <div className="flex-1 p-6 pb-0 h-full">
                 <OutputColumns
+                  key={chatKey} // Add key to force re-render
                   onSentenceSelect={handleSentenceSelect}
                   selectedSentences={selectedSentences}
                   onModelChange={handleModelChange}
