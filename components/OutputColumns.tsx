@@ -449,11 +449,11 @@ export default function OutputColumns({
 
   // Show model badges when modelSelections are updated and AI selection is closed
   useEffect(() => {
-    if (modelSelections.length > 0 && !showAISelection && hasSubmitted) {
+    if (modelSelections.length > 0 && !showAISelection) {
       console.log('Model selections updated, showing model badges');
       setShowModelBadges(true);
     }
-  }, [modelSelections, showAISelection, hasSubmitted]);
+  }, [modelSelections, showAISelection]);
 
   // Get all column keys from columnResponses prop
   const columnKeys = Object.keys(columnResponses);

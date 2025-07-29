@@ -20,21 +20,6 @@ export default function AnimatedModelBadges({
   isVisible,
   isModelSelectorOpen = false,
 }: AnimatedModelBadgesProps) {
-  // Add a small delay to allow modelSelections to be updated asynchronously
-  const [showLoading, setShowLoading] = useState(true);
-
-  useEffect(() => {
-    if (isVisible && modelSelections.length === 0) {
-      // Show loading state for a short time to allow modelSelections to update
-      const timer = setTimeout(() => {
-        setShowLoading(false);
-      }, 1000); // 1 second delay
-      return () => clearTimeout(timer);
-    } else if (modelSelections.length > 0) {
-      setShowLoading(false);
-    }
-  }, [isVisible, modelSelections.length]);
-
   if (!isVisible) {
     return null;
   }
@@ -42,7 +27,7 @@ export default function AnimatedModelBadges({
   return (
     <div className="flex items-center space-x-2">
       {/* Model badges - show when models are selected */}
-      {modelSelections.length > 0 ? (
+      {modelSelections.length > 0 &&
         modelSelections.map((selection, index) => {
           const model = models.find((m) => m.id === selection.modelId);
           return (
@@ -63,24 +48,10 @@ export default function AnimatedModelBadges({
               </span>
             </motion.div>
           );
-        })
-      ) : showLoading ? (
-        // Show loading state when isVisible is true but no models selected yet
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{
-            duration: 0.3,
-            ease: 'easeOut',
-          }}
-          className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full px-1.5 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400"
-        >
-          <span className="text-xs">Loading...</span>
-        </motion.div>
-      ) : null}
+        })}
 
-      {/* Change Models Button - show when models are selected or loading */}
-      {!isModelSelectorOpen && (modelSelections.length > 0 || (isVisible && showLoading)) && (
+      {/* Change Models Button - show when models are selected */}
+      {!isModelSelectorOpen && modelSelections.length > 0 && (
         <motion.button
           onClick={onRestore}
           className="w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors duration-200"
