@@ -111,7 +111,7 @@ describe('ChatInputMessage', () => {
     // Submit the form
     fireEvent.click(submitButton!);
 
-    expect(mockOnSubmit).toHaveBeenCalledWith('Test message');
+    expect(mockOnSubmit).toHaveBeenCalledWith('Test message', undefined, []);
   });
 
   it('should show confirmation modal when no model is selected', () => {

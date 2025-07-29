@@ -4,10 +4,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ConfirmationModal from './ConfirmationModal';
 import AnimatedModelBadges from './AnimatedModelBadges';
+import StackedFileAttachments from './StackedFileAttachments';
 import { ModelInfo } from '@/lib/api-client';
 
 interface ChatInputMessageProps {
-  onSubmit: (prompt: string, modelId?: string) => void;
+  onSubmit: (prompt: string, modelId?: string, attachments?: File[]) => void;
   currentMessage?: string;
   isSubmitting?: boolean;
   selectedModelId?: string;
@@ -59,6 +60,11 @@ const ChatInputMessage = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const localToolsRowRef = useRef<HTMLDivElement>(null);
   const toolsRowRef = externalToolsRowRef || localToolsRowRef;
+
+  // File attachment state
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [showFileSupport, setShowFileSupport] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Remix dropdown state
   const [isRemixDropdownOpen, setIsRemixDropdownOpen] = useState(false);
@@ -176,6 +182,187 @@ const ChatInputMessage = ({
     setShouldAnimate(true);
   };
 
+  // File handling functions
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+
+    // Validate files
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+
+    files.forEach((file: File) => {
+      // Check file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        errors.push(`${file.name} is too large. Maximum size is 10MB.`);
+        return;
+      }
+
+      // Check file type
+      const allowedTypes = [
+        'text/plain',
+        'text/markdown',
+        'text/x-markdown',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+      ];
+
+      // Check file extension for additional support
+      const fileName = file.name.toLowerCase();
+      const isMarkdownByExtension = fileName.endsWith('.md') || fileName.endsWith('.markdown');
+      const isExcelByExtension = fileName.endsWith('.xls') || fileName.endsWith('.xlsx');
+      const isWordByExtension = fileName.endsWith('.doc') || fileName.endsWith('.docx');
+      const isTextByExtension = fileName.endsWith('.txt');
+
+      // Allow files based on MIME type OR extension
+      const isAllowedByType = allowedTypes.includes(file.type);
+      const isAllowedByExtension =
+        isMarkdownByExtension || isExcelByExtension || isWordByExtension || isTextByExtension;
+
+      if (!isAllowedByType && !isAllowedByExtension) {
+        console.log('File type not supported:', file.name, 'Type:', file.type);
+        errors.push(`${file.name} has an unsupported file type (${file.type}).`);
+        return;
+      }
+
+      validFiles.push(file);
+    });
+
+    // Show errors if any
+    if (errors.length > 0) {
+      alert('File upload errors:\n' + errors.join('\n'));
+    }
+
+    // Add valid files
+    if (validFiles.length > 0) {
+      setAttachments((prev) => [...prev, ...validFiles]);
+    }
+
+    // Clear the input value so the same file can be selected again
+    e.target.value = '';
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const openFileDialog = () => {
+    fileInputRef.current?.click();
+  };
+
+  const viewFile = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      // For images, open in a new tab
+      const url = URL.createObjectURL(file);
+      window.open(url, '_blank');
+    } else {
+      // For other files, download them
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const getFileIcon = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"
+          />
+        </svg>
+      );
+    } else if (file.type === 'application/pdf') {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+          />
+        </svg>
+      );
+    } else if (
+      file.type.includes('word') ||
+      file.name.toLowerCase().endsWith('.doc') ||
+      file.name.toLowerCase().endsWith('.docx')
+    ) {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      );
+    } else if (
+      file.type.includes('excel') ||
+      file.name.toLowerCase().endsWith('.xls') ||
+      file.name.toLowerCase().endsWith('.xlsx')
+    ) {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"
+          />
+        </svg>
+      );
+    } else {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      );
+    }
+  };
+
+  const getFileColor = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      return 'text-purple-500 bg-purple-100 dark:bg-purple-900 border-purple-200 dark:border-purple-700';
+    } else if (file.type === 'application/pdf') {
+      return 'text-red-500 bg-red-100 dark:bg-red-900 border-red-200 dark:border-red-700';
+    } else if (
+      file.type.includes('word') ||
+      file.name.toLowerCase().endsWith('.doc') ||
+      file.name.toLowerCase().endsWith('.docx')
+    ) {
+      return 'text-green-500 bg-green-100 dark:bg-green-900 border-green-200 dark:border-green-700';
+    } else if (
+      file.type.includes('excel') ||
+      file.name.toLowerCase().endsWith('.xls') ||
+      file.name.toLowerCase().endsWith('.xlsx')
+    ) {
+      return 'text-orange-500 bg-orange-100 dark:bg-orange-900 border-orange-200 dark:border-orange-700';
+    } else {
+      return 'text-blue-500 bg-blue-100 dark:bg-blue-900 border-blue-200 dark:border-blue-700';
+    }
+  };
+
   // Auto-resize textarea when not animating
   useEffect(() => {
     if (!shouldAnimate && textareaRef.current) {
@@ -213,8 +400,8 @@ const ChatInputMessage = ({
       return;
     }
 
-    // If model is selected, submit directly using the regular onSubmit
-    onSubmit(text.trim());
+    // If model is selected, submit directly using the regular onSubmit with attachments
+    onSubmit(text.trim(), undefined, attachments);
   };
 
   const handleModelConfirmation = () => {
@@ -234,12 +421,12 @@ const ChatInputMessage = ({
         onModelConfirmedOrchestration();
       }
 
-      // Use direct submit to bypass the model selection check
+      // Use direct submit to bypass the model selection check with attachments
       if (onDirectSubmit) {
         onDirectSubmit(pendingSubmission.prompt, pendingSubmission.modelId);
       } else {
-        // Fallback to regular submit
-        onSubmit(pendingSubmission.prompt, pendingSubmission.modelId);
+        // Fallback to regular submit with attachments
+        onSubmit(pendingSubmission.prompt, pendingSubmission.modelId, attachments);
       }
 
       setPendingSubmission(null);
@@ -306,6 +493,10 @@ const ChatInputMessage = ({
             <div className="relative">
               <button
                 type="button"
+                onClick={openFileDialog}
+                onMouseEnter={() => setShowFileSupport(true)}
+                onMouseLeave={() => setShowFileSupport(false)}
+                disabled={isSubmitting}
                 className="w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors duration-200 disabled:opacity-50"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -317,7 +508,128 @@ const ChatInputMessage = ({
                   ></path>
                 </svg>
               </button>
+
+              {/* File support tooltip */}
+              {showFileSupport && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{
+                    duration: 0.2,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                    type: 'spring',
+                    stiffness: 300,
+                    damping: 25,
+                  }}
+                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 z-20 transform-gpu"
+                >
+                  <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs rounded-lg p-3 shadow-xl border border-gray-200 dark:border-gray-700 w-[32rem] backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
+                    <div className="font-medium text-sm mb-2">Supported Files</div>
+
+                    <div className="flex items-center justify-between mb-2 gap-2">
+                      <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+                        <svg
+                          className="w-3 h-3 text-blue-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        <span>.txt, .md</span>
+                      </div>
+                      <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+                        <svg
+                          className="w-3 h-3 text-red-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span>.pdf</span>
+                      </div>
+                      <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+                        <svg
+                          className="w-3 h-3 text-green-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        <span>.doc, .docx</span>
+                      </div>
+                      <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+                        <svg
+                          className="w-3 h-3 text-orange-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span>.xls, .xlsx</span>
+                      </div>
+                      <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+                        <svg
+                          className="w-3 h-3 text-purple-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span>.jpg, .png</span>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Max 10MB per file
+                    </div>
+
+                    {/* Arrow pointing down */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-6 border-r-6 border-t-6 border-transparent border-t-white dark:border-t-gray-900"></div>
+                  </div>
+                </motion.div>
+              )}
             </div>
+
+            {/* File attachment icons */}
+            <StackedFileAttachments
+              attachments={attachments}
+              onRemove={removeAttachment}
+              onView={viewFile}
+              getFileIcon={getFileIcon}
+              getFileColor={getFileColor}
+              disabled={isSubmitting}
+            />
 
             {/* Animated Model Badges - show when models are selected */}
             <AnimatedModelBadges
@@ -462,6 +774,16 @@ const ChatInputMessage = ({
             </button>
           </div>
         </div>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
+          accept=".txt,.md,.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+        />
 
         {/* Character count and help text */}
         <div className="flex justify-between items-center mt-2 px-1">

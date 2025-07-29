@@ -34,3 +34,103 @@ jest.mock('next/router', () => ({
     };
   },
 }));
+
+// Mock Response for tests that need it
+global.Response = class Response {
+  constructor(body, init = {}) {
+    this.body = body;
+    this.init = init;
+    this.status = init.status || 200;
+    this.statusText = init.statusText || '';
+    this.headers = new Map(Object.entries(init.headers || {}));
+  }
+
+  json() {
+    return Promise.resolve(this.body);
+  }
+
+  text() {
+    return Promise.resolve(typeof this.body === 'string' ? this.body : JSON.stringify(this.body));
+  }
+
+  ok() {
+    return this.status >= 200 && this.status < 300;
+  }
+};
+
+// Mock ReadableStream for streaming tests
+global.ReadableStream = class ReadableStream {
+  constructor(underlyingSource) {
+    this.underlyingSource = underlyingSource;
+  }
+
+  getReader() {
+    return {
+      read: () => Promise.resolve({ done: true, value: undefined }),
+      cancel: () => Promise.resolve(),
+      releaseLock: () => {},
+    };
+  }
+};
+
+// Mock TextEncoder and TextDecoder
+global.TextEncoder = class TextEncoder {
+  encode(input) {
+    return new Uint8Array(Buffer.from(input, 'utf8'));
+  }
+};
+
+global.TextDecoder = class TextDecoder {
+  decode(input) {
+    return Buffer.from(input).toString('utf8');
+  }
+};
+
+// Mock fetch
+global.fetch = jest.fn();
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(), // deprecated
+    removeListener: jest.fn(), // deprecated
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
+
+// Mock ResizeObserver
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}));
+
+// Mock IntersectionObserver
+global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}));
+
+// Mock getComputedStyle
+Object.defineProperty(window, 'getComputedStyle', {
+  value: () => ({
+    getPropertyValue: () => '',
+  }),
+});
+
+// Mock console methods to reduce noise in tests
+global.console = {
+  ...console,
+  log: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+};

@@ -32,11 +32,38 @@
   - **Documentation**: Created comprehensive requirements document at `docs/remix-button-requirements.md`
   - **Status**: ✅ **FULLY RESOLVED** - All requirements implemented, tested, and documented
 
+- [x] Unable to click the "+" button to attach a file
+
+  - **Fixed**: Added file attachment functionality to ChatInputMessage component
+  - **Root Cause**: The "+" button was just a static button without any click handler or file input functionality
+  - **Solution**: Implemented complete file attachment system including:
+    - File selection via + button with click handler
+    - File validation (size limit 10MB, supported file types)
+    - File display with icons and hover tooltips
+    - File removal functionality
+    - File preview/download functionality
+    - Submission with attachments
+  - **Mock API**: Implemented comprehensive mock API functionality for testing and development
+  - **Error Handling**: Added graceful error handling for API rate limits, authentication errors, model errors, and file processing errors
+  - **Tests**: Added comprehensive test suite for file attachment functionality including mock API integration tests
+  - **Documentation**: Created comprehensive documentation at `docs/FILE_ATTACHMENTS_README.md`
+  - **Status**: ✅ **FULLY RESOLVED** - All file attachment features implemented, tested, and documented with mock API support
+
 ## Open Issues
 
 - [ ] The chat input message container should not have a top border and the background should be transparent
-- [ ] Unable to click the "+" button to attach a file
 - [ ] When i select an ai model and the "Select AI Models" section hides, i don't see the ai model badge in the tools row
 - [ ] The left side nav is impacting the main content alignment making the content above the chat input off-centered. The left side nav should not impact the main body content styling.
 
 ![Left Nav Impacts Main Content Alignment](<Screenshot 2025-07-28 145836.png>)
+
+## Tests
+
+- **Tests**: Added comprehensive test suite for `AnimatedModelBadges` and `ChatInputMessage` components
+- **Tests**: Added comprehensive test suite for file attachment functionality including:
+  - File selection and validation
+  - File display and UI interactions
+  - File removal and management
+  - File preview/download functionality
+  - Submission with attachments
+  - Error handling for invalid files

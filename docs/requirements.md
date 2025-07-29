@@ -198,6 +198,16 @@ Response should include the following:
 6. AI API request sent with prompt to selected model
 7. AI response appended and properly formatted based on content type (e.g. tweet, post, etc.)
 
+### Use Case 7: User wants to provide files for context
+
+1. User can hover over the "+" button to see supported file types
+2. To upload a file, the user clicks the "+" button
+3. User selects one or more files for upload (Max 10MB)
+4. Files get attached below the chat message and to the right of "+" button in stacked format
+5. If user wants to delete a file, they will hover over file icon (animate to top later) and click the "x" button
+6. If user wants to view file metadata, they will hover over the stacked file icon
+7. If user wants to download the file, they can click on the icon
+
 ## Project Structure
 
 // TODO: AI TO PROVIDE
@@ -253,13 +263,25 @@ AI Should:
 
 ![Default Chat Message](<Screenshot 2025-07-28 145237.png>)
 
+#### Models
+
 ![No Models Selected Chat Message](<Screenshot 2025-07-28 145940.png>)
 
 ![One Model Selected Chat Message](<Screenshot 2025-07-28 153503.png>)
 
 ![3 Models Selected Chat Message](<Screenshot 2025-07-28 153807.png>)
 
-![2+ Qty Models, AI Response, Remix Button](<Screenshot 2025-07-28 170112.png>)
+#### Remix
+
+![2+ Qty Models, AI Response, Remix Button Chat Message](<Screenshot 2025-07-28 170112.png>)
+
+#### File Attachments
+
+![Stacked File Attachments Chat Message](<Screenshot 2025-07-28 180121.png>)
+
+![Hover Plus button, Popover Chat Message](<Screenshot 2025-07-28 180527.png>)
+
+![Hover Added File button, Popover Chat Message](<Screenshot 2025-07-28 180350.png>)
 
 ### Submitting Prompt
 

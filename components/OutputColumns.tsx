@@ -1232,7 +1232,9 @@ export default function OutputColumns({
         {/* Gradient fade overlay for softer edge */}
         <div className="absolute inset-x-0 -top-8 h-8 bg-gradient-to-b from-transparent to-gray-50/80 dark:to-kitchen-dark-bg/80 pointer-events-none transition-opacity duration-300"></div>
         <ChatInputMessage
-          onSubmit={(prompt) => handleSubmitWithOrchestration(prompt)}
+          onSubmit={(prompt, modelId, attachments) =>
+            handleSubmitWithOrchestration(prompt, attachments)
+          }
           currentMessage={currentMessage}
           isSubmitting={false}
           onModelSelect={onModelSelect}
