@@ -8,7 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import TextHighlighter, { useTextHighlighter, Highlight } from './TextHighlighter';
 import { TypingIndicator } from './TypingIndicator';
 import ChatInputMessage from './ChatInputMessage';
-import ModelGridSelector, { ModelSelection } from './ModelGridSelector';
+import { ModelSelection } from './ModelGridSelector';
 import './TextHighlighter.css';
 
 // Copy to Clipboard Component
@@ -298,6 +298,10 @@ interface OutputColumnsProps {
   resetModelSelector?: boolean;
   // Close callback for AI selection
   onCloseAISelection?: () => void;
+  // Model selection badge props
+  onModelSelectionClick?: () => void;
+  // Default model usage flag
+  isUsingDefaultModel?: boolean;
 }
 
 // Note: Removed ColumnModelSelector component since we now use the 3x3 grid system
@@ -336,6 +340,8 @@ export default function OutputColumns({
   onToggleAISelection,
   resetModelSelector = false,
   onCloseAISelection,
+  onModelSelectionClick,
+  isUsingDefaultModel = false,
 }: OutputColumnsProps) {
   // Orchestration state
   const [isModelSelectorCollapsed, setIsModelSelectorCollapsed] = useState(false);
@@ -680,11 +686,12 @@ export default function OutputColumns({
         className="flex-1 overflow-y-auto content-scroll-area smooth-scroll pb-32"
       >
         <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto">
-          {/* Show 3x3 grid when no AI content exists and AI selection should be shown */}
-          {!hasAIContent && showAISelection && (
+          {/* Show AI Selection when enabled */}
+          {showAISelection && (
             <AnimatePresence mode="wait">
               {!isModelSelectorCollapsed && (
                 <motion.div
+                  ref={modelSelectorRef}
                   key="model-selector"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -692,14 +699,7 @@ export default function OutputColumns({
                   transition={{ duration: 0.5, ease: 'easeOut' }}
                   className="w-full"
                 >
-                  <ModelGridSelector
-                    onModelSelectionsChange={onModelSelectionsChange || (() => {})}
-                    disabled={Object.values(isGenerating).some((generating) => generating)}
-                    initialSelections={modelSelections}
-                    isCollapsed={isModelSelectorCollapsed}
-                    onAnimationComplete={handleModelSelectorAnimationComplete}
-                    onClose={onCloseAISelection}
-                  />
+                  {/* ModelGridSelector removed - now using modal approach */}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1212,14 +1212,7 @@ export default function OutputColumns({
                   transition={{ duration: 0.5, ease: 'easeOut' }}
                   className="w-full"
                 >
-                  <ModelGridSelector
-                    onModelSelectionsChange={onModelSelectionsChange || (() => {})}
-                    disabled={Object.values(isGenerating).some((generating) => generating)}
-                    initialSelections={modelSelections}
-                    isCollapsed={isModelSelectorCollapsed}
-                    onAnimationComplete={handleModelSelectorAnimationComplete}
-                    onClose={onCloseAISelection}
-                  />
+                  {/* ModelGridSelector removed - now using modal approach */}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1251,6 +1244,9 @@ export default function OutputColumns({
           onRemix={onRemix}
           remixDisabled={remixDisabled}
           isRemixGenerating={isRemixGenerating}
+          onModelSelectionClick={onModelSelectionClick}
+          modelSelectionDisabled={false}
+          isUsingDefaultModel={isUsingDefaultModel}
         />
       </div>
     </div>

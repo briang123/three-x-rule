@@ -8,6 +8,8 @@ import RightSelectionsPanel from '@/components/RightSelectionsPanel';
 import ChatInput from '@/components/ChatInput';
 import SocialPostsDrawer, { SocialPostConfig } from '@/components/SocialPostsDrawer';
 import { ModelSelection } from '@/components/ModelGridSelector';
+import ModelSelectionModal from '@/components/ModelSelectionModal';
+import HeaderText from '@/components/HeaderText';
 import AuroraBackground from '@/components/AuroraBackground';
 
 export interface SelectedSentence {
@@ -58,6 +60,12 @@ export default function Home() {
   const [showAISelection, setShowAISelection] = useState<boolean>(true);
   const [resetModelSelector, setResetModelSelector] = useState<boolean>(false);
 
+  // New modal state
+  const [showModelSelectionModal, setShowModelSelectionModal] = useState<boolean>(false);
+
+  // Add state to track default model usage
+  const [isUsingDefaultModel, setIsUsingDefaultModel] = useState<boolean>(false);
+
   const handleSentenceSelect = useCallback((sentence: SelectedSentence) => {
     setSelectedSentences((prev) => {
       const exists = prev.find((s) => s.id === sentence.id);
@@ -69,31 +77,37 @@ export default function Home() {
     });
   }, []);
 
-  const handleModelSelectionsChange = useCallback((selections: ModelSelection[]) => {
-    setModelSelections(selections);
-    // Generate columns based on model selections
-    const newColumnModels: { [key: string]: string } = {};
-    const newColumnResponses: { [key: string]: string[] } = {};
-    const newOriginalResponses: { [key: string]: string } = {};
-    const newIsGenerating: { [key: string]: boolean } = {};
+  const handleModelSelectionsChange = useCallback(
+    (selections: ModelSelection[]) => {
+      setModelSelections(selections);
+      // Reset default model flag when user manually selects models
+      setIsUsingDefaultModel(false);
+      // Generate columns based on model selections
+      const newColumnModels: { [key: string]: string } = {};
+      const newColumnResponses: { [key: string]: string[] } = {};
+      const newOriginalResponses: { [key: string]: string } = {};
+      const newIsGenerating: { [key: string]: boolean } = {};
 
-    let columnIndex = 1;
-    selections.forEach((selection) => {
-      for (let i = 0; i < selection.count; i++) {
-        const columnKey = columnIndex.toString();
-        newColumnModels[columnKey] = selection.modelId;
-        newColumnResponses[columnKey] = [];
-        newOriginalResponses[columnKey] = '';
-        newIsGenerating[columnKey] = false;
-        columnIndex++;
-      }
-    });
+      let columnIndex = 1;
+      selections.forEach((selection) => {
+        for (let i = 0; i < selection.count; i++) {
+          const columnKey = columnIndex.toString();
+          newColumnModels[columnKey] = selection.modelId;
+          // Preserve existing responses if they exist, otherwise initialize empty
+          newColumnResponses[columnKey] = columnResponses[columnKey] || [];
+          newOriginalResponses[columnKey] = originalResponses[columnKey] || '';
+          newIsGenerating[columnKey] = isGenerating[columnKey] || false;
+          columnIndex++;
+        }
+      });
 
-    setColumnModels(newColumnModels);
-    setColumnResponses(newColumnResponses);
-    setOriginalResponses(newOriginalResponses);
-    setIsGenerating(newIsGenerating);
-  }, []);
+      setColumnModels(newColumnModels);
+      setColumnResponses(newColumnResponses);
+      setOriginalResponses(newOriginalResponses);
+      setIsGenerating(newIsGenerating);
+    },
+    [columnResponses, originalResponses, isGenerating],
+  );
 
   // Add effect to handle orchestration after model selections are updated
   const [pendingOrchestration, setPendingOrchestration] = useState<{
@@ -111,6 +125,8 @@ export default function Home() {
         },
       ];
       handleModelSelectionsChange(newSelections);
+      // Mark that we're using the default model
+      setIsUsingDefaultModel(true);
     },
     [handleModelSelectionsChange],
   );
@@ -118,6 +134,15 @@ export default function Home() {
   const handleModelSelect = useCallback((modelId: string) => {
     // This function can be used for any additional model selection logic
     // For now, it's just a placeholder that can be extended later
+  }, []);
+
+  // Modal handlers
+  const handleOpenModelSelectionModal = useCallback(() => {
+    setShowModelSelectionModal(true);
+  }, []);
+
+  const handleCloseModelSelectionModal = useCallback(() => {
+    setShowModelSelectionModal(false);
   }, []);
 
   const handleDirectSubmit = useCallback(
@@ -155,6 +180,11 @@ export default function Home() {
     }
   }, [modelSelections, pendingOrchestration, handleDirectSubmit]);
 
+  // Show modal on initial page load
+  useEffect(() => {
+    setShowModelSelectionModal(true);
+  }, []);
+
   const handleSubmit = async (prompt: string, attachments?: File[]) => {
     console.log('Main page: handleSubmit called with prompt:', prompt);
     console.log('Main page: Current column models:', columnModels);
@@ -162,7 +192,8 @@ export default function Home() {
 
     // Check if any models are selected
     if (modelSelections.length === 0) {
-      alert('Please select at least one model from the grid before submitting.');
+      // Show the model selection modal instead of alert
+      setShowModelSelectionModal(true);
       return;
     }
 
@@ -252,18 +283,19 @@ export default function Home() {
     setShowSocialPosts({});
     setSocialPostsConfigs({});
 
-    // Reset model selections and show AI selection
+    // Reset model selections and show modal
     setModelSelections([]);
     setColumnModels({});
-    setShowAISelection(true);
+    setShowModelSelectionModal(true);
+    // Reset default model flag
+    setIsUsingDefaultModel(false);
 
     // Trigger model selector reset
     setResetModelSelector(true);
     // Reset the flag after a short delay
     setTimeout(() => setResetModelSelector(false), 100);
 
-    console.log('Main page: currentMessage cleared and AI selection reset');
-    console.log('Main page: showAISelection set to true, resetModelSelector set to true');
+    console.log('Main page: currentMessage cleared and model selection modal shown');
   };
 
   const handleColumnPromptSubmit = async (
@@ -879,6 +911,16 @@ export default function Home() {
           <div className="flex flex-1 overflow-hidden">
             <div className="flex flex-1 flex-col overflow-hidden">
               <div className="flex-1 p-6 pb-0 h-full">
+                {/* Show header text when no AI responses are present */}
+                <HeaderText
+                  isVisible={
+                    Object.values(columnResponses).every((responses) => responses.length === 0) &&
+                    Object.values(originalResponses).every((response) => !response) &&
+                    !Object.values(isGenerating).some((generating) => generating) &&
+                    !isUsingDefaultModel
+                  }
+                />
+
                 <OutputColumns
                   key={chatKey} // Add key to force re-render
                   onSentenceSelect={handleSentenceSelect}
@@ -941,6 +983,8 @@ export default function Home() {
                   onToggleAISelection={handleToggleAISelection}
                   resetModelSelector={resetModelSelector}
                   onCloseAISelection={handleToggleAISelection}
+                  onModelSelectionClick={handleOpenModelSelectionModal}
+                  isUsingDefaultModel={isUsingDefaultModel}
                 />
               </div>
             </div>
@@ -961,6 +1005,15 @@ export default function Home() {
           onClose={() => setShowSocialPostsDrawer(false)}
           onGenerate={handleSocialPostsGenerate}
           availableColumns={originalResponses}
+        />
+
+        {/* Model Selection Modal */}
+        <ModelSelectionModal
+          isOpen={showModelSelectionModal}
+          onClose={handleCloseModelSelectionModal}
+          onModelSelectionsChange={handleModelSelectionsChange}
+          initialSelections={modelSelections}
+          disabled={Object.values(isGenerating).some((generating) => generating)}
         />
       </div>
     </AuroraBackground>

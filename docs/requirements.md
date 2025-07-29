@@ -298,3 +298,67 @@ AI Should:
 #### Remix
 
 #### Social Posts
+
+## New UX
+
+### AI Model Selection
+
+In efforts to simplify:
+
+1. Create a modal window (new component) that has a smooth animation when opening and closing. Modal should have a border and medium soft shadows
+2. The modal window should have all the same elements as what are being displayed with the exception of the Header text
+3. Header Text should be centered vertically and horizontally on the page, but only if there isn't any ai responses rendered on the page.
+4. When a user initially loads the page, show the modal window should appear
+5. The user should be able to dismiss the modal clicking the "x" or tapping outside the modal window
+6. To access the ai models if in a closed state, the user should be able to click on a badge named ("Models: {x}, Responses: {y}"). Clicking this will open the modal.
+7. When closing the modal, the badge shall be updated with latest selections and qty
+
+#### Use Cases
+
+1. Use Case 1: Picks models first, then prompts
+
+- Initial page load
+- Show modal
+- User selects model(s)
+- User closes modal
+- Model badge that has "Models: {x}, Responses: {y}" appears to right of File attachments
+- Clicking model badge will open modal with all models selected and qty correct
+- User enters prompts
+- User submits prompt
+- Request sent to AI endpoint
+- Receives AI response
+- Render AI response to screen
+
+2. Use Case 2: Enters prompt, then selects models
+
+- Initial page load
+- Show modal
+- User dismisses modal or clicks "X" button
+- Model badge that has "Select Model" appears to right of file attachments
+- User enters prompt
+- User clicks "Select Model"
+- Show modal
+- User selects model(s)
+- User closes modal
+- Model badge that has "Models: {x}, Responses: {y}" appears to right of File attachments
+- User submits prompt
+- Request sent to AI endpoint
+- Receives AI response
+- Render AI response to screen
+
+3. Use Case 3: Enters prompt, then accepts default model
+
+- Initial page load
+- Show modal
+- User dismisses modal or clicks "X" button
+- Model badge that has "Select Model" appears to right of file attachments
+- User enters prompt
+- User submits prompt
+- User gets confirmation window to agree to default model
+- User agrees to the default model
+- Model badge that has "Models: 1, Responses: 1" appears to right of File attachments
+- Request sent to AI endpoint
+- Receives AI response
+- Render AI response to screen
+
+Notes: Create tests when for new component

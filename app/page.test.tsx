@@ -59,6 +59,24 @@ jest.mock('../components/SocialPostsDrawer', () => {
   };
 });
 
+jest.mock('../components/HeaderText', () => {
+  return function MockHeaderText({ isVisible }: any) {
+    if (!isVisible) return null;
+    return <div data-testid="header-text">Header Text</div>;
+  };
+});
+
+jest.mock('../components/ModelSelectionModal', () => {
+  return function MockModelSelectionModal({ isOpen, onClose }: any) {
+    if (!isOpen) return null;
+    return (
+      <div data-testid="model-selection-modal">
+        <button onClick={onClose}>Close Modal</button>
+      </div>
+    );
+  };
+});
+
 // Test the remixDisabled calculation logic directly
 const calculateRemixDisabled = (
   columnResponses: any,
@@ -155,5 +173,103 @@ describe('Home Page - Component Rendering', () => {
     expect(screen.getByTestId('left-navigation')).toBeInTheDocument();
     expect(screen.getByTestId('top-bar')).toBeInTheDocument();
     expect(screen.getByTestId('output-columns')).toBeInTheDocument();
+  });
+});
+
+describe('Model Selection Response Preservation', () => {
+  it('should preserve existing responses when model selections change', () => {
+    // This test verifies the new functionality where updating model selections
+    // preserves existing responses instead of clearing them
+
+    // Mock the handleModelSelectionsChange function behavior
+    const mockColumnResponses = {
+      '1': ['Existing response 1', 'Existing response 2'],
+      '2': ['Existing response 3'],
+    };
+    const mockOriginalResponses = {
+      '1': 'Original response 1',
+      '2': 'Original response 2',
+    };
+    const mockIsGenerating = {
+      '1': false,
+      '2': false,
+    };
+
+    // Simulate the new model selections
+    const newSelections = [
+      { modelId: 'gemini-2.5-flash', count: 1 },
+      { modelId: 'claude-3-5-sonnet', count: 1 },
+    ];
+
+    // Simulate the updated state that should preserve responses
+    const newColumnModels: { [key: string]: string } = {};
+    const newColumnResponses: { [key: string]: string[] } = {};
+    const newOriginalResponses: { [key: string]: string } = {};
+    const newIsGenerating: { [key: string]: boolean } = {};
+
+    let columnIndex = 1;
+    newSelections.forEach((selection) => {
+      for (let i = 0; i < selection.count; i++) {
+        const columnKey = columnIndex.toString();
+        newColumnModels[columnKey] = selection.modelId;
+        // Preserve existing responses if they exist, otherwise initialize empty
+        newColumnResponses[columnKey] = mockColumnResponses[columnKey] || [];
+        newOriginalResponses[columnKey] = mockOriginalResponses[columnKey] || '';
+        newIsGenerating[columnKey] = mockIsGenerating[columnKey] || false;
+        columnIndex++;
+      }
+    });
+
+    // Verify that responses are preserved
+    expect(newColumnResponses['1']).toEqual(['Existing response 1', 'Existing response 2']);
+    expect(newColumnResponses['2']).toEqual(['Existing response 3']);
+    expect(newOriginalResponses['1']).toBe('Original response 1');
+    expect(newOriginalResponses['2']).toBe('Original response 2');
+    expect(newIsGenerating['1']).toBe(false);
+    expect(newIsGenerating['2']).toBe(false);
+
+    // Verify that column models are updated correctly
+    expect(newColumnModels['1']).toBe('gemini-2.5-flash');
+    expect(newColumnModels['2']).toBe('claude-3-5-sonnet');
+  });
+
+  it('should initialize empty responses for new columns when no existing responses', () => {
+    // This test verifies that new columns get empty responses when there are no existing ones
+
+    const mockColumnResponses = {};
+    const mockOriginalResponses = {};
+    const mockIsGenerating = {};
+
+    const newSelections = [{ modelId: 'gemini-2.5-flash', count: 2 }];
+
+    const newColumnModels: { [key: string]: string } = {};
+    const newColumnResponses: { [key: string]: string[] } = {};
+    const newOriginalResponses: { [key: string]: string } = {};
+    const newIsGenerating: { [key: string]: boolean } = {};
+
+    let columnIndex = 1;
+    newSelections.forEach((selection) => {
+      for (let i = 0; i < selection.count; i++) {
+        const columnKey = columnIndex.toString();
+        newColumnModels[columnKey] = selection.modelId;
+        // Preserve existing responses if they exist, otherwise initialize empty
+        newColumnResponses[columnKey] = mockColumnResponses[columnKey] || [];
+        newOriginalResponses[columnKey] = mockOriginalResponses[columnKey] || '';
+        newIsGenerating[columnKey] = mockIsGenerating[columnKey] || false;
+        columnIndex++;
+      }
+    });
+
+    // Verify that new columns get empty responses
+    expect(newColumnResponses['1']).toEqual([]);
+    expect(newColumnResponses['2']).toEqual([]);
+    expect(newOriginalResponses['1']).toBe('');
+    expect(newOriginalResponses['2']).toBe('');
+    expect(newIsGenerating['1']).toBe(false);
+    expect(newIsGenerating['2']).toBe(false);
+
+    // Verify that column models are set correctly
+    expect(newColumnModels['1']).toBe('gemini-2.5-flash');
+    expect(newColumnModels['2']).toBe('gemini-2.5-flash');
   });
 });

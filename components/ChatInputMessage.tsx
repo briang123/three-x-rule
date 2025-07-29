@@ -3,9 +3,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ConfirmationModal from './ConfirmationModal';
-import AnimatedModelBadges from './AnimatedModelBadges';
 import StackedFileAttachments from './StackedFileAttachments';
+import ModelSelectionBadge from './ModelSelectionBadge';
 import { ModelInfo } from '@/lib/api-client';
+import { ModelSelection } from './ModelGridSelector';
 
 interface ChatInputMessageProps {
   onSubmit: (prompt: string, modelId?: string, attachments?: File[]) => void;
@@ -27,6 +28,11 @@ interface ChatInputMessageProps {
   onRemix?: (modelId: string) => void;
   remixDisabled?: boolean;
   isRemixGenerating?: boolean;
+  // New props for model selection badge
+  onModelSelectionClick?: () => void;
+  modelSelectionDisabled?: boolean;
+  // Default model usage flag
+  isUsingDefaultModel?: boolean;
 }
 
 const ChatInputMessage = ({
@@ -48,6 +54,9 @@ const ChatInputMessage = ({
   onRemix,
   remixDisabled,
   isRemixGenerating,
+  onModelSelectionClick,
+  modelSelectionDisabled,
+  isUsingDefaultModel = false,
 }: ChatInputMessageProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [text, setText] = useState(currentMessage);
@@ -406,7 +415,8 @@ const ChatInputMessage = ({
 
   const handleModelConfirmation = () => {
     if (pendingSubmission) {
-      // First, update the model selections in the parent component
+      // For default model, we need to update model selections so the API call works
+      // but we'll use the isUsingDefaultModel flag to hide the badge
       if (onModelSelectionsUpdate) {
         onModelSelectionsUpdate(pendingSubmission.modelId);
       }
@@ -631,14 +641,17 @@ const ChatInputMessage = ({
               disabled={isSubmitting}
             />
 
-            {/* Animated Model Badges - show when models are selected */}
-            <AnimatedModelBadges
-              modelSelections={modelSelections}
-              models={availableModels}
-              onRestore={onToggleAISelection || (() => {})}
-              isVisible={showModelBadges && !showAISelection}
-              isModelSelectorOpen={showAISelection}
-            />
+            {/* Model Selection Badge */}
+            {onModelSelectionClick && !isUsingDefaultModel && (
+              <ModelSelectionBadge
+                modelSelections={modelSelections}
+                onClick={onModelSelectionClick}
+                disabled={modelSelectionDisabled}
+                isUsingDefaultModel={isUsingDefaultModel}
+              />
+            )}
+
+            {/* Animated Model Badges removed - now using simplified ModelSelectionBadge approach */}
 
             {/* Select Models Button - show ONLY when AI selection is closed AND no models selected AND not showing badges */}
             {!showAISelection &&

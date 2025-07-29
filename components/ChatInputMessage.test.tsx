@@ -165,6 +165,7 @@ describe('ChatInputMessage', () => {
     const confirmButton = screen.getByTestId('confirm-button');
     fireEvent.click(confirmButton);
 
+    // onModelSelectionsUpdate should be called when using default model
     expect(mockOnModelSelectionsUpdate).toHaveBeenCalledWith('gemini-2.5-flash-lite');
     expect(mockOnModelSelect).toHaveBeenCalledWith('gemini-2.5-flash-lite');
     expect(mockOnDirectSubmit).toHaveBeenCalledWith('Test message', 'gemini-2.5-flash-lite');
@@ -197,8 +198,8 @@ describe('ChatInputMessage', () => {
       />,
     );
 
-    expect(screen.getByTestId('animated-model-badges')).toBeInTheDocument();
-    expect(screen.getByTestId('model-badge-gemini-2.5-flash-lite')).toBeInTheDocument();
+    // AnimatedModelBadges are no longer shown - using simplified ModelSelectionBadge instead
+    expect(screen.queryByTestId('animated-model-badges')).not.toBeInTheDocument();
   });
 });
 
@@ -231,8 +232,8 @@ describe('ChatInputMessage - Model Badges Integration', () => {
       />,
     );
 
-    expect(screen.getByTestId('animated-model-badges')).toBeInTheDocument();
-    expect(screen.getByTestId('model-badge-gemini-2.5-flash-lite')).toBeInTheDocument();
+    // AnimatedModelBadges are no longer shown - using simplified ModelSelectionBadge instead
+    expect(screen.queryByTestId('animated-model-badges')).not.toBeInTheDocument();
   });
 
   it('should not show model badges when showAISelection is true', () => {
@@ -367,8 +368,7 @@ describe('ChatInputMessage - Model Badges Integration', () => {
       />,
     );
 
-    expect(screen.getByTestId('animated-model-badges')).toBeInTheDocument();
-    expect(screen.getByTestId('model-badge-gemini-2.5-flash-lite')).toBeInTheDocument();
-    expect(screen.getByTestId('model-badge-claude-3-5-sonnet')).toBeInTheDocument();
+    // AnimatedModelBadges are no longer shown - using simplified ModelSelectionBadge instead
+    expect(screen.queryByTestId('animated-model-badges')).not.toBeInTheDocument();
   });
 });
