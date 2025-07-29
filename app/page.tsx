@@ -902,10 +902,31 @@ export default function Home() {
                   onSubmit={handleSubmit}
                   currentMessage={currentMessage}
                   onRemix={handleRemix}
-                  remixDisabled={
-                    !Object.values(originalResponses).some((response) => response.trim() !== '') ||
-                    !currentMessage.trim()
-                  }
+                  remixDisabled={(() => {
+                    const hasResponses = Object.values(columnResponses).some(
+                      (responses) => responses.length > 0,
+                    );
+                    const hasCurrentMessage = currentMessage.trim();
+                    const totalModelQuantity = modelSelections.reduce(
+                      (total, selection) => total + selection.count,
+                      0,
+                    );
+                    const hasMultipleModels = totalModelQuantity >= 2;
+                    const isDisabled = !hasResponses || !hasCurrentMessage || !hasMultipleModels;
+
+                    console.log('Remix button debug:', {
+                      columnResponses: columnResponses,
+                      hasResponses,
+                      currentMessage: currentMessage.trim(),
+                      hasCurrentMessage,
+                      modelSelections: modelSelections,
+                      totalModelQuantity,
+                      hasMultipleModels,
+                      isDisabled,
+                    });
+
+                    return isDisabled;
+                  })()}
                   onModelSelectionsChange={handleModelSelectionsChange}
                   modelSelections={modelSelections}
                   columnModels={columnModels}

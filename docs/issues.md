@@ -22,9 +22,16 @@
   - **Documentation**: [Model Badges Fix](MODEL_BADGES_FIX.md)
   - **Tests**: Added comprehensive test suite for `AnimatedModelBadges` and `ChatInputMessage` components
 
+- [x] When I submit where total of all selected ai models qty > 1 and get responses back, the "Remix" button is disabled when it should be enabled
+
+  - **Fixed**: Updated the `remixDisabled` logic to properly check for responses in `columnResponses` instead of `originalResponses`
+  - **Root Cause**: The `remixDisabled` calculation was checking `originalResponses` which stores the final accumulated response, but should check `columnResponses` which contains the actual response arrays
+  - **Solution**: Changed the logic from `!Object.values(originalResponses).some((response) => response.trim() !== '')` to `!Object.values(columnResponses).some((responses) => responses.length > 0)`
+  - **Additional Fixes**: Updated related remix functionality to use `columnResponses` consistently and fixed `availableColumns` prop type mismatch
+  - **Tests**: Added test file to verify remix button logic
+
 ## Open Issues
 
-- [ ] When I submit where total of all selected ai models qty > 1 and get responses back, the "Remix" button is disabled when it should be enabled
 - [ ] The chat input message container should not have a top border and the background should be transparent
 - [ ] Unable to click the "+" button to attach a file
 - [ ] When i select an ai model and the "Select AI Models" section hides, i don't see the ai model badge in the tools row

@@ -45,6 +45,8 @@ We are building a web app in Next.js with TypeScript using Tailwind CSS and Fram
 
 ## Chat Message Input
 
+We are using `ChatInputMessage.tsx`, not `ChatInput.tsx`
+
 1. By default, the height of textarea is 1 row when user doesn't set focus in textarea.
 2. When user starts typing and adding new rows, the textarea should resize with it until it reaches 8 rows; after which the textarea will get a scrollbar when adding a 9th row. When user removes lines, it will size back down accordingly.
 3. When clearing the text in textarea and still have cursor focused in textarea, the size should still be 1 row.
@@ -257,9 +259,13 @@ AI Should:
 
 ![3 Models Selected Chat Message](<Screenshot 2025-07-28 153807.png>)
 
+![2+ Qty Models, AI Response, Remix Button](<Screenshot 2025-07-28 170112.png>)
+
 ### Submitting Prompt
 
 ![No Previously Selected Model when Submitting](<Screenshot 2025-07-28 150239.png>)
+
+![Remix button with Models](<Screenshot 2025-07-28 165904.png>)
 
 ### AI Content Type Responses
 

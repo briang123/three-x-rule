@@ -15,12 +15,19 @@ export default function RemixDropdown({
   disabled = false,
   isGenerating = false,
 }: RemixDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [openDirection, setOpenDirection] = useState<'up' | 'down'>('down');
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [openDirection, setOpenDirection] = useState<'up' | 'down'>('up');
+
+  // Debug logging
+  console.log('RemixDropdown debug:', {
+    disabled,
+    isGenerating,
+    finalDisabled: disabled || isGenerating,
+  });
 
   useEffect(() => {
     const fetchModels = async () => {

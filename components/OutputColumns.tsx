@@ -1246,6 +1246,9 @@ export default function OutputColumns({
           toolsRowRef={toolsRowRef}
           showAISelection={showAISelection}
           onToggleAISelection={onToggleAISelection}
+          onRemix={onRemix}
+          remixDisabled={remixDisabled}
+          isRemixGenerating={isRemixGenerating}
         />
       </div>
     </div>
