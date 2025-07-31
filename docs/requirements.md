@@ -45,11 +45,19 @@ We are building a web app in Next.js with TypeScript using Tailwind CSS and Fram
 
 ## Chat Message Input
 
-We are using `ChatInputMessage.tsx`, not `ChatInput.tsx`
+We are using `ChatInputMessage.tsx`, not `ChatInput.tsx`.
 
 1. By default, the height of textarea is 1 row when user doesn't set focus in textarea.
 2. When user starts typing and adding new rows, the textarea should resize with it until it reaches 8 rows; after which the textarea will get a scrollbar when adding a 9th row. When user removes lines, it will size back down accordingly.
 3. When clearing the text in textarea and still have cursor focused in textarea, the size should still be 1 row.
+4. The distance between the "0/1000 characters" row and the bottom edge of the screen should remain the same.
+5. This distance should not change when the textarea grows taller with more content.
+6. The textarea should grow upward as the user types more lines
+7. The container should expand to accommodate the growing textarea
+8. But the bottom edge of the container should stay at a fixed distance from the viewport bottom
+9. The character count row ("0/1000 characters" and "Press Enter to submit...") must always be visible
+10. The tools row (buttons, attachments, etc.) must always be visible
+11. These elements should never be cut off or hidden below the fold
 
 When the textarea resizes, I want the other controls to respect the resizing and not have the textarea content bleed over and overlap existing controls. When we reach the 8th row, the textarea doesn't grow anymore but shows the scrollbar in textarea. All the other controls would be where they need to be. When removing lines, the textarea would shrink to 1 row, as described above.
 
@@ -63,7 +71,7 @@ I do not want the text that I'm typing to overlap the controls below the textare
 
 ## Tools Row
 
-- Below the chat input message textarea
+- Below the chat input message textarea. There should not be much space between the text area and the tools row. Just enough to be comfortable.
 - File attachment button (+ icon) to attach files for AI context
 - If ≥ 1 AI models selected, then show up to 3 AI agent badges with qty and include a button so user can change the selected AI models (reload icon) that, when pressed, will hide the AI responses and show the AI selection section with selected models pre-selected
 - If no AI models are selected and user closes AI selection section, then show a button next to "+" button to "Select Models" that, when pressed, will show the AI selection section
@@ -93,6 +101,10 @@ Supported file types
 'image/png',
 'image/gif',
 ```
+
+## Chat Input Container
+
+The container that includes the chat input message text area, the tools row, and the row that contains the 0/1000 characters text should all dynamically shift along with the welcome message and OutputColumns content so that they are aligned with each other when the left side navigation is open. When the side nav closes, it should shift back in alignment with the other content.
 
 ## AI Response Types
 

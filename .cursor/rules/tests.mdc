@@ -1,0 +1,158 @@
+# Application Testing Guidelines
+
+## Testing Workflow
+
+1. **Feature Development First**: Complete feature work and get approval before writing tests
+2. **Test After Approval**: Write comprehensive tests only after the feature is completed and approved
+3. **Regression Testing**: Run tests after completing features to ensure no regressions
+4. **Fix Until Passing**: If tests fail, fix the features until all tests pass
+
+## Testing Framework
+
+- **Jest**: Primary testing framework for the application
+- **Run Tests**: Use `npm run test` to execute the test suite
+- **Test Coverage**: Ensure adequate coverage for new features
+
+## File Naming Convention
+
+Test files must follow this naming pattern:
+
+- **Component/File**: `ComponentName.tsx` or `fileName.ts`
+- **Test File**: `ComponentName.test.tsx` or `fileName.test.ts`
+
+### Examples:
+
+```
+✅ Correct:
+- ChatContainer.tsx → ChatContainer.test.tsx
+- api-client.ts → api-client.test.ts
+- useTypewriter.ts → useTypewriter.test.ts
+
+❌ Incorrect:
+- ChatContainer.tsx → ChatContainer.spec.tsx
+- api-client.ts → test-api-client.ts
+- useTypewriter.ts → useTypewriterTests.ts
+```
+
+## Test Structure
+
+### Component Tests
+
+```typescript
+import { render, screen } from '@testing-library/react';
+import { ComponentName } from './ComponentName';
+
+describe('ComponentName', () => {
+  it('should render correctly', () => {
+    render(<ComponentName />);
+    expect(screen.getByText('Expected Text')).toBeInTheDocument();
+  });
+
+  it('should handle user interactions', () => {
+    render(<ComponentName />);
+    // Test user interactions
+  });
+});
+```
+
+### Hook Tests
+
+```typescript
+import { renderHook, act } from '@testing-library/react';
+import { useCustomHook } from './useCustomHook';
+
+describe('useCustomHook', () => {
+  it('should return expected initial state', () => {
+    const { result } = renderHook(() => useCustomHook());
+    expect(result.current.value).toBe(expectedValue);
+  });
+});
+```
+
+### Utility Function Tests
+
+```typescript
+import { utilityFunction } from './utilityFunction';
+
+describe('utilityFunction', () => {
+  it('should process input correctly', () => {
+    const input = 'test input';
+    const expected = 'expected output';
+    expect(utilityFunction(input)).toBe(expected);
+  });
+});
+```
+
+## Testing Best Practices
+
+1. **Test Behavior, Not Implementation**: Focus on what the component/function does, not how it does it
+2. **Use Descriptive Test Names**: Test names should clearly describe what is being tested
+3. **Arrange-Act-Assert**: Structure tests with clear setup, action, and verification phases
+4. **Mock External Dependencies**: Mock API calls, timers, and external services
+5. **Test Edge Cases**: Include tests for error conditions and boundary cases
+6. **Keep Tests Simple**: Each test should verify one specific behavior
+
+## Quality Assurance
+
+- **All Tests Must Pass**: Before considering a feature complete, all tests must pass
+- **No Regressions**: Running `npm run test` should pass after any feature changes
+- **Test Coverage**: Aim for meaningful test coverage, especially for critical paths
+- **Continuous Integration**: Tests should be part of the CI/CD pipeline
+
+## Common Testing Patterns
+
+### Async Testing
+
+```typescript
+it('should handle async operations', async () => {
+  render(<AsyncComponent />);
+  await waitFor(() => {
+    expect(screen.getByText('Loaded')).toBeInTheDocument();
+  });
+});
+```
+
+### User Event Testing
+
+```typescript
+import userEvent from '@testing-library/user-event';
+
+it('should handle user input', async () => {
+  const user = userEvent.setup();
+  render(<InputComponent />);
+
+  const input = screen.getByRole('textbox');
+  await user.type(input, 'test value');
+
+  expect(input).toHaveValue('test value');
+});
+```
+
+### Mocking
+
+```typescript
+// Mock modules
+jest.mock('./api-client');
+
+// Mock functions
+const mockFunction = jest.fn();
+
+// Mock timers
+jest.useFakeTimers();
+```
+
+## Testing Checklist
+
+Before marking a feature as complete:
+
+- [ ] Feature is implemented and approved
+- [ ] Tests are written following naming conventions
+- [ ] `npm run test` passes without errors
+- [ ] No regressions in existing functionality
+- [ ] Tests cover main functionality and edge cases
+- [ ] Test coverage is adequate for the feature
+
+globs:
+alwaysApply: false
+
+---

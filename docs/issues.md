@@ -51,7 +51,7 @@
 
 ## Open Issues
 
-- [ ] The chat input message container should not have a top border and the background should be transparent
+- [ ] The chat input message container should not have a top border and the background should be transparent. There should also be a feathering that the ai response content can scroll behind it without sharp edges. This was working before.
 - [ ] When i select an ai model and the "Select AI Models" section hides, i don't see the ai model badge in the tools row
 - [ ] The left side nav is impacting the main content alignment making the content above the chat input off-centered. The left side nav should not impact the main body content styling.
 
