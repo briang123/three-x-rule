@@ -24,10 +24,7 @@ interface ChatInputMessageProps {
   onModelConfirmedOrchestration?: () => void;
   showAISelection?: boolean;
   onToggleAISelection?: () => void;
-  // Remix props
-  onRemix?: (modelId: string) => void;
-  remixDisabled?: boolean;
-  isRemixGenerating?: boolean;
+
   // New props for model selection badge
   onModelSelectionClick?: () => void;
   modelSelectionDisabled?: boolean;
@@ -53,9 +50,6 @@ const ChatInputMessage = ({
   onModelConfirmedOrchestration,
   showAISelection = true,
   onToggleAISelection,
-  onRemix,
-  remixDisabled,
-  isRemixGenerating,
   onModelSelectionClick,
   modelSelectionDisabled,
   isUsingDefaultModel = false,
@@ -77,13 +71,6 @@ const ChatInputMessage = ({
   const [attachments, setAttachments] = useState<File[]>([]);
   const [showFileSupport, setShowFileSupport] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Remix dropdown state
-  const [isRemixDropdownOpen, setIsRemixDropdownOpen] = useState(false);
-  const [remixModels, setRemixModels] = useState<ModelInfo[]>([]);
-  const [remixLoading, setRemixLoading] = useState(true);
-  const [remixError, setRemixError] = useState<string | null>(null);
-  const remixButtonRef = useRef<HTMLButtonElement>(null);
 
   // Calculate the container height based on content and focus state
   const calculateContainerHeight = () => {
@@ -130,61 +117,6 @@ const ChatInputMessage = ({
   useEffect(() => {
     setText(currentMessage);
   }, [currentMessage]);
-
-  // Fetch models for remix dropdown
-  useEffect(() => {
-    const fetchRemixModels = async () => {
-      try {
-        setRemixLoading(true);
-        const response = await fetch('/api/chat');
-        const data = await response.json();
-
-        if (data.success) {
-          setRemixModels(data.data.models);
-        } else {
-          setRemixError(data.error || 'Failed to fetch models');
-        }
-      } catch (err) {
-        setRemixError('Failed to fetch models');
-        console.error('Error fetching remix models:', err);
-      } finally {
-        setRemixLoading(false);
-      }
-    };
-
-    fetchRemixModels();
-  }, []);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest('.remix-dropdown')) {
-        setIsRemixDropdownOpen(false);
-      }
-    };
-
-    if (isRemixDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isRemixDropdownOpen]);
-
-  const handleRemixClick = () => {
-    if (!remixDisabled && !isRemixGenerating) {
-      setIsRemixDropdownOpen(!isRemixDropdownOpen);
-    }
-  };
-
-  const handleRemixModelSelect = (modelId: string) => {
-    if (onRemix) {
-      onRemix(modelId);
-    }
-    setIsRemixDropdownOpen(false);
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
@@ -689,81 +621,6 @@ const ChatInputMessage = ({
 
           {/* Bottom Right Controls */}
           <div className="absolute bottom-3 right-3 flex items-center space-x-2">
-            <div className="relative remix-dropdown">
-              <button
-                ref={remixButtonRef}
-                disabled={remixDisabled || isRemixGenerating}
-                onClick={handleRemixClick}
-                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${
-                  remixDisabled || isRemixGenerating
-                    ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-500'
-                    : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-md hover:shadow-lg transform hover:scale-105'
-                } ${isRemixGenerating ? 'animate-pulse' : ''}`}
-                type="button"
-              >
-                <div className="flex items-center space-x-1">
-                  <svg
-                    className={`w-3 h-3 ${isRemixGenerating ? 'animate-spin' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    ></path>
-                  </svg>
-                  <span>{isRemixGenerating ? 'Generating...' : 'Remix'}</span>
-                  {!isRemixGenerating && (
-                    <svg
-                      className={`w-3 h-3 transition-transform ${isRemixDropdownOpen ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19 9l-7 7-7-7"
-                      ></path>
-                    </svg>
-                  )}
-                </div>
-              </button>
-
-              {isRemixDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute left-0 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 max-h-[calc(100vh-64px)] overflow-y-auto bottom-full mb-1"
-                >
-                  <div className="p-2">
-                    <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 mb-2">
-                      Select model for remix
-                    </div>
-                    <div className="space-y-1">
-                      {remixModels.map((model) => (
-                        <button
-                          type="button"
-                          key={model.id}
-                          onClick={() => handleRemixModelSelect(model.id)}
-                          className="w-full text-left px-3 py-2 rounded text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
-                        >
-                          <div className="font-medium">{model.name}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 break-words">
-                            {model.description}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </div>
             <button
               type="submit"
               disabled={!text.trim() || isSubmitting}
