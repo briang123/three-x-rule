@@ -501,11 +501,11 @@
   }
 
   /* Optimized backdrop blur for better performance */
-  .backdrop-blur-optimized {
+  /* .backdrop-blur-optimized {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     transform: translateZ(0);
-  }
+  } */
 
   /* Optimize animations during scroll */
   .chat-input-container.scrolling {

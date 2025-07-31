@@ -33,6 +33,8 @@ interface ChatInputMessageProps {
   modelSelectionDisabled?: boolean;
   // Default model usage flag
   isUsingDefaultModel?: boolean;
+  // Left navigation state
+  isLeftNavCollapsed?: boolean;
 }
 
 const ChatInputMessage = ({
@@ -57,6 +59,7 @@ const ChatInputMessage = ({
   onModelSelectionClick,
   modelSelectionDisabled,
   isUsingDefaultModel = false,
+  isLeftNavCollapsed = true,
 }: ChatInputMessageProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [text, setText] = useState(currentMessage);
@@ -458,7 +461,7 @@ const ChatInputMessage = ({
 
   return (
     <motion.div
-      className="max-w-4xl mx-auto p-4 transition-all duration-300 ease-out transform-gpu will-change-transform"
+      className="pb-4 transition-all duration-300 ease-out transform-gpu will-change-transform"
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{

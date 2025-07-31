@@ -43,11 +43,14 @@ const navigationItems = [
   },
 ];
 
-export default function LeftNavigation() {
-  const [isCollapsed, setIsCollapsed] = useState(true); // Default to collapsed
+interface LeftNavigationProps {
+  isCollapsed: boolean;
+  onToggleCollapse: (collapsed: boolean) => void;
+}
 
+export default function LeftNavigation({ isCollapsed, onToggleCollapse }: LeftNavigationProps) {
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    onToggleCollapse(!isCollapsed);
   };
 
   return (

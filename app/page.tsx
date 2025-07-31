@@ -66,6 +66,9 @@ export default function Home() {
   // Add state to track default model usage
   const [isUsingDefaultModel, setIsUsingDefaultModel] = useState<boolean>(false);
 
+  // Add state to track left navigation collapse state
+  const [isLeftNavCollapsed, setIsLeftNavCollapsed] = useState<boolean>(true);
+
   const handleSentenceSelect = useCallback((sentence: SelectedSentence) => {
     setSelectedSentences((prev) => {
       const exists = prev.find((s) => s.id === sentence.id);
@@ -897,6 +900,10 @@ export default function Home() {
     });
   }, [modelSelections.length]);
 
+  const handleLeftNavToggle = useCallback((collapsed: boolean) => {
+    setIsLeftNavCollapsed(collapsed);
+  }, []);
+
   return (
     <AuroraBackground
       colorStops={auroraConfig.colorStops}
@@ -905,7 +912,7 @@ export default function Home() {
       amplitude={auroraConfig.amplitude}
     >
       <div className="flex h-screen transition-colors duration-200">
-        <LeftNavigation />
+        <LeftNavigation isCollapsed={isLeftNavCollapsed} onToggleCollapse={handleLeftNavToggle} />
         <div className="flex flex-1 flex-col overflow-hidden">
           <TopBar onNewChat={handleNewChat} onSocialPosts={handleSocialPosts} />
           <div className="flex flex-1 overflow-hidden">
@@ -985,6 +992,7 @@ export default function Home() {
                   onCloseAISelection={handleToggleAISelection}
                   onModelSelectionClick={handleOpenModelSelectionModal}
                   isUsingDefaultModel={isUsingDefaultModel}
+                  isLeftNavCollapsed={isLeftNavCollapsed}
                 />
               </div>
             </div>

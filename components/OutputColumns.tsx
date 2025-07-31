@@ -302,6 +302,8 @@ interface OutputColumnsProps {
   onModelSelectionClick?: () => void;
   // Default model usage flag
   isUsingDefaultModel?: boolean;
+  // Left navigation state
+  isLeftNavCollapsed?: boolean;
 }
 
 // Note: Removed ColumnModelSelector component since we now use the 3x3 grid system
@@ -342,6 +344,7 @@ export default function OutputColumns({
   onCloseAISelection,
   onModelSelectionClick,
   isUsingDefaultModel = false,
+  isLeftNavCollapsed = true,
 }: OutputColumnsProps) {
   // Orchestration state
   const [isModelSelectorCollapsed, setIsModelSelectorCollapsed] = useState(false);
@@ -683,7 +686,7 @@ export default function OutputColumns({
     <div className="relative w-full h-full flex flex-col">
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto content-scroll-area smooth-scroll pb-32"
+        className="flex-1 overflow-y-auto content-scroll-area smooth-scroll pb-96"
       >
         <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto">
           {/* Show AI Selection when enabled */}
@@ -1218,36 +1221,48 @@ export default function OutputColumns({
             </AnimatePresence>
           )}
         </div>
+
+        {/* Additional spacer to ensure last content is fully visible */}
+        <div className="h-32"></div>
       </div>
 
       {/* ChatInput as fixed footer outside the scrollable container */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-50/80 dark:bg-kitchen-dark-bg/80 border-t border-gray-200 dark:border-kitchen-dark-border z-50 backdrop-blur-optimized chat-input-container transform-gpu will-change-transform transition-all duration-300 ease-out">
-        {/* Gradient fade overlay for softer edge */}
-        <div className="absolute inset-x-0 -top-8 h-8 bg-gradient-to-b from-transparent to-gray-50/80 dark:to-kitchen-dark-bg/80 pointer-events-none transition-opacity duration-300"></div>
-        <ChatInputMessage
-          onSubmit={(prompt, modelId, attachments) =>
-            handleSubmitWithOrchestration(prompt, attachments)
-          }
-          currentMessage={currentMessage}
-          isSubmitting={false}
-          onModelSelect={onModelSelect}
-          onModelSelectionsUpdate={onModelSelectionsUpdate}
-          onDirectSubmit={onDirectSubmit}
-          modelSelections={modelSelections}
-          showModelBadges={showModelBadges}
-          onRestoreModelSelection={handleRestoreModelSelection}
-          onModelConfirmedOrchestration={handleModelConfirmedOrchestration}
-          availableModels={models}
-          toolsRowRef={toolsRowRef}
-          showAISelection={showAISelection}
-          onToggleAISelection={onToggleAISelection}
-          onRemix={onRemix}
-          remixDisabled={remixDisabled}
-          isRemixGenerating={isRemixGenerating}
-          onModelSelectionClick={onModelSelectionClick}
-          modelSelectionDisabled={false}
-          isUsingDefaultModel={isUsingDefaultModel}
-        />
+      <div
+        className="fixed bottom-0 bg-transparent z-50 backdrop-blur-optimized chat-input-container transform-gpu will-change-transform transition-all duration-300 ease-out"
+        style={{
+          left: isLeftNavCollapsed ? '64px' : '256px',
+          right: '0px',
+        }}
+      >
+        <div className="flex justify-center">
+          <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 transition-all duration-300">
+            <ChatInputMessage
+              onSubmit={(prompt, modelId, attachments) =>
+                handleSubmitWithOrchestration(prompt, attachments)
+              }
+              currentMessage={currentMessage}
+              isSubmitting={false}
+              onModelSelect={onModelSelect}
+              onModelSelectionsUpdate={onModelSelectionsUpdate}
+              onDirectSubmit={onDirectSubmit}
+              modelSelections={modelSelections}
+              showModelBadges={showModelBadges}
+              onRestoreModelSelection={handleRestoreModelSelection}
+              onModelConfirmedOrchestration={handleModelConfirmedOrchestration}
+              availableModels={models}
+              toolsRowRef={toolsRowRef}
+              showAISelection={showAISelection}
+              onToggleAISelection={onToggleAISelection}
+              onRemix={onRemix}
+              remixDisabled={remixDisabled}
+              isRemixGenerating={isRemixGenerating}
+              onModelSelectionClick={onModelSelectionClick}
+              modelSelectionDisabled={false}
+              isUsingDefaultModel={isUsingDefaultModel}
+              isLeftNavCollapsed={isLeftNavCollapsed}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
