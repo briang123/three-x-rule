@@ -9,6 +9,7 @@ import TextHighlighter, { useTextHighlighter, Highlight } from './TextHighlighte
 import { TypingIndicator } from './TypingIndicator';
 import ChatInputMessage from './ChatInputMessage';
 import { ModelSelection } from './ModelGridSelector';
+import RemixButtonCard from './RemixButtonCard';
 import './TextHighlighter.css';
 
 // Copy to Clipboard Component
@@ -267,7 +268,8 @@ interface OutputColumnsProps {
   onAddColumn?: () => void;
   onDeleteColumn?: (column: string) => void;
   // Remix props
-  remixResponse?: string;
+  remixResponses?: string[];
+  remixModels?: string[];
   showRemix?: boolean;
   onCloseRemix?: () => void;
   remixModel?: string;
@@ -317,7 +319,8 @@ export default function OutputColumns({
   isGenerating,
   onAddColumn,
   onDeleteColumn,
-  remixResponse = '',
+  remixResponses = [],
+  remixModels = [],
   showRemix = false,
   onCloseRemix,
   remixModel = '',
@@ -420,13 +423,13 @@ export default function OutputColumns({
     const hasColumnContent = Object.values(originalResponses).some(
       (response) => response.trim() !== '',
     );
-    const hasRemixContent = remixResponse.trim() !== '';
+    const hasRemixContent = remixResponses.length > 0;
     const hasSocialContent = Object.values(socialPostsResponses).some(
       (response) => response.trim() !== '',
     );
 
     return hasColumnContent || hasRemixContent || hasSocialContent;
-  }, [originalResponses, remixResponse, socialPostsResponses]);
+  }, [originalResponses, remixResponses, socialPostsResponses]);
 
   // Auto-hide AI selection when content is received
   useEffect(() => {
@@ -846,88 +849,110 @@ export default function OutputColumns({
             </motion.div>
           )} */}
 
-          {/* Remix Column */}
-          {showRemix && (remixResponse || isRemixGenerating || isErrorMessage(remixResponse)) && (
-            <motion.div
-              ref={remixRef}
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="kitchen-card p-6 flex flex-col overflow-hidden w-full max-w-full flex-shrink-0 column-container"
-            >
-              <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-gradient-to-r from-purple-500 to-pink-500">
-                    <svg
-                      className={`w-5 h-5 ${isRemixGenerating ? 'animate-spin' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
+          {/* Remix Response Cards */}
+          {remixResponses &&
+            remixResponses.map((response, index) => (
+              <motion.div
+                key={`remix-response-${index}`}
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
+                className="kitchen-card p-6 flex flex-col overflow-hidden w-full max-w-full flex-shrink-0 column-container"
+              >
+                <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-gradient-to-r from-purple-500 to-pink-500">
+                      <svg
+                        className={`w-5 h-5 ${isRemixGenerating && index === remixResponses.length - 1 ? 'animate-spin' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-semibold text-kitchen-text dark:text-kitchen-dark-text">
+                        {isRemixGenerating && index === remixResponses.length - 1
+                          ? 'Generating Remix...'
+                          : `Remix Response ${index + 1}`}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-lg font-semibold text-kitchen-text dark:text-kitchen-dark-text">
-                      Remix
+                    <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full">
+                      {remixModels[index] || remixModel || 'Model'}
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full">
-                    {remixModel || 'Model'}
-                  </span>
-                </div>
-              </div>
 
-              {/* Remix Response Display */}
-              <div className="column-content pr-2">
-                <div className="space-y-3">
-                  {isRemixGenerating && (
-                    <div className="text-center text-blue-600 py-4">
-                      <div className="flex items-center justify-center space-x-2 mb-3">
-                        <TypingIndicator />
-                        <span className="text-sm font-medium">Generating remix...</span>
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                        <p className="mb-2">
-                          Synthesizing responses from all columns into a curated remix using{' '}
-                          {remixModel || 'selected model'}.
-                        </p>
-                        <p>
-                          This process combines the best insights from multiple AI perspectives to
-                          create a comprehensive answer.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {(!remixResponse || remixResponse.trim() === '') && !isRemixGenerating ? null : (
-                    // Markdown View for Remix
-                    <div className="relative">
-                      {remixResponse && (
-                        <div className="absolute top-2 right-2 z-10">
-                          <CopyButton content={remixResponse} />
+                {/* Remix Response Display */}
+                <div className="column-content pr-2">
+                  <div className="space-y-3">
+                    {isRemixGenerating && index === remixResponses.length - 1 ? (
+                      // Loading state for the last card
+                      <div className="text-center text-blue-600 py-4">
+                        <div className="flex items-center justify-center space-x-2 mb-3">
+                          <TypingIndicator />
+                          <span className="text-sm font-medium">Generating remix...</span>
                         </div>
-                      )}
-                      {isErrorMessage(remixResponse) ? (
-                        <ErrorMessage message={remixResponse} />
-                      ) : (
-                        <HighlightableText
-                          content={remixResponse}
-                          onAddSelection={(text) => handleAddSelection(text, 'R')}
-                          column="R"
-                        />
-                      )}
-                    </div>
-                  )}
+                        <div className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                          <p className="mb-2">
+                            Synthesizing responses from all columns into a curated remix using{' '}
+                            {remixModels[index] || remixModel || 'selected model'}.
+                          </p>
+                          <p>
+                            This process combines the best insights from multiple AI perspectives to
+                            create a comprehensive answer.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      // Completed response display
+                      <div className="relative">
+                        <div className="absolute top-2 right-2 z-10">
+                          <CopyButton content={response} />
+                        </div>
+                        {isErrorMessage(response) ? (
+                          <ErrorMessage message={response} />
+                        ) : (
+                          <HighlightableText
+                            content={response}
+                            onAddSelection={(text) => handleAddSelection(text, 'R')}
+                            column="R"
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </motion.div>
+            ))}
+
+          {/* RemixButtonCard Component for Testing */}
+          {hasAIContent && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+              className="w-full"
+            >
+              <RemixButtonCard
+                onRemix={(modelId) => {
+                  console.log('RemixButtonCard: onRemix called with modelId:', modelId);
+                  if (onRemix) {
+                    onRemix(modelId);
+                  }
+                }}
+                disabled={remixDisabled}
+                isGenerating={isRemixGenerating}
+                responseCount={Object.keys(columnResponses).length}
+              />
             </motion.div>
           )}
 

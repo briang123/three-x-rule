@@ -40,7 +40,8 @@ export default function Home() {
   });
 
   // Remix state
-  const [remixResponse, setRemixResponse] = useState<string>('');
+  const [remixResponses, setRemixResponses] = useState<string[]>([]);
+  const [remixModels, setRemixModels] = useState<string[]>([]);
   const [isRemixGenerating, setIsRemixGenerating] = useState<boolean>(false);
   const [showRemix, setShowRemix] = useState<boolean>(false);
   const [remixModel, setRemixModel] = useState<string>('');
@@ -275,7 +276,8 @@ export default function Home() {
     // Increment chatKey to force re-render
     setChatKey((prev) => prev + 1);
     // Clear remix state
-    setRemixResponse('');
+    setRemixResponses([]);
+    setRemixModels([]);
     setIsRemixGenerating(false);
     setShowRemix(false);
     setRemixModel('');
@@ -557,7 +559,10 @@ export default function Home() {
 
       setIsRemixGenerating(true);
       setShowRemix(true);
-      setRemixResponse('');
+      // Add empty string to start new remix response
+      setRemixResponses((prev) => [...prev, '']);
+      // Add the model ID for this specific remix
+      setRemixModels((prev) => [...prev, modelId]);
       setRemixModel(modelId);
 
       try {
@@ -624,7 +629,12 @@ export default function Home() {
                 const parsed = JSON.parse(data);
                 if (parsed.success && parsed.data && parsed.data.content) {
                   accumulatedResponse += parsed.data.content;
-                  setRemixResponse(accumulatedResponse);
+                  // Update the last element in the array with the accumulated response
+                  setRemixResponses((prev) => {
+                    const newResponses = [...prev];
+                    newResponses[newResponses.length - 1] = accumulatedResponse;
+                    return newResponses;
+                  });
                 } else if (!parsed.success) {
                   console.error('API Error:', parsed.error);
                   throw new Error(parsed.error || 'API request failed');
@@ -665,7 +675,8 @@ export default function Home() {
           }
         }
 
-        setRemixResponse(errorMessage);
+        // Add error message as a new response
+        setRemixResponses((prev) => [...prev, errorMessage]);
       } finally {
         setIsRemixGenerating(false);
       }
@@ -938,7 +949,8 @@ export default function Home() {
                   isGenerating={isGenerating}
                   onAddColumn={handleAddColumn}
                   onDeleteColumn={handleDeleteColumn}
-                  remixResponse={remixResponse}
+                  remixResponses={remixResponses}
+                  remixModels={remixModels}
                   isRemixGenerating={isRemixGenerating}
                   showRemix={showRemix}
                   onCloseRemix={handleCloseRemix}

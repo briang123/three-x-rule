@@ -78,4 +78,6 @@ The component loads models from `/api/chat` and should persist the selected mode
 
 ## UI
 
+I want to see this Remix Panel appended to all the general ai responses.
+
 ![alt text](<docs/Screenshot 2025-07-31 145330.png>)
