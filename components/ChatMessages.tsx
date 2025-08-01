@@ -8,6 +8,7 @@ import { ModelSelection } from './ModelGridSelector';
 import { useScroll } from '@/hooks/useScroll';
 import { useRemixScroll } from '@/hooks/useRemixScroll';
 import { useScrollPerformance } from '@/hooks/useScrollPerformance';
+import useTimeout from '@/hooks/useTimeout';
 import PromptMessages from './PromptMessages';
 import { SocialPostConfig, SocialPosts } from './social-platforms';
 import RemixMessages from './RemixMessages';
@@ -241,8 +242,15 @@ const ChatMessages = React.memo(function ChatMessages({
   const prevShowSocialPostsRef = useRef<{ [key: string]: boolean }>({});
   const prevHasAIContentRef = useRef<boolean>(false);
 
-  // Effect to handle social posts border fade-out after content is received
+  // State to track which social posts need fade-out timers
+  const [socialPostsNeedingFadeOut, setSocialPostsNeedingFadeOut] = useState<{
+    [key: string]: boolean;
+  }>({});
+
+  // Effect to determine which social posts need fade-out timers
   useEffect(() => {
+    const postsNeedingFadeOut: { [key: string]: boolean } = {};
+
     Object.entries(socialPostsResponses).forEach(([socialPostId, response]) => {
       // Only start fade-out timer if:
       // 1. The social post is visible
@@ -256,18 +264,25 @@ const ChatMessages = React.memo(function ChatMessages({
         !isSocialPostsGenerating[socialPostId] &&
         !socialPostsBorderStates[socialPostId]
       ) {
-        // Start the fade-out timer after content is received
-        const timer = setTimeout(() => {
-          setSocialPostsBorderStates((prev) => ({
-            ...prev,
-            [socialPostId]: true, // true means faded out
-          }));
-        }, 10000); // 10 seconds
-
-        return () => clearTimeout(timer);
+        postsNeedingFadeOut[socialPostId] = true;
       }
     });
+
+    setSocialPostsNeedingFadeOut(postsNeedingFadeOut);
   }, [socialPostsResponses, showSocialPosts, isSocialPostsGenerating, socialPostsBorderStates]);
+
+  // Timeout hook for social posts border fade-out
+  const socialPostsFadeOutTimeout = useTimeout(
+    () => {
+      Object.keys(socialPostsNeedingFadeOut).forEach((socialPostId) => {
+        setSocialPostsBorderStates((prev) => ({
+          ...prev,
+          [socialPostId]: true, // true means faded out
+        }));
+      });
+    },
+    Object.keys(socialPostsNeedingFadeOut).length > 0 ? 10000 : null,
+  );
 
   // Clean up border states when social posts are removed
   useEffect(() => {
@@ -287,14 +302,8 @@ const ChatMessages = React.memo(function ChatMessages({
 
   // Effect to scroll to remix when it appears
   useEffect(() => {
-    if (showRemix && !prevShowRemixRef.current && remixRef.current) {
-      // Small delay to ensure the element is rendered
-      setTimeout(() => {
-        scrollToElement(remixRef.current, { center: true });
-      }, 100);
-    }
     prevShowRemixRef.current = showRemix;
-  }, [showRemix, scrollToElement]);
+  }, [showRemix]);
 
   // Effect to scroll to new social posts when they appear
   useEffect(() => {
@@ -314,33 +323,48 @@ const ChatMessages = React.memo(function ChatMessages({
 
   // Effect to scroll to new AI content when it first appears
   useEffect(() => {
-    if (hasAIContent && !prevHasAIContentRef.current) {
-      // Small delay to ensure the content is rendered
-      setTimeout(() => {
-        scrollToTop();
-      }, 200);
-    }
     prevHasAIContentRef.current = hasAIContent;
-  }, [hasAIContent, scrollToTop]);
+  }, [hasAIContent]);
 
   // Effect to scroll to new columns when they are added
   useEffect(() => {
-    const newColumns = columnKeys.filter((column) => !prevColumnKeysRef.current.includes(column));
-    if (newColumns.length > 0 && hasAIContent) {
-      // Scroll to the last new column
-      const lastNewColumn = newColumns[newColumns.length - 1];
-      const columnRef = columnRefs.current[lastNewColumn];
-      if (columnRef) {
-        setTimeout(() => {
-          scrollToElement(columnRef, { center: true });
-        }, 100);
-      }
-    }
     prevColumnKeysRef.current = columnKeys;
-  }, [columnKeys, hasAIContent, scrollToElement]);
+  }, [columnKeys]);
 
   // Use scroll performance optimization hook
   useScrollPerformance(scrollContainerRef, 150);
+
+  // Timeout hooks for scroll effects
+  const remixScrollTimeout = useTimeout(
+    () => {
+      if (remixRef.current) {
+        scrollToElement(remixRef.current, { center: true });
+      }
+    },
+    showRemix && !prevShowRemixRef.current ? 100 : null,
+  );
+
+  const aiContentScrollTimeout = useTimeout(
+    () => {
+      scrollToTop();
+    },
+    hasAIContent && !prevHasAIContentRef.current ? 200 : null,
+  );
+
+  const columnScrollTimeout = useTimeout(
+    () => {
+      const newColumns = columnKeys.filter((column) => !prevColumnKeysRef.current.includes(column));
+      if (newColumns.length > 0 && hasAIContent) {
+        // Scroll to the last new column
+        const lastNewColumn = newColumns[newColumns.length - 1];
+        const columnRef = columnRefs.current[lastNewColumn];
+        if (columnRef) {
+          scrollToElement(columnRef, { center: true });
+        }
+      }
+    },
+    columnKeys.length > prevColumnKeysRef.current.length && hasAIContent ? 100 : null,
+  );
 
   useEffect(() => {
     let isMounted = true;
