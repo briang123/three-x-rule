@@ -9,6 +9,7 @@ import { useScroll } from '@/hooks/useScroll';
 import { useRemixScroll } from '@/hooks/useRemixScroll';
 import { useScrollPerformance } from '@/hooks/useScrollPerformance';
 import useTimeout from '@/hooks/useTimeout';
+import useSocialPostsBorderFadeOut from '@/hooks/useSocialPostsBorderFadeOut';
 import PromptMessages from './PromptMessages';
 import { SocialPostConfig, SocialPosts } from './social-platforms';
 import RemixMessages from './RemixMessages';
@@ -167,9 +168,13 @@ const ChatMessages = React.memo(function ChatMessages({
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
-  const [socialPostsBorderStates, setSocialPostsBorderStates] = useState<{
-    [key: string]: boolean;
-  }>({});
+  // Use the social posts border fade-out hook
+  const { socialPostsBorderStates, setSocialPostsBorderStates } = useSocialPostsBorderFadeOut({
+    socialPostsResponses,
+    showSocialPosts,
+    isSocialPostsGenerating,
+    fadeOutDelay: 10000,
+  });
 
   // Refs for smooth scrolling
   const remixRef = useRef<HTMLDivElement>(null);
@@ -241,62 +246,6 @@ const ChatMessages = React.memo(function ChatMessages({
   const prevShowRemixRef = useRef<boolean>(false);
   const prevShowSocialPostsRef = useRef<{ [key: string]: boolean }>({});
   const prevHasAIContentRef = useRef<boolean>(false);
-
-  // State to track which social posts need fade-out timers
-  const [socialPostsNeedingFadeOut, setSocialPostsNeedingFadeOut] = useState<{
-    [key: string]: boolean;
-  }>({});
-
-  // Effect to determine which social posts need fade-out timers
-  useEffect(() => {
-    const postsNeedingFadeOut: { [key: string]: boolean } = {};
-
-    Object.entries(socialPostsResponses).forEach(([socialPostId, response]) => {
-      // Only start fade-out timer if:
-      // 1. The social post is visible
-      // 2. There's actual content (not empty)
-      // 3. It's not currently generating
-      // 4. The border hasn't already faded
-      if (
-        showSocialPosts[socialPostId] &&
-        response &&
-        response.trim() !== '' &&
-        !isSocialPostsGenerating[socialPostId] &&
-        !socialPostsBorderStates[socialPostId]
-      ) {
-        postsNeedingFadeOut[socialPostId] = true;
-      }
-    });
-
-    setSocialPostsNeedingFadeOut(postsNeedingFadeOut);
-  }, [socialPostsResponses, showSocialPosts, isSocialPostsGenerating, socialPostsBorderStates]);
-
-  // Timeout hook for social posts border fade-out
-  const socialPostsFadeOutTimeout = useTimeout(
-    () => {
-      Object.keys(socialPostsNeedingFadeOut).forEach((socialPostId) => {
-        setSocialPostsBorderStates((prev) => ({
-          ...prev,
-          [socialPostId]: true, // true means faded out
-        }));
-      });
-    },
-    Object.keys(socialPostsNeedingFadeOut).length > 0 ? 10000 : null,
-  );
-
-  // Clean up border states when social posts are removed
-  useEffect(() => {
-    const currentSocialPostIds = Object.keys(showSocialPosts);
-    setSocialPostsBorderStates((prev) => {
-      const newState = { ...prev };
-      Object.keys(newState).forEach((id) => {
-        if (!currentSocialPostIds.includes(id)) {
-          delete newState[id];
-        }
-      });
-      return newState;
-    });
-  }, [showSocialPosts]);
 
   // Enhanced scroll hook provides smoothScrollToElement functionality
 
