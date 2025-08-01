@@ -1,12 +1,16 @@
 import { useCallback, useRef, useEffect } from 'react';
 
-interface UseScrollOptions {
+export interface UseScrollOptions {
   behavior?: ScrollBehavior;
   offset?: number;
+  centerElement?: boolean; // New option to center elements
 }
 
 interface UseScrollReturn {
-  scrollToElement: (element: HTMLElement | null) => void;
+  scrollToElement: (
+    element: HTMLElement | null,
+    options?: { center?: boolean; offset?: number },
+  ) => void;
   scrollToLatest: (elements: { [key: number]: HTMLElement | null }) => void;
   scrollToIndex: (elements: { [key: number]: HTMLElement | null }, index: number) => void;
   scrollToTop: () => void;
@@ -21,27 +25,40 @@ export const useScroll = (
   const defaultContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = scrollContainer || defaultContainerRef;
 
-  const { behavior = 'smooth', offset = 20 } = options;
+  const { behavior = 'smooth', offset = 20, centerElement = false } = options;
 
   const scrollToElement = useCallback(
-    (element: HTMLElement | null) => {
+    (element: HTMLElement | null, elementOptions?: { center?: boolean; offset?: number }) => {
       if (element && containerRef.current) {
-        // Calculate position relative to the scroll container
-        const containerRect = containerRef.current.getBoundingClientRect();
+        const container = containerRef.current;
         const elementRect = element.getBoundingClientRect();
-        const scrollTop = containerRef.current.scrollTop;
+        const containerRect = container.getBoundingClientRect();
+        const scrollTop = container.scrollTop;
+        const elementTop = element.offsetTop;
+        const containerHeight = container.clientHeight;
 
-        // Calculate the position to scroll to
-        const elementTop = scrollTop + elementRect.top - containerRect.top - offset;
+        // Use element-specific options or fall back to hook options
+        const shouldCenter = elementOptions?.center ?? centerElement;
+        const elementOffset = elementOptions?.offset ?? offset;
+
+        let targetScrollTop: number;
+
+        if (shouldCenter) {
+          // Center the element in the container
+          targetScrollTop = elementTop - containerHeight / 2 + element.clientHeight / 2;
+        } else {
+          // Scroll to element with offset
+          targetScrollTop = scrollTop + elementRect.top - containerRect.top - elementOffset;
+        }
 
         // Scroll within the container
-        containerRef.current.scrollTo({
-          top: elementTop,
+        container.scrollTo({
+          top: targetScrollTop,
           behavior,
         });
       }
     },
-    [behavior, offset, containerRef],
+    [behavior, offset, centerElement, containerRef],
   );
 
   const scrollToLatest = useCallback(
@@ -92,38 +109,5 @@ export const useScroll = (
     scrollToTop,
     scrollToBottom,
     scrollContainerRef: containerRef,
-  };
-};
-
-// Specialized hook for remix responses
-export const useRemixScroll = (
-  remixResponsesLength: number,
-  isRemixGenerating: boolean,
-  scrollContainer?: React.RefObject<HTMLDivElement>,
-  options: UseScrollOptions = {},
-) => {
-  const remixResponseRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
-  const { scrollToLatest, scrollToIndex } = useScroll(scrollContainer, options);
-
-  const scrollToLatestRemix = useCallback(() => {
-    const latestIndex = remixResponsesLength - 1;
-    if (latestIndex >= 0) {
-      scrollToIndex(remixResponseRefs.current, latestIndex);
-    }
-  }, [remixResponsesLength, scrollToIndex]);
-
-  // Auto-scroll when new remix response is added
-  useEffect(() => {
-    if (remixResponsesLength > 0 && isRemixGenerating) {
-      const timer = setTimeout(() => {
-        scrollToLatestRemix();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [remixResponsesLength, isRemixGenerating, scrollToLatestRemix]);
-
-  return {
-    remixResponseRefs,
-    scrollToLatestRemix,
   };
 };

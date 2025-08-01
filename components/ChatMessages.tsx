@@ -5,7 +5,9 @@ import { SelectedSentence } from '@/app/page';
 import { ModelInfo } from '@/lib/api-client';
 import ChatInputWrapper from './ChatInputWrapper';
 import { ModelSelection } from './ModelGridSelector';
-import { useRemixScroll } from '@/hooks/useScroll';
+import { useScroll } from '@/hooks/useScroll';
+import { useRemixScroll } from '@/hooks/useRemixScroll';
+import { useScrollPerformance } from '@/hooks/useScrollPerformance';
 import PromptMessages from './PromptMessages';
 import { SocialPostConfig, SocialPosts } from './social-platforms';
 import RemixMessages from './RemixMessages';
@@ -172,7 +174,13 @@ const ChatMessages = React.memo(function ChatMessages({
   const remixRef = useRef<HTMLDivElement>(null);
   const socialPostsRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Use the enhanced scroll hook with centering enabled
+  const { scrollToElement, scrollToTop } = useScroll(scrollContainerRef, {
+    behavior: 'smooth',
+    offset: 20,
+    centerElement: true,
+  });
 
   // Determine if we should show the 3x3 grid or output columns
   const hasAIContent = useMemo(() => {
@@ -275,38 +283,18 @@ const ChatMessages = React.memo(function ChatMessages({
     });
   }, [showSocialPosts]);
 
-  // Smooth scroll function
-  const smoothScrollToElement = useCallback((element: HTMLElement | null) => {
-    if (!element || !scrollContainerRef.current) return;
-
-    const container = scrollContainerRef.current;
-    const elementRect = element.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-
-    const scrollTop = container.scrollTop;
-    const elementTop = element.offsetTop;
-    const containerHeight = container.clientHeight;
-
-    // Calculate the target scroll position to center the element
-    const targetScrollTop = elementTop - containerHeight / 2 + element.clientHeight / 2;
-
-    // Smooth scroll to the target position
-    container.scrollTo({
-      top: targetScrollTop,
-      behavior: 'smooth',
-    });
-  }, []);
+  // Enhanced scroll hook provides smoothScrollToElement functionality
 
   // Effect to scroll to remix when it appears
   useEffect(() => {
     if (showRemix && !prevShowRemixRef.current && remixRef.current) {
       // Small delay to ensure the element is rendered
       setTimeout(() => {
-        smoothScrollToElement(remixRef.current);
+        scrollToElement(remixRef.current, { center: true });
       }, 100);
     }
     prevShowRemixRef.current = showRemix;
-  }, [showRemix, smoothScrollToElement]);
+  }, [showRemix, scrollToElement]);
 
   // Effect to scroll to new social posts when they appear
   useEffect(() => {
@@ -316,29 +304,24 @@ const ChatMessages = React.memo(function ChatMessages({
         if (socialPostRef) {
           // Small delay to ensure the element is rendered
           setTimeout(() => {
-            smoothScrollToElement(socialPostRef);
+            scrollToElement(socialPostRef, { center: true });
           }, 100);
         }
       }
     });
     prevShowSocialPostsRef.current = { ...showSocialPosts };
-  }, [showSocialPosts, smoothScrollToElement]);
+  }, [showSocialPosts, scrollToElement]);
 
   // Effect to scroll to new AI content when it first appears
   useEffect(() => {
     if (hasAIContent && !prevHasAIContentRef.current) {
       // Small delay to ensure the content is rendered
       setTimeout(() => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTo({
-            top: 0,
-            behavior: 'smooth',
-          });
-        }
+        scrollToTop();
       }, 200);
     }
     prevHasAIContentRef.current = hasAIContent;
-  }, [hasAIContent]);
+  }, [hasAIContent, scrollToTop]);
 
   // Effect to scroll to new columns when they are added
   useEffect(() => {
@@ -349,45 +332,15 @@ const ChatMessages = React.memo(function ChatMessages({
       const columnRef = columnRefs.current[lastNewColumn];
       if (columnRef) {
         setTimeout(() => {
-          smoothScrollToElement(columnRef);
+          scrollToElement(columnRef, { center: true });
         }, 100);
       }
     }
     prevColumnKeysRef.current = columnKeys;
-  }, [columnKeys, hasAIContent, smoothScrollToElement]);
+  }, [columnKeys, hasAIContent, scrollToElement]);
 
-  // Optimize scroll performance
-  useEffect(() => {
-    const handleScroll = () => {
-      // Add a class to optimize animations during scroll
-      const chatInputContainer = document.querySelector('.chat-input-container');
-      if (chatInputContainer) {
-        chatInputContainer.classList.add('scrolling');
-
-        // Remove the class after scroll ends
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
-        scrollTimeoutRef.current = setTimeout(() => {
-          chatInputContainer.classList.remove('scrolling');
-        }, 150);
-      }
-    };
-
-    const scrollContainer = scrollContainerRef.current;
-    if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-    }
-
-    return () => {
-      if (scrollContainer) {
-        scrollContainer.removeEventListener('scroll', handleScroll);
-      }
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
+  // Use scroll performance optimization hook
+  useScrollPerformance(scrollContainerRef, 150);
 
   useEffect(() => {
     let isMounted = true;
@@ -419,14 +372,6 @@ const ChatMessages = React.memo(function ChatMessages({
       isMounted = false;
     };
   }, []); // Only run once on mount
-
-  // Note: Removed old column model handling since we now use the 3x3 grid system
-
-  // Note: Removed handleModelChange since we now use the 3x3 grid system
-
-  const isSelected = (sentenceId: string) => {
-    return selectedSentences.some((s) => s.id === sentenceId);
-  };
 
   const getColumnColor = (column: string) => {
     const colors = {
