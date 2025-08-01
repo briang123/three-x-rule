@@ -624,6 +624,7 @@ const ChatInputMessage = React.memo(function ChatInputMessage({
             <button
               type="submit"
               disabled={!text.trim() || isSubmitting}
+              aria-label={isSubmitting ? 'Submitting...' : 'Submit message'}
               className="w-8 h-8 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 rounded-full flex items-center justify-center text-white transition-colors duration-200 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (

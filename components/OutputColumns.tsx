@@ -1279,7 +1279,7 @@ const OutputColumns = React.memo(function OutputColumns({
                 handleSubmitWithOrchestration(prompt, attachments)
               }
               currentMessage={currentMessage}
-              isSubmitting={false}
+              isSubmitting={Object.values(isGenerating).some((generating) => generating)}
               onModelSelect={onModelSelect}
               onModelSelectionsUpdate={onModelSelectionsUpdate}
               onDirectSubmit={onDirectSubmit}
@@ -1291,9 +1291,6 @@ const OutputColumns = React.memo(function OutputColumns({
               toolsRowRef={toolsRowRef}
               showAISelection={showAISelection}
               onToggleAISelection={onToggleAISelection}
-              onRemix={onRemix}
-              remixDisabled={remixDisabled}
-              isRemixGenerating={isRemixGenerating}
               onModelSelectionClick={onModelSelectionClick}
               modelSelectionDisabled={false}
               isUsingDefaultModel={isUsingDefaultModel}

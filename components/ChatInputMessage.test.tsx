@@ -371,4 +371,67 @@ describe('ChatInputMessage - Model Badges Integration', () => {
     // AnimatedModelBadges are no longer shown - using simplified ModelSelectionBadge instead
     expect(screen.queryByTestId('animated-model-badges')).not.toBeInTheDocument();
   });
+
+  it('should show loading spinner when isSubmitting is true', () => {
+    render(
+      <ChatInputMessage
+        {...defaultProps}
+        isSubmitting={true}
+        modelSelections={[{ modelId: 'gemini-2.5-flash-lite', count: 1 }]}
+      />,
+    );
+
+    // Check that the submit button is disabled and has correct aria-label
+    const submitButton = screen.getByRole('button', { name: 'Submitting...' });
+    expect(submitButton).toBeDisabled();
+
+    // Check that the loading spinner is visible
+    const loadingSpinner = submitButton.querySelector(
+      'div[class*="border-white border-t-transparent rounded-full"]',
+    );
+    expect(loadingSpinner).toBeInTheDocument();
+  });
+
+  it('should show normal submit icon when isSubmitting is false', () => {
+    render(
+      <ChatInputMessage
+        {...defaultProps}
+        isSubmitting={false}
+        modelSelections={[{ modelId: 'gemini-2.5-flash-lite', count: 1 }]}
+      />,
+    );
+
+    // Check that the submit button is enabled when there's text
+    const textarea = screen.getByPlaceholderText('Ask anything...') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: 'Test message' } });
+
+    const submitButton = screen.getByRole('button', { name: 'Submit message' });
+    expect(submitButton).not.toBeDisabled();
+
+    // Check that the normal submit icon is visible
+    const submitIcon = submitButton.querySelector('svg');
+    expect(submitIcon).toBeInTheDocument();
+
+    // Check that no loading spinner is present
+    const loadingSpinner = submitButton.querySelector(
+      'div[class*="border-white border-t-transparent rounded-full"]',
+    );
+    expect(loadingSpinner).not.toBeInTheDocument();
+  });
+
+  it('should disable submit button when isSubmitting is true', () => {
+    render(
+      <ChatInputMessage
+        {...defaultProps}
+        isSubmitting={true}
+        modelSelections={[{ modelId: 'gemini-2.5-flash-lite', count: 1 }]}
+      />,
+    );
+
+    const textarea = screen.getByPlaceholderText('Ask anything...') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: 'Test message' } });
+
+    const submitButton = screen.getByRole('button', { name: 'Submitting...' });
+    expect(submitButton).toBeDisabled();
+  });
 });
