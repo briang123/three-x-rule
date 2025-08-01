@@ -34,7 +34,7 @@ interface ChatInputMessageProps {
   isLeftNavCollapsed?: boolean;
 }
 
-const ChatInputMessage = ({
+const ChatInputMessage = React.memo(function ChatInputMessage({
   onSubmit,
   currentMessage = '',
   isSubmitting = false,
@@ -54,7 +54,7 @@ const ChatInputMessage = ({
   modelSelectionDisabled,
   isUsingDefaultModel = false,
   isLeftNavCollapsed = true,
-}: ChatInputMessageProps) => {
+}: ChatInputMessageProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [text, setText] = useState(currentMessage);
   const [shouldAnimate, setShouldAnimate] = useState(true);
@@ -683,6 +683,6 @@ const ChatInputMessage = ({
       />
     </motion.div>
   );
-};
+});
 
 export default ChatInputMessage;

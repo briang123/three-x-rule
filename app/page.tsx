@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import TopBar from '@/components/TopBar';
 import LeftNavigation from '@/components/LeftNavigation';
 import OutputColumns from '@/components/OutputColumns';
@@ -190,10 +190,6 @@ export default function Home() {
   }, []);
 
   const handleSubmit = async (prompt: string, attachments?: File[]) => {
-    console.log('Main page: handleSubmit called with prompt:', prompt);
-    console.log('Main page: Current column models:', columnModels);
-    console.log('Main page: Current modelSelections:', modelSelections);
-
     // Check if any models are selected
     if (modelSelections.length === 0) {
       // Show the model selection modal instead of alert
@@ -215,21 +211,15 @@ export default function Home() {
       }
     });
 
-    console.log('Main page: Dynamic column models:', dynamicColumnModels);
-
     // Send the same prompt to all columns with their respective models
     const promises = [];
 
     for (const column of Object.keys(dynamicColumnModels)) {
       if (dynamicColumnModels[column]) {
-        console.log(
-          `Main page: Adding promise for column ${column} with model ${dynamicColumnModels[column]}`,
-        );
         promises.push(
           handleColumnPromptSubmit(column, prompt, attachments || [], dynamicColumnModels[column]),
         );
       } else {
-        console.log(`Main page: No model selected for column ${column}`);
       }
     }
 
@@ -239,17 +229,14 @@ export default function Home() {
       return;
     }
 
-    console.log(`Main page: Starting ${promises.length} API calls`);
     try {
       await Promise.all(promises);
-      console.log('Main page: All API calls completed');
     } catch (error) {
       console.error('Error generating responses:', error);
     }
   };
 
   const handleNewChat = () => {
-    console.log('Main page: handleNewChat called, clearing currentMessage');
     setSelectedSentences([]);
     setColumnResponses((prev) => {
       const reset: { [key: string]: string[] } = {};
@@ -299,8 +286,6 @@ export default function Home() {
     setResetModelSelector(true);
     // Reset the flag after a short delay
     setTimeout(() => setResetModelSelector(false), 100);
-
-    console.log('Main page: currentMessage cleared and model selection modal shown');
   };
 
   const handleColumnPromptSubmit = async (
@@ -309,9 +294,6 @@ export default function Home() {
     attachments: File[],
     model: string,
   ) => {
-    console.log(`Main page: handleColumnPromptSubmit called for column ${column}`);
-    console.log(`Main page: Using model ${model} for column ${column}`);
-
     // Set generating state for this column
     setIsGenerating((prev) => ({
       ...prev,
@@ -341,29 +323,15 @@ export default function Home() {
         stream: true, // Enable streaming
       };
 
-      console.log(`Main page: Sending request for column ${column}`);
-      console.log(`Main page: Column ${column} - attachments:`, attachments);
-      console.log(`Main page: Column ${column} - attachments.length:`, attachments?.length);
-      console.log(`Main page: Column ${column} - attachments type:`, typeof attachments);
-
       let response;
 
       if (attachments && attachments.length > 0) {
-        console.log(
-          `Main page: Column ${column} - Using attachments endpoint with ${attachments.length} files`,
-        );
         // Use the attachments endpoint
         const formData = new FormData();
         formData.append('jsonData', JSON.stringify(requestBody));
 
         // Add files to form data
         attachments.forEach((file, index) => {
-          console.log(
-            `Main page: Column ${column} - Adding file ${index}:`,
-            file.name,
-            file.type,
-            file.size,
-          );
           formData.append(`file-${index}`, file);
         });
 
@@ -407,7 +375,6 @@ export default function Home() {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
             if (data === '[DONE]') {
-              console.log(`Main page: Stream completed for column ${column}`);
               break;
             }
 
@@ -437,8 +404,6 @@ export default function Home() {
         ...prev,
         [column]: accumulatedResponse,
       }));
-
-      console.log(`Main page: Completed response for column ${column}:`, accumulatedResponse);
     } catch (error) {
       console.error(`Error in column ${column}:`, error);
 
@@ -478,7 +443,6 @@ export default function Home() {
   };
 
   const handleModelChange = useCallback((column: string, modelId: string) => {
-    console.log(`Main page: Model changed for column ${column}: ${modelId}`);
     setColumnModels((prev) => ({
       ...prev,
       [column]: modelId,
@@ -555,8 +519,6 @@ export default function Home() {
         return;
       }
 
-      console.log('Main page: handleRemix called with model:', modelId);
-
       setIsRemixGenerating(true);
       setShowRemix(true);
       // Add empty string to start new remix response
@@ -574,8 +536,6 @@ export default function Home() {
 
         // Create the remix prompt
         const remixPrompt = `${currentMessage}\n\nCombine the best parts from all of the responses together and provide a synthesized and curated response.\n\nHere are the responses to combine:\n\n${combinedResponses}`;
-
-        console.log('Main page: Sending remix request with prompt:', remixPrompt);
 
         // Prepare the request body
         const requestBody = {
@@ -621,7 +581,6 @@ export default function Home() {
             if (line.startsWith('data: ')) {
               const data = line.slice(6);
               if (data === '[DONE]') {
-                console.log('Main page: Remix stream completed');
                 break;
               }
 
@@ -647,8 +606,6 @@ export default function Home() {
             }
           }
         }
-
-        console.log('Main page: Remix completed:', accumulatedResponse);
       } catch (error) {
         console.error('Error in remix:', error);
 
@@ -694,8 +651,6 @@ export default function Home() {
 
   const handleSocialPostsGenerate = useCallback(
     async (config: SocialPostConfig) => {
-      console.log('Main page: handleSocialPostsGenerate called with config:', config);
-
       // Generate a unique ID for this social post column
       const socialPostId = `social-${Date.now()}`;
 
@@ -763,8 +718,6 @@ export default function Home() {
           }
         }
 
-        console.log('Main page: Sending social posts request with prompt:', socialPrompt);
-
         // Prepare the request body
         const requestBody = {
           messages: [
@@ -809,7 +762,6 @@ export default function Home() {
             if (line.startsWith('data: ')) {
               const data = line.slice(6);
               if (data === '[DONE]') {
-                console.log('Main page: Social posts stream completed');
                 break;
               }
 
@@ -833,8 +785,6 @@ export default function Home() {
             }
           }
         }
-
-        console.log('Main page: Social posts completed:', accumulatedResponse);
       } catch (error) {
         console.error('Error in social posts generation:', error);
 
@@ -963,7 +913,7 @@ export default function Home() {
                   onSubmit={handleSubmit}
                   currentMessage={currentMessage}
                   onRemix={handleRemix}
-                  remixDisabled={(() => {
+                  remixDisabled={useMemo(() => {
                     const hasResponses = Object.values(columnResponses).some(
                       (responses) => responses.length > 0,
                     );
@@ -973,21 +923,8 @@ export default function Home() {
                       0,
                     );
                     const hasMultipleModels = totalModelQuantity >= 2;
-                    const isDisabled = !hasResponses || !hasCurrentMessage || !hasMultipleModels;
-
-                    console.log('Remix button debug:', {
-                      columnResponses: columnResponses,
-                      hasResponses,
-                      currentMessage: currentMessage.trim(),
-                      hasCurrentMessage,
-                      modelSelections: modelSelections,
-                      totalModelQuantity,
-                      hasMultipleModels,
-                      isDisabled,
-                    });
-
-                    return isDisabled;
-                  })()}
+                    return !hasResponses || !hasCurrentMessage || !hasMultipleModels;
+                  }, [columnResponses, currentMessage, modelSelections])}
                   onModelSelectionsChange={handleModelSelectionsChange}
                   modelSelections={modelSelections}
                   columnModels={columnModels}
@@ -996,7 +933,6 @@ export default function Home() {
                   onDirectSubmit={handleDirectSubmit}
                   onRestoreModelSelection={() => {
                     // Reset any state if needed when model selection is restored
-                    console.log('Model selection restored');
                   }}
                   showAISelection={showAISelection}
                   onToggleAISelection={handleToggleAISelection}

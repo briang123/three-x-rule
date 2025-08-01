@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ModelInfo } from '@/lib/api-client';
 
@@ -12,7 +12,7 @@ interface RemixButtonCardProps {
   responseCount?: number;
 }
 
-export default function RemixButtonCard({
+const RemixButtonCard = React.memo(function RemixButtonCard({
   onRemix,
   onRemixStart,
   disabled = false,
@@ -260,4 +260,6 @@ export default function RemixButtonCard({
       </div>
     </motion.div>
   );
-}
+});
+
+export default RemixButtonCard;

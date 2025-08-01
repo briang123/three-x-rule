@@ -311,7 +311,7 @@ interface OutputColumnsProps {
 
 // Note: Removed ColumnModelSelector component since we now use the 3x3 grid system
 
-export default function OutputColumns({
+const OutputColumns = React.memo(function OutputColumns({
   onSentenceSelect,
   selectedSentences,
   onModelChange,
@@ -402,7 +402,6 @@ export default function OutputColumns({
 
   const handleModelSelectorAnimationComplete = useCallback(() => {
     // This will be called when the ModelGridSelector animation completes
-    console.log('Model selector animation completed');
   }, []);
 
   const [models, setModels] = useState<ModelInfo[]>([]);
@@ -435,7 +434,6 @@ export default function OutputColumns({
   // Auto-hide AI selection when content is received
   useEffect(() => {
     if (hasAIContent && showAISelection && onToggleAISelection) {
-      console.log('Auto-hiding AI selection because content is received');
       onToggleAISelection();
     }
   }, [hasAIContent, showAISelection, onToggleAISelection]);
@@ -443,7 +441,6 @@ export default function OutputColumns({
   // Reset model selector state when resetModelSelector prop changes
   useEffect(() => {
     if (resetModelSelector) {
-      console.log('Resetting model selector state');
       setIsModelSelectorCollapsed(false);
       setShowModelBadges(false);
       setHasSubmitted(false);
@@ -453,7 +450,6 @@ export default function OutputColumns({
   // Reset model selector when showAISelection becomes true
   useEffect(() => {
     if (showAISelection) {
-      console.log('showAISelection is true, resetting model selector');
       setIsModelSelectorCollapsed(false);
       setShowModelBadges(false);
       setHasSubmitted(false);
@@ -463,7 +459,6 @@ export default function OutputColumns({
   // Show model badges when modelSelections are updated and AI selection is closed
   useEffect(() => {
     if (modelSelections.length > 0 && !showAISelection) {
-      console.log('Model selections updated, showing model badges');
       setShowModelBadges(true);
     }
   }, [modelSelections, showAISelection]);
@@ -638,30 +633,34 @@ export default function OutputColumns({
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchModels = async () => {
       try {
         setLoading(true);
-        console.log('OutputColumns: Fetching models from /api/chat');
         const response = await fetch('/api/chat');
-        console.log('OutputColumns: Response status:', response.status);
         const data = await response.json();
-        console.log('OutputColumns: Models data:', data);
 
-        if (data.success) {
+        if (data.success && isMounted) {
           setModels(data.data.models);
-          console.log('OutputColumns: Set models:', data.data.models);
           setInitialized(true);
-        } else {
+        } else if (!data.success) {
           console.error('OutputColumns: Failed to fetch models:', data.error);
         }
       } catch (err) {
         console.error('Error fetching models:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchModels();
+
+    return () => {
+      isMounted = false;
+    };
   }, []); // Only run once on mount
 
   // Note: Removed old column model handling since we now use the 3x3 grid system
@@ -956,7 +955,6 @@ export default function OutputColumns({
             >
               <RemixButtonCard
                 onRemix={(modelId) => {
-                  console.log('RemixButtonCard: onRemix called with modelId:', modelId);
                   if (onRemix) {
                     onRemix(modelId);
                   }
@@ -1306,4 +1304,6 @@ export default function OutputColumns({
       </div>
     </div>
   );
-}
+});
+
+export default OutputColumns;
