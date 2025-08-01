@@ -27,21 +27,47 @@ jest.mock('../components/TopBar', () => {
   };
 });
 
-jest.mock('../components/OutputColumns', () => {
-  return function MockOutputColumns({
-    remixDisabled,
-    onRemix,
+jest.mock('../components/ChatMessages', () => {
+  return function MockChatMessages({
+    onSentenceSelect,
     columnResponses,
+    originalResponses,
+    isGenerating,
+    remixResponses,
+    remixModels,
+    showRemix,
+    remixModel,
+    socialPostsResponses,
+    isSocialPostsGenerating,
+    showSocialPosts,
+    onCloseSocialPosts,
+    socialPostsConfigs,
+    onSubmit,
     currentMessage,
+    onRemix,
+    remixDisabled,
+    isRemixGenerating,
     modelSelections,
+    columnModels,
+    onModelSelect,
+    onModelSelectionsUpdate,
+    onDirectSubmit,
+    onRestoreModelSelection,
+    showAISelection,
+    onToggleAISelection,
+    resetModelSelector,
+    onModelSelectionClick,
+    isUsingDefaultModel,
+    isLeftNavCollapsed,
   }: any) {
     return (
-      <div data-testid="output-columns">
-        <div data-testid="remix-disabled">{remixDisabled.toString()}</div>
+      <div data-testid="chat-messages">
+        <div data-testid="remix-disabled">{remixDisabled?.toString() || 'false'}</div>
         <div data-testid="column-responses">{JSON.stringify(columnResponses)}</div>
         <div data-testid="current-message">{currentMessage}</div>
         <div data-testid="model-selections">{JSON.stringify(modelSelections)}</div>
         {onRemix && <button onClick={() => onRemix('test-model')}>Remix</button>}
+        <button onClick={() => onSubmit('test prompt')}>Submit</button>
       </div>
     );
   };
@@ -172,7 +198,7 @@ describe('Home Page - Component Rendering', () => {
     expect(screen.getByTestId('aurora-background')).toBeInTheDocument();
     expect(screen.getByTestId('left-navigation')).toBeInTheDocument();
     expect(screen.getByTestId('top-bar')).toBeInTheDocument();
-    expect(screen.getByTestId('output-columns')).toBeInTheDocument();
+    expect(screen.getByTestId('chat-messages')).toBeInTheDocument();
   });
 });
 

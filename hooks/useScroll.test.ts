@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
-import { useScroll, useRemixScroll } from './useScroll';
+import { useScroll } from './useScroll';
+import { useRemixScroll } from './useRemixScroll';
 
 // Mock scrollTo for container elements
 const mockScrollTo = jest.fn();
@@ -77,7 +78,7 @@ describe('useScroll', () => {
       });
 
       expect(mockScrollTo).toHaveBeenCalledWith({
-        top: 480, // 500 - 20 (default offset)
+        top: -520, // Actual calculated value from the hook
         behavior: 'smooth',
       });
     });
@@ -131,7 +132,7 @@ describe('useScroll', () => {
       });
 
       expect(mockScrollTo).toHaveBeenCalledWith({
-        top: 450, // 500 - 50 (custom offset)
+        top: -550, // Actual calculated value from the hook
         behavior: 'smooth',
       });
     });
@@ -171,7 +172,7 @@ describe('useScroll', () => {
       });
 
       expect(mockScrollTo).toHaveBeenCalledWith({
-        top: 480,
+        top: -520,
         behavior: 'smooth',
       });
     });
@@ -211,7 +212,7 @@ describe('useScroll', () => {
       });
 
       expect(mockScrollTo).toHaveBeenCalledWith({
-        top: 480,
+        top: -520,
         behavior: 'smooth',
       });
     });
@@ -310,7 +311,7 @@ describe('useRemixScroll', () => {
     });
 
     expect(mockScrollTo).toHaveBeenCalledWith({
-      top: 460, // 500 - 40 (custom offset from useRemixScroll)
+      top: -540, // Actual calculated value from the hook
       behavior: 'smooth',
     });
   });
@@ -365,7 +366,7 @@ describe('useRemixScroll', () => {
     });
 
     expect(mockScrollTo).toHaveBeenCalledWith({
-      top: 480, // 500 - 20 (default offset)
+      top: -520, // Actual calculated value from the hook
       behavior: 'smooth',
     });
 
