@@ -6,6 +6,7 @@ import { ModelInfo } from '@/lib/api-client';
 
 interface RemixButtonCardProps {
   onRemix: (modelId: string) => void;
+  onRemixStart?: () => void;
   disabled?: boolean;
   isGenerating?: boolean;
   responseCount?: number;
@@ -13,6 +14,7 @@ interface RemixButtonCardProps {
 
 export default function RemixButtonCard({
   onRemix,
+  onRemixStart,
   disabled = false,
   isGenerating = false,
   responseCount = 0,
@@ -75,6 +77,11 @@ export default function RemixButtonCard({
 
   const handleRemix = () => {
     if (selectedModel) {
+      // Call the scroll callback first
+      if (onRemixStart) {
+        onRemixStart();
+      }
+      // Then trigger the remix
       onRemix(selectedModel);
     }
   };

@@ -10,6 +10,7 @@ import { TypingIndicator } from './TypingIndicator';
 import ChatInputMessage from './ChatInputMessage';
 import { ModelSelection } from './ModelGridSelector';
 import RemixButtonCard from './RemixButtonCard';
+import { useRemixScroll } from '@/hooks/useScroll';
 import './TextHighlighter.css';
 
 // Copy to Clipboard Component
@@ -685,6 +686,14 @@ export default function OutputColumns({
     return colors[column as keyof typeof colors] || 'bg-gray-500';
   };
 
+  // Use the remix scroll hook
+  const { remixResponseRefs, scrollToLatestRemix } = useRemixScroll(
+    remixResponses.length,
+    isRemixGenerating,
+    scrollContainerRef, // Pass the scroll container ref
+    { offset: 40 }, // Add more offset to ensure entire card is visible
+  );
+
   return (
     <div className="relative w-full h-full flex flex-col">
       <div
@@ -854,6 +863,9 @@ export default function OutputColumns({
             remixResponses.map((response, index) => (
               <motion.div
                 key={`remix-response-${index}`}
+                ref={(el) => {
+                  remixResponseRefs.current[index] = el;
+                }}
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
@@ -948,6 +960,9 @@ export default function OutputColumns({
                   if (onRemix) {
                     onRemix(modelId);
                   }
+                }}
+                onRemixStart={() => {
+                  scrollToLatestRemix();
                 }}
                 disabled={remixDisabled}
                 isGenerating={isRemixGenerating}
