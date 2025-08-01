@@ -2,7 +2,7 @@
 
 import React from 'react';
 import CopyButton from '@/components/CopyButton';
-import CheckIcon from './CheckIcon';
+import CheckIcon from '../icons/CheckIcon';
 
 interface GeneratedSummaryProps {
   postCount: number;

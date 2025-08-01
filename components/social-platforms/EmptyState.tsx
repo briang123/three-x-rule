@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import ChatBubbleIcon from './ChatBubbleIcon';
+import SocialChatBubbleIcon from '../icons/SocialChatBubbleIcon';
 
 interface EmptyStateProps {
   message?: string;
@@ -14,7 +14,7 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className={className}>
-      <ChatBubbleIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+      <SocialChatBubbleIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
       <p>{message}</p>
     </div>
   );

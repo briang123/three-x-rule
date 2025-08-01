@@ -15,13 +15,9 @@ export { default as TikTokPlatform } from './TikTokPlatform';
 export { default as SocialPlatformFactory } from './SocialPlatformFactory';
 
 // Export utility components
-export { default as CloseButton } from './CloseButton';
 export { default as ModelBadge } from './ModelBadge';
 export { default as ContentTypeBadge } from './ContentTypeBadge';
 export { default as PlatformIcon } from './PlatformIcon';
-export { default as ChatBubbleIcon } from './ChatBubbleIcon';
-export { default as ErrorIcon } from './ErrorIcon';
-export { default as CheckIcon } from './CheckIcon';
 export { default as ErrorDisplay } from './ErrorDisplay';
 export { default as CharacterCount } from './CharacterCount';
 export { default as PostNumberBadge } from './PostNumberBadge';
@@ -30,3 +26,6 @@ export { default as GeneratingIndicator } from './GeneratingIndicator';
 export { default as EmptyState } from './EmptyState';
 export { default as ContainerizedAIResponseCard } from './ContainerizedAIResponseCard';
 export { default as MotionBorderCard } from './MotionBorderCard';
+
+// Export main social posts component
+export { default as SocialPosts } from './SocialPosts';

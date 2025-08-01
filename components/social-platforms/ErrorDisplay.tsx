@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import ErrorIcon from './ErrorIcon';
+import ErrorIcon from '../icons/ErrorIcon';
 
 interface ErrorDisplayProps {
   errorMessage: string;

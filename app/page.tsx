@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import TopBar from '@/components/TopBar';
 import LeftNavigation from '@/components/LeftNavigation';
-import OutputColumns from '@/components/OutputColumns';
+import ChatMessages from '@/components/ChatMessages';
 import RightSelectionsPanel from '@/components/RightSelectionsPanel';
 import ChatInput from '@/components/ChatInput';
 import SocialPostsDrawer, { SocialPostConfig } from '@/components/SocialPostsDrawer';
@@ -889,7 +889,7 @@ export default function Home() {
                   }
                 />
 
-                <OutputColumns
+                <ChatMessages
                   key={chatKey} // Add key to force re-render
                   onSentenceSelect={handleSentenceSelect}
                   selectedSentences={selectedSentences}

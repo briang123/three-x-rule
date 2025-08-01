@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { SocialPlatformProps, getPlatformColors, getContentTypeLabel } from './types';
-import CloseButton from './CloseButton';
+import CloseButton from '../icons/CloseButton';
 import ModelBadge from './ModelBadge';
 import ContentTypeBadge from './ContentTypeBadge';
 import PlatformIcon from './PlatformIcon';
