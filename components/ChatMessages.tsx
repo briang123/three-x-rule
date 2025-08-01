@@ -10,11 +10,12 @@ import { useRemixScroll } from '@/hooks/useRemixScroll';
 import { useScrollPerformance } from '@/hooks/useScrollPerformance';
 import useTimeout from '@/hooks/useTimeout';
 import useSocialPostsBorderFadeOut from '@/hooks/useSocialPostsBorderFadeOut';
+import { useModelOrchestration } from '@/hooks/useModelOrchestration';
 import PromptMessages from './PromptMessages';
 import { SocialPostConfig, SocialPosts } from './social-platforms';
 import RemixMessages from './RemixMessages';
 
-interface OutputColumnsProps {
+interface ChatMessagesProps {
   onSentenceSelect: (sentence: SelectedSentence) => void;
   columnResponses: {
     [key: string]: string[];
@@ -95,14 +96,11 @@ const ChatMessages = React.memo(function ChatMessages({
   onModelSelectionClick,
   isUsingDefaultModel = false,
   isLeftNavCollapsed = true,
-}: OutputColumnsProps) {
-  // Orchestration state
-  const [showModelBadges, setShowModelBadges] = useState(false);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-
+}: ChatMessagesProps) {
   // Position tracking refs
   const modelSelectorRef = useRef<HTMLDivElement>(null);
   const toolsRowRef = useRef<HTMLDivElement>(null);
+
   const handleAddSelection = useCallback(
     (text: string, source: string) => {
       const selectionId = `${source}-${Date.now()}`;
@@ -115,38 +113,37 @@ const ChatMessages = React.memo(function ChatMessages({
     [onSentenceSelect],
   );
 
-  // Orchestration handlers
-  const handleSubmitWithOrchestration = useCallback(
-    async (prompt: string, attachments?: File[]) => {
-      if (!hasSubmitted) {
-        setHasSubmitted(true);
+  // Determine if we should show the 3x3 grid or output columns
+  const hasAIContent = useMemo(() => {
+    // Check if there's any AI-generated content
+    const hasColumnContent = Object.values(originalResponses).some(
+      (response) => response.trim() !== '',
+    );
+    const hasRemixContent = remixResponses.length > 0;
+    const hasSocialContent = Object.values(socialPostsResponses).some(
+      (response) => response.trim() !== '',
+    );
 
-        // Start orchestration
-        onSubmit(prompt, attachments);
-      }
-    },
-    [hasSubmitted, onSubmit],
-  );
+    return hasColumnContent || hasRemixContent || hasSocialContent;
+  }, [originalResponses, remixResponses, socialPostsResponses]);
 
-  const handleRestoreModelSelection = useCallback(() => {
-    setShowModelBadges(false);
-    setHasSubmitted(false);
-    if (onRestoreModelSelection) {
-      onRestoreModelSelection();
-    }
-  }, [onRestoreModelSelection]);
-
-  // Handle orchestration when models are confirmed from modal
-  const handleModelConfirmedOrchestration = useCallback(() => {
-    setHasSubmitted(true);
-
-    // Start orchestration after model confirmation
-    // The actual prompt and modelId will be handled by the pending orchestration mechanism
-  }, []);
-
-  const handleModelSelectorAnimationComplete = useCallback(() => {
-    // This will be called when the ModelGridSelector animation completes
-  }, []);
+  // Use the model orchestration hook
+  const {
+    showModelBadges,
+    hasSubmitted,
+    handleSubmitWithOrchestration,
+    handleRestoreModelSelection,
+    handleModelConfirmedOrchestration,
+    handleModelSelectorAnimationComplete,
+  } = useModelOrchestration({
+    showAISelection,
+    onToggleAISelection,
+    onRestoreModelSelection,
+    resetModelSelector,
+    modelSelections,
+    hasAIContent,
+    onSubmit,
+  });
 
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,50 +167,6 @@ const ChatMessages = React.memo(function ChatMessages({
     offset: 20,
     centerElement: true,
   });
-
-  // Determine if we should show the 3x3 grid or output columns
-  const hasAIContent = useMemo(() => {
-    // Check if there's any AI-generated content
-    const hasColumnContent = Object.values(originalResponses).some(
-      (response) => response.trim() !== '',
-    );
-    const hasRemixContent = remixResponses.length > 0;
-    const hasSocialContent = Object.values(socialPostsResponses).some(
-      (response) => response.trim() !== '',
-    );
-
-    return hasColumnContent || hasRemixContent || hasSocialContent;
-  }, [originalResponses, remixResponses, socialPostsResponses]);
-
-  // Auto-hide AI selection when content is received
-  useEffect(() => {
-    if (hasAIContent && showAISelection && onToggleAISelection) {
-      onToggleAISelection();
-    }
-  }, [hasAIContent, showAISelection, onToggleAISelection]);
-
-  // Reset model selector state when resetModelSelector prop changes
-  useEffect(() => {
-    if (resetModelSelector) {
-      setShowModelBadges(false);
-      setHasSubmitted(false);
-    }
-  }, [resetModelSelector]);
-
-  // Reset model selector when showAISelection becomes true
-  useEffect(() => {
-    if (showAISelection) {
-      setShowModelBadges(false);
-      setHasSubmitted(false);
-    }
-  }, [showAISelection]);
-
-  // Show model badges when modelSelections are updated and AI selection is closed
-  useEffect(() => {
-    if (modelSelections.length > 0 && !showAISelection) {
-      setShowModelBadges(true);
-    }
-  }, [modelSelections, showAISelection]);
 
   // Get all column keys from columnResponses prop
   const columnKeys = Object.keys(columnResponses);
