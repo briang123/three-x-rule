@@ -16,8 +16,6 @@ import RemixMessages from './RemixMessages';
 
 interface OutputColumnsProps {
   onSentenceSelect: (sentence: SelectedSentence) => void;
-  selectedSentences: SelectedSentence[];
-  onModelChange?: (column: string, modelId: string) => void;
   columnResponses: {
     [key: string]: string[];
   };
@@ -27,13 +25,10 @@ interface OutputColumnsProps {
   isGenerating: {
     [key: string]: boolean;
   };
-  onAddColumn?: () => void;
-  onDeleteColumn?: (column: string) => void;
   // Remix props
   remixResponses?: string[];
   remixModels?: string[];
   showRemix?: boolean;
-  onCloseRemix?: () => void;
   remixModel?: string;
   // Social Posts props
   socialPostsResponses?: { [key: string]: string };
@@ -48,7 +43,6 @@ interface OutputColumnsProps {
   remixDisabled?: boolean;
   isRemixGenerating?: boolean;
   // New 3x3 grid props
-  onModelSelectionsChange?: (selections: ModelSelection[]) => void;
   modelSelections?: ModelSelection[];
   // Column models from parent component
   columnModels?: { [key: string]: string };
@@ -60,8 +54,6 @@ interface OutputColumnsProps {
   showAISelection?: boolean;
   onToggleAISelection?: () => void;
   resetModelSelector?: boolean;
-  // Close callback for AI selection
-  onCloseAISelection?: () => void;
   // Model selection badge props
   onModelSelectionClick?: () => void;
   // Default model usage flag
@@ -74,17 +66,12 @@ interface OutputColumnsProps {
 
 const ChatMessages = React.memo(function ChatMessages({
   onSentenceSelect,
-  selectedSentences,
-  onModelChange,
   columnResponses,
   originalResponses,
   isGenerating,
-  onAddColumn,
-  onDeleteColumn,
   remixResponses = [],
   remixModels = [],
   showRemix = false,
-  onCloseRemix,
   remixModel = '',
   socialPostsResponses = {},
   isSocialPostsGenerating = {},
@@ -96,7 +83,6 @@ const ChatMessages = React.memo(function ChatMessages({
   onRemix,
   remixDisabled = false,
   isRemixGenerating = false,
-  onModelSelectionsChange,
   modelSelections = [],
   columnModels = {},
   onModelSelect,
@@ -106,13 +92,11 @@ const ChatMessages = React.memo(function ChatMessages({
   showAISelection = true,
   onToggleAISelection,
   resetModelSelector = false,
-  onCloseAISelection,
   onModelSelectionClick,
   isUsingDefaultModel = false,
   isLeftNavCollapsed = true,
 }: OutputColumnsProps) {
   // Orchestration state
-  const [isModelSelectorCollapsed, setIsModelSelectorCollapsed] = useState(false);
   const [showModelBadges, setShowModelBadges] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
@@ -146,7 +130,6 @@ const ChatMessages = React.memo(function ChatMessages({
 
   const handleRestoreModelSelection = useCallback(() => {
     setShowModelBadges(false);
-    setIsModelSelectorCollapsed(false);
     setHasSubmitted(false);
     if (onRestoreModelSelection) {
       onRestoreModelSelection();
@@ -212,7 +195,6 @@ const ChatMessages = React.memo(function ChatMessages({
   // Reset model selector state when resetModelSelector prop changes
   useEffect(() => {
     if (resetModelSelector) {
-      setIsModelSelectorCollapsed(false);
       setShowModelBadges(false);
       setHasSubmitted(false);
     }
@@ -221,7 +203,6 @@ const ChatMessages = React.memo(function ChatMessages({
   // Reset model selector when showAISelection becomes true
   useEffect(() => {
     if (showAISelection) {
-      setIsModelSelectorCollapsed(false);
       setShowModelBadges(false);
       setHasSubmitted(false);
     }
@@ -284,7 +265,7 @@ const ChatMessages = React.memo(function ChatMessages({
   useScrollPerformance(scrollContainerRef, 150);
 
   // Timeout hooks for scroll effects
-  const remixScrollTimeout = useTimeout(
+  useTimeout(
     () => {
       if (remixRef.current) {
         scrollToElement(remixRef.current, { center: true });
@@ -293,14 +274,14 @@ const ChatMessages = React.memo(function ChatMessages({
     showRemix && !prevShowRemixRef.current ? 100 : null,
   );
 
-  const aiContentScrollTimeout = useTimeout(
+  useTimeout(
     () => {
       scrollToTop();
     },
     hasAIContent && !prevHasAIContentRef.current ? 200 : null,
   );
 
-  const columnScrollTimeout = useTimeout(
+  useTimeout(
     () => {
       const newColumns = columnKeys.filter((column) => !prevColumnKeysRef.current.includes(column));
       if (newColumns.length > 0 && hasAIContent) {
