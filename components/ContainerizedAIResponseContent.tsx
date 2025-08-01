@@ -117,7 +117,7 @@ function ErrorMessage({ message }: { message: string }) {
   );
 }
 
-interface ContainerizedAIResponseCardProps {
+interface ContainerizedAIResponseContentProps {
   content: string;
   column: string;
   onAddSelection: (text: string) => void;
@@ -125,7 +125,7 @@ interface ContainerizedAIResponseCardProps {
   className?: string;
 }
 
-const ContainerizedAIResponseCard: React.FC<ContainerizedAIResponseCardProps> = ({
+const ContainerizedAIResponseContent: React.FC<ContainerizedAIResponseContentProps> = ({
   content,
   column,
   onAddSelection,
@@ -152,4 +152,4 @@ const ContainerizedAIResponseCard: React.FC<ContainerizedAIResponseCardProps> = 
   );
 };
 
-export default ContainerizedAIResponseCard;
+export default ContainerizedAIResponseContent;

@@ -3,17 +3,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ModelInfo } from '@/lib/api-client';
+import { SocialPostConfig } from './social-platforms';
 
-export interface SocialPostConfig {
-  platform: string;
-  modelId: string;
-  postType: string;
-  numberOfPosts: number;
-  characterLimit: number;
-  isThreaded: boolean;
-  customPrompt?: string;
-  selectedColumns?: string[];
-}
+export { SocialPostConfig };
 
 interface SocialPostsDrawerProps {
   isOpen: boolean;
