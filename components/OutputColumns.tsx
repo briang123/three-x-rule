@@ -4,137 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { SelectedSentence } from '@/app/page';
 import { ModelInfo } from '@/lib/api-client';
-import ReactMarkdown from 'react-markdown';
-import TextHighlighter, { useTextHighlighter, Highlight } from './TextHighlighter';
 import { TypingIndicator } from './TypingIndicator';
 import ChatInputMessage from './ChatInputMessage';
 import { ModelSelection } from './ModelGridSelector';
 import RemixButtonCard from './RemixButtonCard';
 import { useRemixScroll } from '@/hooks/useScroll';
-import './TextHighlighter.css';
-
-// Copy to Clipboard Component
-function CopyButton({ content }: { content: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(content);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="p-1 text-kitchen-text-light hover:text-kitchen-text transition-colors"
-      title="Copy to clipboard"
-    >
-      {copied ? (
-        <svg
-          className="w-4 h-4 text-green-500"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-      ) : (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-          />
-        </svg>
-      )}
-    </button>
-  );
-}
-
-// Highlightable Text Component using the modular TextHighlighter
-function HighlightableText({
-  content,
-  onAddSelection,
-  column,
-}: {
-  content: string;
-  onAddSelection: (text: string) => void;
-  column: string;
-}) {
-  const { highlights, addHighlight, removeHighlight } = useTextHighlighter();
-
-  const columnColors = {
-    A: 'rgba(59, 130, 246, 0.3)', // blue
-    B: 'rgba(34, 197, 94, 0.3)', // green
-    C: 'rgba(168, 85, 247, 0.3)', // purple
-    D: 'rgba(239, 68, 68, 0.3)', // red
-    E: 'rgba(245, 158, 11, 0.3)', // orange
-    F: 'rgba(16, 185, 129, 0.3)', // emerald
-    R: 'rgba(168, 85, 247, 0.3)', // purple for remix
-    S: 'rgba(34, 197, 94, 0.3)', // green for social posts
-  };
-
-  const handleHighlightAdd = (highlight: Highlight) => {
-    // Add to local highlights - extract the data without id and timestamp
-    const { id, timestamp, ...highlightData } = highlight;
-    addHighlight(highlightData);
-
-    // Add to selections for the parent component
-    onAddSelection(highlight.text);
-  };
-
-  const handleHighlightRemove = (highlightId: string) => {
-    removeHighlight(highlightId);
-  };
-
-  return (
-    <div className="relative">
-      <TextHighlighter
-        highlights={highlights}
-        onHighlightAdd={handleHighlightAdd}
-        onHighlightRemove={handleHighlightRemove}
-        highlightColor={
-          columnColors[column as keyof typeof columnColors] || 'rgba(156, 163, 175, 0.3)'
-        }
-        className={`bg-gray-50 dark:bg-kitchen-dark-surface rounded-lg p-4 border border-gray-200 dark:border-kitchen-dark-border select-text highlightable-text-${column.toLowerCase()}`}
-      >
-        <div className="text-sm text-gray-800 dark:text-kitchen-dark-text markdown-content">
-          <ReactMarkdown
-            components={{
-              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-              h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
-              h2: ({ children }) => <h2 className="text-base font-bold mb-2">{children}</h2>,
-              h3: ({ children }) => <h3 className="text-sm font-bold mb-1">{children}</h3>,
-              strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-              em: ({ children }) => <em className="italic">{children}</em>,
-              code: ({ children }) => (
-                <code className="bg-gray-200 px-1 py-0.5 rounded text-xs">{children}</code>
-              ),
-              pre: ({ children }) => (
-                <pre className="bg-gray-200 p-2 rounded text-xs overflow-x-auto">{children}</pre>
-              ),
-              ul: ({ children }) => <ul className="mb-2 space-y-1">{children}</ul>,
-              ol: ({ children }) => <ol className="mb-2 space-y-1">{children}</ol>,
-              li: ({ children }) => <li className="text-sm">{children}</li>,
-              blockquote: ({ children }) => (
-                <blockquote className="border-l-4 border-gray-300 pl-4 italic">
-                  {children}
-                </blockquote>
-              ),
-            }}
-          >
-            {content}
-          </ReactMarkdown>
-        </div>
-      </TextHighlighter>
-    </div>
-  );
-}
+import ContainerizedAIResponseCard from './ContainerizedAIResponseCard';
 
 // Function to clean markdown formatting from a post
 function cleanMarkdownFormatting(post: string): string {
@@ -152,37 +27,6 @@ function removeNumberingPrefixes(post: string): string {
     .replace(/^#\d+\s*/, '')
     .replace(/^Part\s+\d+:\s*/gi, '')
     .trim();
-}
-
-// Function to check if a message is an error
-function isErrorMessage(message: string): boolean {
-  return (
-    message.startsWith('Rate limit exceeded') ||
-    message.startsWith('Authentication error') ||
-    message.startsWith('Server error') ||
-    message.startsWith('Network error') ||
-    message.startsWith('An error occurred')
-  );
-}
-
-// Function to render error message with consistent styling
-function ErrorMessage({ message }: { message: string }) {
-  return (
-    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-      <div className="flex items-center space-x-2 mb-2">
-        <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span className="text-sm font-medium text-red-700 dark:text-red-300">Error</span>
-      </div>
-      <p className="text-red-600 dark:text-red-400 text-sm">{message}</p>
-    </div>
-  );
 }
 
 // Function to parse social posts into individual posts
@@ -792,34 +636,11 @@ const OutputColumns = React.memo(function OutputColumns({
                       </div>
                     ) : (
                       // Markdown View
-                      <div className="relative">
-                        {(originalResponses[column] || columnResponses[column].join('\n\n')) && (
-                          <div className="absolute top-2 right-2 z-10">
-                            <CopyButton
-                              content={
-                                originalResponses[column] || columnResponses[column].join('\n\n')
-                              }
-                            />
-                          </div>
-                        )}
-                        {isErrorMessage(
-                          originalResponses[column] || columnResponses[column].join('\n\n'),
-                        ) ? (
-                          <ErrorMessage
-                            message={
-                              originalResponses[column] || columnResponses[column].join('\n\n')
-                            }
-                          />
-                        ) : (
-                          <HighlightableText
-                            content={
-                              originalResponses[column] || columnResponses[column].join('\n\n')
-                            }
-                            onAddSelection={(text) => handleAddSelection(text, column)}
-                            column={column}
-                          />
-                        )}
-                      </div>
+                      <ContainerizedAIResponseCard
+                        content={originalResponses[column] || columnResponses[column].join('\n\n')}
+                        column={column}
+                        onAddSelection={(text) => handleAddSelection(text, column)}
+                      />
                     )}
                   </div>
                 </div>
@@ -925,20 +746,11 @@ const OutputColumns = React.memo(function OutputColumns({
                       </div>
                     ) : (
                       // Completed response display
-                      <div className="relative">
-                        <div className="absolute top-2 right-2 z-10">
-                          <CopyButton content={response} />
-                        </div>
-                        {isErrorMessage(response) ? (
-                          <ErrorMessage message={response} />
-                        ) : (
-                          <HighlightableText
-                            content={response}
-                            onAddSelection={(text) => handleAddSelection(text, 'R')}
-                            column="R"
-                          />
-                        )}
-                      </div>
+                      <ContainerizedAIResponseCard
+                        content={response}
+                        column="R"
+                        onAddSelection={(text) => handleAddSelection(text, 'R')}
+                      />
                     )}
                   </div>
                 </div>
@@ -1138,8 +950,37 @@ const OutputColumns = React.memo(function OutputColumns({
                       <div className="space-y-4">
                         {(() => {
                           // Check if response is an error message
-                          if (isErrorMessage(response)) {
-                            return <ErrorMessage message={response} />;
+                          if (
+                            response &&
+                            (response.startsWith('Rate limit exceeded') ||
+                              response.startsWith('Authentication error') ||
+                              response.startsWith('Server error') ||
+                              response.startsWith('Network error') ||
+                              response.startsWith('An error occurred'))
+                          ) {
+                            return (
+                              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <svg
+                                    className="w-5 h-5 text-red-500"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                  </svg>
+                                  <span className="text-sm font-medium text-red-700 dark:text-red-300">
+                                    Error
+                                  </span>
+                                </div>
+                                <p className="text-red-600 dark:text-red-400 text-sm">{response}</p>
+                              </div>
+                            );
                           }
 
                           const posts = parseSocialPosts(response);
@@ -1188,7 +1029,33 @@ const OutputColumns = React.memo(function OutputColumns({
                                                   : 'posts'}
                                     </span>
                                   </div>
-                                  <CopyButton content={response} />
+                                  <div className="absolute top-2 right-2 z-10">
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          await navigator.clipboard.writeText(response);
+                                        } catch (err) {
+                                          console.error('Failed to copy: ', err);
+                                        }
+                                      }}
+                                      className="p-1 text-kitchen-text-light hover:text-kitchen-text transition-colors"
+                                      title="Copy to clipboard"
+                                    >
+                                      <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                        />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 </div>
                               )}
                               {posts.map((post, index) => (
@@ -1196,11 +1063,6 @@ const OutputColumns = React.memo(function OutputColumns({
                                   key={index}
                                   className="relative bg-white dark:bg-kitchen-dark-surface border border-gray-200 dark:border-kitchen-dark-border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
                                 >
-                                  {post && post.trim() && (
-                                    <div className="absolute top-2 right-2 z-10">
-                                      <CopyButton content={post} />
-                                    </div>
-                                  )}
                                   <div className="flex items-center mb-3">
                                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-kitchen-dark-surface-light px-2 py-1 rounded">
                                       {config?.postType === 'tweet'
@@ -1222,10 +1084,11 @@ const OutputColumns = React.memo(function OutputColumns({
                                       </span>
                                     )}
                                   </div>
-                                  <HighlightableText
+                                  <ContainerizedAIResponseCard
                                     content={post}
-                                    onAddSelection={(text) => handleAddSelection(text, 'S')}
                                     column="S"
+                                    onAddSelection={(text) => handleAddSelection(text, 'S')}
+                                    showCopyButton={false}
                                   />
                                 </div>
                               ))}
