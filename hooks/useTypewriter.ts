@@ -31,10 +31,11 @@ export function useTypewriter({
       let i = 0;
       const type = () => {
         if (i < text.length) {
-          setDisplayed((prev) => prev + text[i]);
+          const char = text[i];
+          setDisplayed((prev) => prev + char);
 
           let delay = speed;
-          if (['.', ',', '?', '!'].includes(text[i])) {
+          if (['.', ',', '?', '!'].includes(char)) {
             delay += pauseAfterPunctuation;
           }
 

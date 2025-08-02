@@ -217,7 +217,7 @@ const ChatMessages = React.memo(function ChatMessages({
   // Effect to scroll to remix when it appears
   useEffect(() => {
     prevShowRemixRef.current = showRemix;
-  }, [showRemix, prevShowRemixRef]);
+  }, [showRemix]);
 
   // Effect to scroll to new social posts when they appear
   useEffect(() => {
@@ -233,17 +233,17 @@ const ChatMessages = React.memo(function ChatMessages({
       }
     });
     prevShowSocialPostsRef.current = { ...showSocialPosts };
-  }, [showSocialPosts, scrollToElement, prevShowSocialPostsRef, socialPostsRefs]);
+  }, [showSocialPosts, scrollToElement]);
 
   // Effect to scroll to new AI content when it first appears
   useEffect(() => {
     prevHasAIContentRef.current = hasAIContent;
-  }, [hasAIContent, prevHasAIContentRef]);
+  }, [hasAIContent]);
 
   // Effect to scroll to new messages when they are added
   useEffect(() => {
     prevMessageKeysRef.current = messageKeys;
-  }, [messageKeys, prevMessageKeysRef]);
+  }, [messageKeys]);
 
   // Set up timeout triggers for scroll effects
   useEffect(() => {
@@ -258,7 +258,7 @@ const ChatMessages = React.memo(function ChatMessages({
         }
       }, 100);
     }
-  }, [showRemix, prevShowRemixRef, remixScrollTimeout, remixResponseRefs, scrollToElement]);
+  }, [showRemix, scrollToElement]);
 
   useEffect(() => {
     if (hasAIContent && !prevHasAIContentRef.current) {
@@ -266,7 +266,7 @@ const ChatMessages = React.memo(function ChatMessages({
         scrollToTop();
       }, 200);
     }
-  }, [hasAIContent, prevHasAIContentRef, aiContentScrollTimeout, scrollToTop]);
+  }, [hasAIContent, scrollToTop]);
 
   useEffect(() => {
     if (messageKeys.length > prevMessageKeysRef.current.length && hasAIContent) {
@@ -284,14 +284,7 @@ const ChatMessages = React.memo(function ChatMessages({
         }
       }, 100);
     }
-  }, [
-    messageKeys,
-    prevMessageKeysRef,
-    hasAIContent,
-    newMessagesScrollTimeout,
-    messageRefs,
-    scrollToElement,
-  ]);
+  }, [messageKeys, hasAIContent, scrollToElement]);
 
   const getMessageColor = (message: string) => {
     const colors = {
