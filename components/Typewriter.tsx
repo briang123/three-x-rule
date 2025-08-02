@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTypewriter } from '@/hooks/useTypewriter';
+import { useTypewriter } from '@/hooks';
 import ReactMarkdown from 'react-markdown';
 
 export function Typewriter({

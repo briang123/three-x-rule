@@ -5,12 +5,11 @@ import { SelectedSentence } from '@/app/page';
 import { ModelInfo } from '@/lib/api-client';
 import ChatInputWrapper from './ChatInputWrapper';
 import { ModelSelection } from './ModelGridSelector';
-import { useScroll } from '@/hooks/useScroll';
-import { useRemixScroll } from '@/hooks/useRemixScroll';
-import { useScrollPerformance } from '@/hooks/useScrollPerformance';
-import useTimeout from '@/hooks/useTimeout';
-import useSocialPostsBorderFadeOut from '@/hooks/useSocialPostsBorderFadeOut';
-import { useModelOrchestration } from '@/hooks/useModelOrchestration';
+import {
+  useScrollEffectsWithState,
+  useSocialPostsBorderFadeOut,
+  useModelOrchestration,
+} from '@/hooks';
 import PromptMessages from './PromptMessages';
 import { SocialPostConfig, SocialPosts } from './social-platforms';
 import RemixMessages from './RemixMessages';
@@ -148,6 +147,7 @@ const ChatMessages = React.memo(function ChatMessages({
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+
   // Use the social posts border fade-out hook
   const { socialPostsBorderStates, setSocialPostsBorderStates } = useSocialPostsBorderFadeOut({
     socialPostsResponses,
@@ -156,37 +156,45 @@ const ChatMessages = React.memo(function ChatMessages({
     fadeOutDelay: 10000,
   });
 
-  // Refs for smooth scrolling
-  const remixRef = useRef<HTMLDivElement>(null);
-  const socialPostsRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // Use the enhanced scroll hook with centering enabled
-  const { scrollToElement, scrollToTop } = useScroll(scrollContainerRef, {
-    behavior: 'smooth',
-    offset: 20,
-    centerElement: true,
-  });
-
   // Get all column keys from columnResponses prop
   const columnKeys = Object.keys(columnResponses);
 
-  // Use ref to track previous columnModels to avoid infinite re-renders
-  const prevColumnModelsRef = useRef<{ [key: string]: string }>({});
-  // Use ref to track column keys to prevent infinite re-renders
-  const prevColumnKeysRef = useRef<string[]>([]);
-  const columnRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  // Track previous states for scroll triggers
-  const prevShowRemixRef = useRef<boolean>(false);
-  const prevShowSocialPostsRef = useRef<{ [key: string]: boolean }>({});
-  const prevHasAIContentRef = useRef<boolean>(false);
-
-  // Enhanced scroll hook provides smoothScrollToElement functionality
+  // Use the consolidated scroll effects hook
+  const {
+    scrollToElement,
+    scrollToTop,
+    scrollContainerRef,
+    remixResponseRefs,
+    scrollToLatestRemix,
+    socialPostsRefs,
+    columnRefs,
+    // State tracking
+    prevShowRemixRef,
+    prevShowSocialPostsRef,
+    prevHasAIContentRef,
+    prevColumnKeysRef,
+    // Timeout refs
+    remixScrollTimeout,
+    aiContentScrollTimeout,
+    newColumnsScrollTimeout,
+    socialPostsScrollTimeout,
+  } = useScrollEffectsWithState(undefined, {
+    scrollOptions: {
+      behavior: 'smooth',
+      offset: 20,
+      centerElement: true,
+    },
+    performanceDelay: 150,
+    remixScrollDelay: 100,
+    socialPostsScrollDelay: 100,
+    aiContentScrollDelay: 200,
+    newColumnsScrollDelay: 100,
+  });
 
   // Effect to scroll to remix when it appears
   useEffect(() => {
     prevShowRemixRef.current = showRemix;
-  }, [showRemix]);
+  }, [showRemix, prevShowRemixRef]);
 
   // Effect to scroll to new social posts when they appear
   useEffect(() => {
@@ -202,52 +210,65 @@ const ChatMessages = React.memo(function ChatMessages({
       }
     });
     prevShowSocialPostsRef.current = { ...showSocialPosts };
-  }, [showSocialPosts, scrollToElement]);
+  }, [showSocialPosts, scrollToElement, prevShowSocialPostsRef, socialPostsRefs]);
 
   // Effect to scroll to new AI content when it first appears
   useEffect(() => {
     prevHasAIContentRef.current = hasAIContent;
-  }, [hasAIContent]);
+  }, [hasAIContent, prevHasAIContentRef]);
 
   // Effect to scroll to new columns when they are added
   useEffect(() => {
     prevColumnKeysRef.current = columnKeys;
-  }, [columnKeys]);
+  }, [columnKeys, prevColumnKeysRef]);
 
-  // Use scroll performance optimization hook
-  useScrollPerformance(scrollContainerRef, 150);
-
-  // Timeout hooks for scroll effects
-  useTimeout(
-    () => {
-      if (remixRef.current) {
-        scrollToElement(remixRef.current, { center: true });
-      }
-    },
-    showRemix && !prevShowRemixRef.current ? 100 : null,
-  );
-
-  useTimeout(
-    () => {
-      scrollToTop();
-    },
-    hasAIContent && !prevHasAIContentRef.current ? 200 : null,
-  );
-
-  useTimeout(
-    () => {
-      const newColumns = columnKeys.filter((column) => !prevColumnKeysRef.current.includes(column));
-      if (newColumns.length > 0 && hasAIContent) {
-        // Scroll to the last new column
-        const lastNewColumn = newColumns[newColumns.length - 1];
-        const columnRef = columnRefs.current[lastNewColumn];
-        if (columnRef) {
-          scrollToElement(columnRef, { center: true });
+  // Set up timeout triggers for scroll effects
+  useEffect(() => {
+    if (showRemix && !prevShowRemixRef.current) {
+      remixScrollTimeout.current = setTimeout(() => {
+        const keys = Object.keys(remixResponseRefs.current)
+          .map(Number)
+          .sort((a, b) => b - a);
+        const latestIndex = keys[0];
+        if (latestIndex !== undefined && remixResponseRefs.current[latestIndex]) {
+          scrollToElement(remixResponseRefs.current[latestIndex], { center: true });
         }
-      }
-    },
-    columnKeys.length > prevColumnKeysRef.current.length && hasAIContent ? 100 : null,
-  );
+      }, 100);
+    }
+  }, [showRemix, prevShowRemixRef, remixScrollTimeout, remixResponseRefs, scrollToElement]);
+
+  useEffect(() => {
+    if (hasAIContent && !prevHasAIContentRef.current) {
+      aiContentScrollTimeout.current = setTimeout(() => {
+        scrollToTop();
+      }, 200);
+    }
+  }, [hasAIContent, prevHasAIContentRef, aiContentScrollTimeout, scrollToTop]);
+
+  useEffect(() => {
+    if (columnKeys.length > prevColumnKeysRef.current.length && hasAIContent) {
+      newColumnsScrollTimeout.current = setTimeout(() => {
+        const newColumns = columnKeys.filter(
+          (column) => !prevColumnKeysRef.current.includes(column),
+        );
+        if (newColumns.length > 0) {
+          // Scroll to the last new column
+          const lastNewColumn = newColumns[newColumns.length - 1];
+          const columnRef = columnRefs.current[lastNewColumn];
+          if (columnRef) {
+            scrollToElement(columnRef, { center: true });
+          }
+        }
+      }, 100);
+    }
+  }, [
+    columnKeys,
+    prevColumnKeysRef,
+    hasAIContent,
+    newColumnsScrollTimeout,
+    columnRefs,
+    scrollToElement,
+  ]);
 
   useEffect(() => {
     let isMounted = true;
@@ -293,14 +314,6 @@ const ChatMessages = React.memo(function ChatMessages({
     };
     return colors[column as keyof typeof colors] || 'bg-gray-500';
   };
-
-  // Use the remix scroll hook
-  const { remixResponseRefs, scrollToLatestRemix } = useRemixScroll(
-    remixResponses.length,
-    isRemixGenerating,
-    scrollContainerRef, // Pass the scroll container ref
-    { offset: 40 }, // Add more offset to ensure entire card is visible
-  );
 
   return (
     <div className="relative w-full h-full flex flex-col">

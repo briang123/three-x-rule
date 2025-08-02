@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { useCopyToClipboard } from '@/hooks';
 
 interface CopyButtonProps {
   content: string;

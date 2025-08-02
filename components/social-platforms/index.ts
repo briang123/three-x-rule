@@ -1,5 +1,6 @@
 // Export types
 export * from './types';
+export type { SocialPostConfig } from './types';
 
 // Export base component
 export { default as BaseSocialPlatform } from './BaseSocialPlatform';
