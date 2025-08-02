@@ -60,11 +60,12 @@ const RemixMessages: React.FC<RemixMessagesProps> = ({
         ))}
 
       {/* RemixButtonCard Component */}
-      {hasAIContent && (
+      {hasAIContent && Object.keys(messageResponses).length > 1 && (
         <RemixButtonWrapper
           onRemix={onRemix}
-          remixDisabled={remixDisabled}
-          isRemixGenerating={isRemixGenerating}
+          onRemixStart={() => {}}
+          disabled={remixDisabled}
+          isGenerating={isRemixGenerating}
           responseCount={Object.keys(messageResponses).length}
         />
       )}

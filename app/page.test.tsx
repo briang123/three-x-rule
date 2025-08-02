@@ -30,7 +30,7 @@ jest.mock('../components/TopBar', () => {
 jest.mock('../components/ChatMessages', () => {
   return function MockChatMessages({
     onSentenceSelect,
-    columnResponses,
+    messageResponses,
     originalResponses,
     isGenerating,
     remixResponses,
@@ -48,7 +48,7 @@ jest.mock('../components/ChatMessages', () => {
     remixDisabled,
     isRemixGenerating,
     modelSelections,
-    columnModels,
+    messageModels,
     onModelSelect,
     onModelSelectionsUpdate,
     onDirectSubmit,
@@ -63,7 +63,7 @@ jest.mock('../components/ChatMessages', () => {
     return (
       <div data-testid="chat-messages">
         <div data-testid="remix-disabled">{remixDisabled?.toString() || 'false'}</div>
-        <div data-testid="column-responses">{JSON.stringify(columnResponses)}</div>
+        <div data-testid="message-responses">{JSON.stringify(messageResponses)}</div>
         <div data-testid="current-message">{currentMessage}</div>
         <div data-testid="model-selections">{JSON.stringify(modelSelections)}</div>
         {onRemix && <button onClick={() => onRemix('test-model')}>Remix</button>}
@@ -105,11 +105,11 @@ jest.mock('../components/ModelSelectionModal', () => {
 
 // Test the remixDisabled calculation logic directly
 const calculateRemixDisabled = (
-  columnResponses: any,
+  messageResponses: any,
   currentMessage: string,
   modelSelections: any[],
 ) => {
-  const hasResponses = Object.values(columnResponses).some(
+  const hasResponses = Object.values(messageResponses).some(
     (responses: any) => responses.length > 0,
   );
   const hasCurrentMessage = currentMessage.trim();
@@ -125,68 +125,68 @@ const calculateRemixDisabled = (
 
 describe('Remix Button Logic', () => {
   it('should disable remix button when no responses exist', () => {
-    const columnResponses = {};
+    const messageResponses = {};
     const currentMessage = 'test message';
     const modelSelections = [
       { modelId: 'gemini-2.5-flash', count: 1 },
       { modelId: 'gemini-2.5-flash-lite', count: 1 },
     ];
 
-    const isDisabled = calculateRemixDisabled(columnResponses, currentMessage, modelSelections);
+    const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
     expect(isDisabled).toBe(true);
   });
 
   it('should disable remix button when no current message', () => {
-    const columnResponses = { '1': ['Response 1'], '2': ['Response 2'] };
+    const messageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
     const currentMessage = '';
     const modelSelections = [
       { modelId: 'gemini-2.5-flash', count: 1 },
       { modelId: 'gemini-2.5-flash-lite', count: 1 },
     ];
 
-    const isDisabled = calculateRemixDisabled(columnResponses, currentMessage, modelSelections);
+    const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
     expect(isDisabled).toBe(true);
   });
 
   it('should disable remix button when total model quantity is 1', () => {
-    const columnResponses = { '1': ['Response 1'] };
+    const messageResponses = { '1': ['Response 1'] };
     const currentMessage = 'test message';
     const modelSelections = [{ modelId: 'gemini-2.5-flash', count: 1 }];
 
-    const isDisabled = calculateRemixDisabled(columnResponses, currentMessage, modelSelections);
+    const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
     expect(isDisabled).toBe(true);
   });
 
   it('should disable remix button when total model quantity is 0', () => {
-    const columnResponses = { '1': ['Response 1'] };
+    const messageResponses = { '1': ['Response 1'] };
     const currentMessage = 'test message';
     const modelSelections = [];
 
-    const isDisabled = calculateRemixDisabled(columnResponses, currentMessage, modelSelections);
+    const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
     expect(isDisabled).toBe(true);
   });
 
   it('should enable remix button when all conditions are met', () => {
-    const columnResponses = { '1': ['Response 1'], '2': ['Response 2'] };
+    const messageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
     const currentMessage = 'test message';
     const modelSelections = [
       { modelId: 'gemini-2.5-flash', count: 1 },
       { modelId: 'gemini-2.5-flash-lite', count: 1 },
     ];
 
-    const isDisabled = calculateRemixDisabled(columnResponses, currentMessage, modelSelections);
+    const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
     expect(isDisabled).toBe(false);
   });
 
   it('should enable remix button when total model quantity is 3', () => {
-    const columnResponses = { '1': ['Response 1'] };
+    const messageResponses = { '1': ['Response 1'] };
     const currentMessage = 'test message';
     const modelSelections = [
       { modelId: 'gemini-2.5-flash', count: 2 },
       { modelId: 'gemini-2.5-flash-lite', count: 1 },
     ];
 
-    const isDisabled = calculateRemixDisabled(columnResponses, currentMessage, modelSelections);
+    const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
     expect(isDisabled).toBe(false);
   });
 });
@@ -208,7 +208,7 @@ describe('Model Selection Response Preservation', () => {
     // preserves existing responses instead of clearing them
 
     // Mock the handleModelSelectionsChange function behavior
-    const mockColumnResponses = {
+    const mockMessageResponses = {
       '1': ['Existing response 1', 'Existing response 2'],
       '2': ['Existing response 3'],
     };
@@ -228,74 +228,130 @@ describe('Model Selection Response Preservation', () => {
     ];
 
     // Simulate the updated state that should preserve responses
-    const newColumnModels: { [key: string]: string } = {};
-    const newColumnResponses: { [key: string]: string[] } = {};
+    const newMessageModels: { [key: string]: string } = {};
+    const newMessageResponses: { [key: string]: string[] } = {};
     const newOriginalResponses: { [key: string]: string } = {};
     const newIsGenerating: { [key: string]: boolean } = {};
 
-    let columnIndex = 1;
+    let messageIndex = 1;
     newSelections.forEach((selection) => {
       for (let i = 0; i < selection.count; i++) {
-        const columnKey = columnIndex.toString();
-        newColumnModels[columnKey] = selection.modelId;
+        const messageKey = messageIndex.toString();
+        newMessageModels[messageKey] = selection.modelId;
         // Preserve existing responses if they exist, otherwise initialize empty
-        newColumnResponses[columnKey] = mockColumnResponses[columnKey] || [];
-        newOriginalResponses[columnKey] = mockOriginalResponses[columnKey] || '';
-        newIsGenerating[columnKey] = mockIsGenerating[columnKey] || false;
-        columnIndex++;
+        newMessageResponses[messageKey] = mockMessageResponses[messageKey] || [];
+        newOriginalResponses[messageKey] = mockOriginalResponses[messageKey] || '';
+        newIsGenerating[messageKey] = mockIsGenerating[messageKey] || false;
+        messageIndex++;
       }
     });
 
     // Verify that responses are preserved
-    expect(newColumnResponses['1']).toEqual(['Existing response 1', 'Existing response 2']);
-    expect(newColumnResponses['2']).toEqual(['Existing response 3']);
+    expect(newMessageResponses['1']).toEqual(['Existing response 1', 'Existing response 2']);
+    expect(newMessageResponses['2']).toEqual(['Existing response 3']);
     expect(newOriginalResponses['1']).toBe('Original response 1');
     expect(newOriginalResponses['2']).toBe('Original response 2');
     expect(newIsGenerating['1']).toBe(false);
     expect(newIsGenerating['2']).toBe(false);
 
-    // Verify that column models are updated correctly
-    expect(newColumnModels['1']).toBe('gemini-2.5-flash');
-    expect(newColumnModels['2']).toBe('claude-3-5-sonnet');
+    // Verify that message models are updated correctly
+    expect(newMessageModels['1']).toBe('gemini-2.5-flash');
+    expect(newMessageModels['2']).toBe('claude-3-5-sonnet');
   });
 
-  it('should initialize empty responses for new columns when no existing responses', () => {
-    // This test verifies that new columns get empty responses when there are no existing ones
+  it('should initialize empty responses for new messages when no existing responses', () => {
+    // This test verifies that new messages get empty responses when there are no existing ones
 
-    const mockColumnResponses = {};
+    const mockMessageResponses = {};
     const mockOriginalResponses = {};
     const mockIsGenerating = {};
 
     const newSelections = [{ modelId: 'gemini-2.5-flash', count: 2 }];
 
-    const newColumnModels: { [key: string]: string } = {};
-    const newColumnResponses: { [key: string]: string[] } = {};
+    const newMessageModels: { [key: string]: string } = {};
+    const newMessageResponses: { [key: string]: string[] } = {};
     const newOriginalResponses: { [key: string]: string } = {};
     const newIsGenerating: { [key: string]: boolean } = {};
 
-    let columnIndex = 1;
+    let messageIndex = 1;
     newSelections.forEach((selection) => {
       for (let i = 0; i < selection.count; i++) {
-        const columnKey = columnIndex.toString();
-        newColumnModels[columnKey] = selection.modelId;
+        const messageKey = messageIndex.toString();
+        newMessageModels[messageKey] = selection.modelId;
         // Preserve existing responses if they exist, otherwise initialize empty
-        newColumnResponses[columnKey] = mockColumnResponses[columnKey] || [];
-        newOriginalResponses[columnKey] = mockOriginalResponses[columnKey] || '';
-        newIsGenerating[columnKey] = mockIsGenerating[columnKey] || false;
-        columnIndex++;
+        newMessageResponses[messageKey] = mockMessageResponses[messageKey] || [];
+        newOriginalResponses[messageKey] = mockOriginalResponses[messageKey] || '';
+        newIsGenerating[messageKey] = mockIsGenerating[messageKey] || false;
+        messageIndex++;
       }
     });
 
-    // Verify that new columns get empty responses
-    expect(newColumnResponses['1']).toEqual([]);
-    expect(newColumnResponses['2']).toEqual([]);
+    // Verify that new messages get empty responses
+    expect(newMessageResponses['1']).toEqual([]);
+    expect(newMessageResponses['2']).toEqual([]);
     expect(newOriginalResponses['1']).toBe('');
     expect(newOriginalResponses['2']).toBe('');
     expect(newIsGenerating['1']).toBe(false);
     expect(newIsGenerating['2']).toBe(false);
 
-    // Verify that column models are set correctly
-    expect(newColumnModels['1']).toBe('gemini-2.5-flash');
-    expect(newColumnModels['2']).toBe('gemini-2.5-flash');
+    // Verify that message models are set correctly
+    expect(newMessageModels['1']).toBe('gemini-2.5-flash');
+    expect(newMessageModels['2']).toBe('gemini-2.5-flash');
+  });
+});
+
+describe('Remix Panel Visibility Logic', () => {
+  it('should calculate remixDisabled correctly for single message', () => {
+    const messageResponses = { '1': ['Response 1'] };
+    const currentMessage = 'test message';
+    const modelSelections = [{ modelId: 'gemini-2.5-flash', count: 1 }];
+
+    const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
+    expect(isDisabled).toBe(true);
+  });
+
+  it('should calculate remixDisabled correctly for multiple messages', () => {
+    const messageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
+    const currentMessage = 'test message';
+    const modelSelections = [
+      { modelId: 'gemini-2.5-flash', count: 1 },
+      { modelId: 'claude-3-5-sonnet', count: 1 },
+    ];
+
+    const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
+    expect(isDisabled).toBe(false);
+  });
+
+  it('should calculate remixDisabled correctly for multiple responses from single model', () => {
+    const messageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
+    const currentMessage = 'test message';
+    const modelSelections = [{ modelId: 'gemini-2.5-flash', count: 2 }];
+
+    const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
+    expect(isDisabled).toBe(false);
+  });
+
+  it('should calculate remixDisabled correctly when no current message', () => {
+    const messageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
+    const currentMessage = '';
+    const modelSelections = [
+      { modelId: 'gemini-2.5-flash', count: 1 },
+      { modelId: 'claude-3-5-sonnet', count: 1 },
+    ];
+
+    const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
+    expect(isDisabled).toBe(true);
+  });
+
+  it('should calculate remixDisabled correctly when no responses', () => {
+    const messageResponses = {};
+    const currentMessage = 'test message';
+    const modelSelections = [
+      { modelId: 'gemini-2.5-flash', count: 1 },
+      { modelId: 'claude-3-5-sonnet', count: 1 },
+    ];
+
+    const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
+    expect(isDisabled).toBe(true);
   });
 });
