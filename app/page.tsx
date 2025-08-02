@@ -5,7 +5,6 @@ import TopBar from '@/components/TopBar';
 import LeftNavigation from '@/components/LeftNavigation';
 import ChatMessages from '@/components/ChatMessages';
 import RightSelectionsPanel from '@/components/RightSelectionsPanel';
-import ChatInput from '@/components/ChatInput';
 import SocialPostsDrawer, { SocialPostConfig } from '@/components/SocialPostsDrawer';
 import { ModelSelection } from '@/components/ModelGridSelector';
 import ModelSelectionModal from '@/components/ModelSelectionModal';
