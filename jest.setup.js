@@ -35,6 +35,33 @@ jest.mock('next/router', () => ({
   },
 }));
 
+// Mock Request for tests that need it
+global.Request = class Request {
+  constructor(url, init = {}) {
+    Object.defineProperty(this, 'url', {
+      value: url,
+      writable: false,
+      enumerable: true,
+      configurable: false,
+    });
+    this.method = init.method || 'GET';
+    this.body = init.body;
+    this.headers = new Map(Object.entries(init.headers || {}));
+  }
+
+  json() {
+    return Promise.resolve(JSON.parse(this.body));
+  }
+
+  text() {
+    return Promise.resolve(this.body);
+  }
+
+  formData() {
+    return Promise.resolve(this.body);
+  }
+};
+
 // Mock Response for tests that need it
 global.Response = class Response {
   constructor(body, init = {}) {
@@ -57,6 +84,23 @@ global.Response = class Response {
     return this.status >= 200 && this.status < 300;
   }
 };
+
+// Mock NextResponse
+jest.mock('next/server', () => ({
+  NextRequest: global.Request,
+  NextResponse: {
+    json: jest.fn((body, init = {}) => {
+      const response = new global.Response(JSON.stringify(body), {
+        status: init.status || 200,
+        headers: {
+          'Content-Type': 'application/json',
+          ...init.headers,
+        },
+      });
+      return response;
+    }),
+  },
+}));
 
 // Mock ReadableStream for streaming tests
 global.ReadableStream = class ReadableStream {
@@ -83,6 +127,30 @@ global.TextEncoder = class TextEncoder {
 global.TextDecoder = class TextDecoder {
   decode(input) {
     return Buffer.from(input).toString('utf8');
+  }
+};
+
+// Mock FormData
+global.FormData = class FormData {
+  constructor() {
+    this.entries = [];
+  }
+
+  append(key, value, filename) {
+    this.entries.push([key, value, filename]);
+  }
+
+  get(key) {
+    const entry = this.entries.find(([k]) => k === key);
+    return entry ? entry[1] : null;
+  }
+
+  entries() {
+    return this.entries;
+  }
+
+  [Symbol.iterator]() {
+    return this.entries[Symbol.iterator]();
   }
 };
 
