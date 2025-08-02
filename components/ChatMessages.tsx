@@ -15,8 +15,8 @@ import PromptMessages from './PromptMessages';
 import { SocialPostConfig, SocialPosts } from './social-platforms';
 import RemixMessages from './RemixMessages';
 
-interface ChatMessagesProps {
-  onSentenceSelect: (sentence: SelectedSentence) => void;
+// Core message data props
+interface MessageDataProps {
   messageResponses: {
     [key: string]: string[];
   };
@@ -26,28 +26,38 @@ interface ChatMessagesProps {
   isGenerating: {
     [key: string]: boolean;
   };
-  // Remix props
+  messageModels?: { [key: string]: string };
+}
+
+// Remix functionality props
+interface RemixProps {
   remixResponses?: string[];
   remixModels?: string[];
   showRemix?: boolean;
   remixModel?: string;
-  // Social Posts props
+  onRemix?: (modelId: string) => void;
+  remixDisabled?: boolean;
+  isRemixGenerating?: boolean;
+}
+
+// Social posts functionality props
+interface SocialPostsProps {
   socialPostsResponses?: { [key: string]: string };
   isSocialPostsGenerating?: { [key: string]: boolean };
   showSocialPosts?: { [key: string]: boolean };
   onCloseSocialPosts?: (socialPostId: string) => void;
   socialPostsConfigs?: { [key: string]: SocialPostConfig };
-  // ChatInput props
+}
+
+// Chat input and submission props
+interface ChatInputProps {
   onSubmit: (prompt: string, attachments?: File[]) => void;
   currentMessage?: string;
-  onRemix?: (modelId: string) => void;
-  remixDisabled?: boolean;
-  isRemixGenerating?: boolean;
-  // New 3x3 grid props
+}
+
+// Model selection and management props
+interface ModelSelectionProps {
   modelSelections?: ModelSelection[];
-  // Message models from parent component
-  messageModels?: { [key: string]: string };
-  // Model selection callbacks
   onModelSelect?: (modelId: string) => void;
   onModelSelectionsUpdate?: (modelId: string) => void;
   onDirectSubmit?: (prompt: string, modelId: string) => void;
@@ -55,13 +65,29 @@ interface ChatMessagesProps {
   showAISelection?: boolean;
   onToggleAISelection?: () => void;
   resetModelSelector?: boolean;
-  // Model selection badge props
   onModelSelectionClick?: () => void;
-  // Default model usage flag
   isUsingDefaultModel?: boolean;
-  // Left navigation state
+}
+
+// UI state and navigation props
+interface UIStateProps {
   isLeftNavCollapsed?: boolean;
 }
+
+// Event handler props
+interface EventHandlerProps {
+  onSentenceSelect: (sentence: SelectedSentence) => void;
+}
+
+// Combined interface
+interface ChatMessagesProps
+  extends MessageDataProps,
+    RemixProps,
+    SocialPostsProps,
+    ChatInputProps,
+    ModelSelectionProps,
+    UIStateProps,
+    EventHandlerProps {}
 
 // Note: Removed ColumnModelSelector component since we now use the 3x3 grid system
 
