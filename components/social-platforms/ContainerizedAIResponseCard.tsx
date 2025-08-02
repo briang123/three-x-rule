@@ -10,7 +10,7 @@ interface ContainerizedAIResponseCardProps {
   post: string;
   index: number;
   contentType: string;
-  onAddSelection: (text: string, column: string) => void;
+  onAddSelection: (text: string) => void;
   className?: string;
 }
 
@@ -32,8 +32,8 @@ export default function ContainerizedAIResponseCard({
       </div>
       <ContainerizedAIResponseContent
         content={post}
-        column="S"
-        onAddSelection={(text) => onAddSelection(text, 'S')}
+        message="S"
+        onAddSelection={onAddSelection}
         showCopyButton={false}
       />
     </div>

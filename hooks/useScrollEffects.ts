@@ -13,7 +13,7 @@ export interface UseScrollEffectsOptions {
   remixScrollDelay?: number;
   socialPostsScrollDelay?: number;
   aiContentScrollDelay?: number;
-  newColumnsScrollDelay?: number;
+  newMessagesScrollDelay?: number;
 }
 
 export interface UseScrollEffectsReturn {
@@ -35,8 +35,8 @@ export interface UseScrollEffectsReturn {
   // Social posts refs
   socialPostsRefs: React.MutableRefObject<{ [key: string]: HTMLDivElement | null }>;
 
-  // Column refs
-  columnRefs: React.MutableRefObject<{ [key: string]: HTMLDivElement | null }>;
+  // Message refs
+  messageRefs: React.MutableRefObject<{ [key: string]: HTMLDivElement | null }>;
 
   // Performance optimization
   isScrolling: boolean;
@@ -55,7 +55,7 @@ export const useScrollEffects = (
     remixScrollDelay = 100,
     socialPostsScrollDelay = 100,
     aiContentScrollDelay = 200,
-    newColumnsScrollDelay = 100,
+    newMessagesScrollDelay = 100,
   } = options;
 
   const { behavior = 'smooth', offset = 20, centerElement = false } = scrollOptions;
@@ -63,7 +63,7 @@ export const useScrollEffects = (
   // Refs for different content types
   const remixResponseRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const socialPostsRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const columnRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const messageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Performance tracking
   const isScrollingRef = useRef(false);
@@ -209,8 +209,8 @@ export const useScrollEffects = (
     // Social posts refs
     socialPostsRefs,
 
-    // Column refs
-    columnRefs,
+    // Message refs
+    messageRefs,
 
     // Performance optimization
     get isScrolling() {
@@ -230,7 +230,7 @@ export const useScrollEffectsWithState = (
   const prevShowRemixRef = useRef<boolean>(false);
   const prevShowSocialPostsRef = useRef<{ [key: string]: boolean }>({});
   const prevHasAIContentRef = useRef<boolean>(false);
-  const prevColumnKeysRef = useRef<string[]>([]);
+  const prevMessageKeysRef = useRef<string[]>([]);
 
   // Timeout hooks for scroll effects
   const remixScrollTimeout = useTimeout(() => {
@@ -251,7 +251,7 @@ export const useScrollEffectsWithState = (
     scrollEffects.scrollToTop();
   }, null);
 
-  const newColumnsScrollTimeout = useTimeout(() => {
+  const newMessagesScrollTimeout = useTimeout(() => {
     // This will be handled by the component using the hook
   }, null);
 
@@ -265,12 +265,12 @@ export const useScrollEffectsWithState = (
     prevShowRemixRef,
     prevShowSocialPostsRef,
     prevHasAIContentRef,
-    prevColumnKeysRef,
+    prevMessageKeysRef,
 
     // Timeout refs
     remixScrollTimeout,
     aiContentScrollTimeout,
-    newColumnsScrollTimeout,
+    newMessagesScrollTimeout,
     socialPostsScrollTimeout,
   };
 };

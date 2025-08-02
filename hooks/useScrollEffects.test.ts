@@ -60,7 +60,7 @@ describe('useScrollEffects', () => {
     expect(result.current.scrollContainerRef).toBeDefined();
     expect(result.current.remixResponseRefs).toBeDefined();
     expect(result.current.socialPostsRefs).toBeDefined();
-    expect(result.current.columnRefs).toBeDefined();
+    expect(result.current.messageRefs).toBeDefined();
     expect(result.current.scrollToLatestRemix).toBeDefined();
     expect(typeof result.current.isScrolling).toBe('boolean');
   });
@@ -76,7 +76,7 @@ describe('useScrollEffects', () => {
       remixScrollDelay: 150,
       socialPostsScrollDelay: 120,
       aiContentScrollDelay: 250,
-      newColumnsScrollDelay: 180,
+      newMessagesScrollDelay: 180,
     };
 
     const { result } = renderHook(() => useScrollEffects(undefined, options));
@@ -109,12 +109,12 @@ describe('useScrollEffectsWithState', () => {
     expect(result.current.prevShowRemixRef).toBeDefined();
     expect(result.current.prevShowSocialPostsRef).toBeDefined();
     expect(result.current.prevHasAIContentRef).toBeDefined();
-    expect(result.current.prevColumnKeysRef).toBeDefined();
+    expect(result.current.prevMessageKeysRef).toBeDefined();
 
     // Timeout refs
     expect(result.current.remixScrollTimeout).toBeDefined();
     expect(result.current.aiContentScrollTimeout).toBeDefined();
-    expect(result.current.newColumnsScrollTimeout).toBeDefined();
+    expect(result.current.newMessagesScrollTimeout).toBeDefined();
     expect(result.current.socialPostsScrollTimeout).toBeDefined();
   });
 });

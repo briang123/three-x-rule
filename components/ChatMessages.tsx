@@ -16,7 +16,7 @@ import RemixMessages from './RemixMessages';
 
 interface ChatMessagesProps {
   onSentenceSelect: (sentence: SelectedSentence) => void;
-  columnResponses: {
+  messageResponses: {
     [key: string]: string[];
   };
   originalResponses: {
@@ -44,8 +44,8 @@ interface ChatMessagesProps {
   isRemixGenerating?: boolean;
   // New 3x3 grid props
   modelSelections?: ModelSelection[];
-  // Column models from parent component
-  columnModels?: { [key: string]: string };
+  // Message models from parent component
+  messageModels?: { [key: string]: string };
   // Model selection callbacks
   onModelSelect?: (modelId: string) => void;
   onModelSelectionsUpdate?: (modelId: string) => void;
@@ -66,7 +66,7 @@ interface ChatMessagesProps {
 
 const ChatMessages = React.memo(function ChatMessages({
   onSentenceSelect,
-  columnResponses,
+  messageResponses,
   originalResponses,
   isGenerating,
   remixResponses = [],
@@ -84,7 +84,7 @@ const ChatMessages = React.memo(function ChatMessages({
   remixDisabled = false,
   isRemixGenerating = false,
   modelSelections = [],
-  columnModels = {},
+  messageModels = {},
   onModelSelect,
   onModelSelectionsUpdate,
   onDirectSubmit,
@@ -112,10 +112,10 @@ const ChatMessages = React.memo(function ChatMessages({
     [onSentenceSelect],
   );
 
-  // Determine if we should show the 3x3 grid or output columns
+  // Determine if we should show the 3x3 grid or output messages
   const hasAIContent = useMemo(() => {
     // Check if there's any AI-generated content
-    const hasColumnContent = Object.values(originalResponses).some(
+    const hasMessageContent = Object.values(originalResponses).some(
       (response) => response.trim() !== '',
     );
     const hasRemixContent = remixResponses.length > 0;
@@ -123,7 +123,7 @@ const ChatMessages = React.memo(function ChatMessages({
       (response) => response.trim() !== '',
     );
 
-    return hasColumnContent || hasRemixContent || hasSocialContent;
+    return hasMessageContent || hasRemixContent || hasSocialContent;
   }, [originalResponses, remixResponses, socialPostsResponses]);
 
   // Use the model orchestration hook
@@ -156,8 +156,8 @@ const ChatMessages = React.memo(function ChatMessages({
     fadeOutDelay: 10000,
   });
 
-  // Get all column keys from columnResponses prop
-  const columnKeys = Object.keys(columnResponses);
+  // Get all message keys from messageResponses prop
+  const messageKeys = Object.keys(messageResponses);
 
   // Use the consolidated scroll effects hook
   const {
@@ -167,16 +167,16 @@ const ChatMessages = React.memo(function ChatMessages({
     remixResponseRefs,
     scrollToLatestRemix,
     socialPostsRefs,
-    columnRefs,
+    messageRefs,
     // State tracking
     prevShowRemixRef,
     prevShowSocialPostsRef,
     prevHasAIContentRef,
-    prevColumnKeysRef,
+    prevMessageKeysRef,
     // Timeout refs
     remixScrollTimeout,
     aiContentScrollTimeout,
-    newColumnsScrollTimeout,
+    newMessagesScrollTimeout,
     socialPostsScrollTimeout,
   } = useScrollEffectsWithState(undefined, {
     scrollOptions: {
@@ -188,7 +188,7 @@ const ChatMessages = React.memo(function ChatMessages({
     remixScrollDelay: 100,
     socialPostsScrollDelay: 100,
     aiContentScrollDelay: 200,
-    newColumnsScrollDelay: 100,
+    newMessagesScrollDelay: 100,
   });
 
   // Effect to scroll to remix when it appears
@@ -217,10 +217,10 @@ const ChatMessages = React.memo(function ChatMessages({
     prevHasAIContentRef.current = hasAIContent;
   }, [hasAIContent, prevHasAIContentRef]);
 
-  // Effect to scroll to new columns when they are added
+  // Effect to scroll to new messages when they are added
   useEffect(() => {
-    prevColumnKeysRef.current = columnKeys;
-  }, [columnKeys, prevColumnKeysRef]);
+    prevMessageKeysRef.current = messageKeys;
+  }, [messageKeys, prevMessageKeysRef]);
 
   // Set up timeout triggers for scroll effects
   useEffect(() => {
@@ -246,27 +246,27 @@ const ChatMessages = React.memo(function ChatMessages({
   }, [hasAIContent, prevHasAIContentRef, aiContentScrollTimeout, scrollToTop]);
 
   useEffect(() => {
-    if (columnKeys.length > prevColumnKeysRef.current.length && hasAIContent) {
-      newColumnsScrollTimeout.current = setTimeout(() => {
-        const newColumns = columnKeys.filter(
-          (column) => !prevColumnKeysRef.current.includes(column),
+    if (messageKeys.length > prevMessageKeysRef.current.length && hasAIContent) {
+      newMessagesScrollTimeout.current = setTimeout(() => {
+        const newMessages = messageKeys.filter(
+          (message) => !prevMessageKeysRef.current.includes(message),
         );
-        if (newColumns.length > 0) {
-          // Scroll to the last new column
-          const lastNewColumn = newColumns[newColumns.length - 1];
-          const columnRef = columnRefs.current[lastNewColumn];
-          if (columnRef) {
-            scrollToElement(columnRef, { center: true });
+        if (newMessages.length > 0) {
+          // Scroll to the last new message
+          const lastNewMessage = newMessages[newMessages.length - 1];
+          const messageRef = messageRefs.current[lastNewMessage];
+          if (messageRef) {
+            scrollToElement(messageRef, { center: true });
           }
         }
       }, 100);
     }
   }, [
-    columnKeys,
-    prevColumnKeysRef,
+    messageKeys,
+    prevMessageKeysRef,
     hasAIContent,
-    newColumnsScrollTimeout,
-    columnRefs,
+    newMessagesScrollTimeout,
+    messageRefs,
     scrollToElement,
   ]);
 
@@ -283,7 +283,7 @@ const ChatMessages = React.memo(function ChatMessages({
           setModels(data.data.models);
           setInitialized(true);
         } else if (!data.success) {
-          console.error('OutputColumns: Failed to fetch models:', data.error);
+          console.error('ChatMessages: Failed to fetch models:', data.error);
         }
       } catch (err) {
         console.error('Error fetching models:', err);
@@ -301,7 +301,7 @@ const ChatMessages = React.memo(function ChatMessages({
     };
   }, []); // Only run once on mount
 
-  const getColumnColor = (column: string) => {
+  const getMessageColor = (message: string) => {
     const colors = {
       A: 'bg-blue-500',
       B: 'bg-green-500',
@@ -312,7 +312,7 @@ const ChatMessages = React.memo(function ChatMessages({
       R: 'bg-gradient-to-r from-purple-500 to-pink-500',
       S: 'bg-gradient-to-r from-green-500 to-emerald-500',
     };
-    return colors[column as keyof typeof colors] || 'bg-gray-500';
+    return colors[message as keyof typeof colors] || 'bg-gray-500';
   };
 
   return (
@@ -324,15 +324,15 @@ const ChatMessages = React.memo(function ChatMessages({
         <div className="flex flex-col justify-start gap-6 pl-6 pr-6 w-1/2 mx-auto">
           <PromptMessages
             hasAIContent={hasAIContent}
-            columnKeys={columnKeys}
-            columnResponses={columnResponses}
+            messageKeys={messageKeys}
+            messageResponses={messageResponses}
             originalResponses={originalResponses}
             isGenerating={isGenerating}
-            columnModels={columnModels}
+            messageModels={messageModels}
             loading={loading}
             onAddSelection={handleAddSelection}
-            columnRefs={columnRefs}
-            getColumnColor={getColumnColor}
+            messageRefs={messageRefs}
+            getMessageColor={getMessageColor}
           />
 
           <RemixMessages
@@ -342,7 +342,7 @@ const ChatMessages = React.memo(function ChatMessages({
             isRemixGenerating={isRemixGenerating}
             remixDisabled={remixDisabled}
             hasAIContent={hasAIContent}
-            columnResponses={columnResponses}
+            messageResponses={messageResponses}
             onRemix={onRemix}
             onAddSelection={handleAddSelection}
             scrollToLatestRemix={scrollToLatestRemix}

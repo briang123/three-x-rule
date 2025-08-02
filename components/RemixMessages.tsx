@@ -11,7 +11,7 @@ interface RemixMessagesProps {
   isRemixGenerating: boolean;
   remixDisabled: boolean;
   hasAIContent: boolean;
-  columnResponses: { [key: string]: string[] };
+  messageResponses: { [key: string]: string[] };
   onRemix?: (modelId: string) => void;
   onAddSelection: (text: string, source: string) => void;
   scrollToLatestRemix: () => void;
@@ -25,7 +25,7 @@ const RemixMessages: React.FC<RemixMessagesProps> = ({
   isRemixGenerating,
   remixDisabled,
   hasAIContent,
-  columnResponses,
+  messageResponses,
   onRemix,
   onAddSelection,
   scrollToLatestRemix,
@@ -62,17 +62,10 @@ const RemixMessages: React.FC<RemixMessagesProps> = ({
       {/* RemixButtonCard Component */}
       {hasAIContent && (
         <RemixButtonWrapper
-          onRemix={(modelId) => {
-            if (onRemix) {
-              onRemix(modelId);
-            }
-          }}
-          onRemixStart={() => {
-            scrollToLatestRemix();
-          }}
-          disabled={remixDisabled}
-          isGenerating={isRemixGenerating}
-          responseCount={Object.keys(columnResponses).length}
+          onRemix={onRemix}
+          remixDisabled={remixDisabled}
+          isRemixGenerating={isRemixGenerating}
+          responseCount={Object.keys(messageResponses).length}
         />
       )}
     </>

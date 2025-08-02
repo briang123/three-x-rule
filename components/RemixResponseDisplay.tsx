@@ -38,7 +38,7 @@ const RemixResponseDisplay: React.FC<RemixResponseDisplayProps> = ({
         // Completed response display
         <ContainerizedAIResponseContent
           content={response}
-          column="R"
+          message="R"
           onAddSelection={onAddSelection}
         />
       )}

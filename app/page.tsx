@@ -22,8 +22,8 @@ export default function Home() {
   const [selectedSentences, setSelectedSentences] = useState<SelectedSentence[]>([]);
   const [showRightPanel, setShowRightPanel] = useState(false); // Add state to control right panel visibility
   const [modelSelections, setModelSelections] = useState<ModelSelection[]>([]);
-  const [columnModels, setColumnModels] = useState<{ [key: string]: string }>({});
-  const [columnResponses, setColumnResponses] = useState<{ [key: string]: string[] }>({});
+  const [messageModels, setMessageModels] = useState<{ [key: string]: string }>({});
+  const [messageResponses, setMessageResponses] = useState<{ [key: string]: string[] }>({});
   const [originalResponses, setOriginalResponses] = useState<{ [key: string]: string }>({});
   const [isGenerating, setIsGenerating] = useState<{ [key: string]: boolean }>({});
   const [currentMessage, setCurrentMessage] = useState('');
@@ -86,31 +86,31 @@ export default function Home() {
       setModelSelections(selections);
       // Reset default model flag when user manually selects models
       setIsUsingDefaultModel(false);
-      // Generate columns based on model selections
-      const newColumnModels: { [key: string]: string } = {};
-      const newColumnResponses: { [key: string]: string[] } = {};
+      // Generate messages based on model selections
+      const newMessageModels: { [key: string]: string } = {};
+      const newMessageResponses: { [key: string]: string[] } = {};
       const newOriginalResponses: { [key: string]: string } = {};
       const newIsGenerating: { [key: string]: boolean } = {};
 
-      let columnIndex = 1;
+      let messageIndex = 1;
       selections.forEach((selection) => {
         for (let i = 0; i < selection.count; i++) {
-          const columnKey = columnIndex.toString();
-          newColumnModels[columnKey] = selection.modelId;
+          const messageKey = messageIndex.toString();
+          newMessageModels[messageKey] = selection.modelId;
           // Preserve existing responses if they exist, otherwise initialize empty
-          newColumnResponses[columnKey] = columnResponses[columnKey] || [];
-          newOriginalResponses[columnKey] = originalResponses[columnKey] || '';
-          newIsGenerating[columnKey] = isGenerating[columnKey] || false;
-          columnIndex++;
+          newMessageResponses[messageKey] = messageResponses[messageKey] || [];
+          newOriginalResponses[messageKey] = originalResponses[messageKey] || '';
+          newIsGenerating[messageKey] = isGenerating[messageKey] || false;
+          messageIndex++;
         }
       });
 
-      setColumnModels(newColumnModels);
-      setColumnResponses(newColumnResponses);
+      setMessageModels(newMessageModels);
+      setMessageResponses(newMessageResponses);
       setOriginalResponses(newOriginalResponses);
       setIsGenerating(newIsGenerating);
     },
-    [columnResponses, originalResponses, isGenerating],
+    [messageResponses, originalResponses, isGenerating],
   );
 
   // Add effect to handle orchestration after model selections are updated
@@ -160,12 +160,12 @@ export default function Home() {
         return;
       }
 
-      // Create a single column with the specified model
-      const directColumnModels: { [key: string]: string } = { '1': modelId };
+      // Create a single message with the specified model
+      const directMessageModels: { [key: string]: string } = { '1': modelId };
 
       // Send the prompt directly to the API
       try {
-        await handleColumnPromptSubmit('1', prompt, [], modelId);
+        await handleMessagePromptSubmit('1', prompt, [], modelId);
       } catch (error) {
         console.error('Error in direct submit:', error);
       }
@@ -200,32 +200,37 @@ export default function Home() {
     // Store the current message
     setCurrentMessage(prompt);
 
-    // Generate columns dynamically from modelSelections to ensure we have the latest data
-    const dynamicColumnModels: { [key: string]: string } = {};
-    let columnIndex = 1;
+    // Generate messages dynamically from modelSelections to ensure we have the latest data
+    const dynamicMessageModels: { [key: string]: string } = {};
+    let messageIndex = 1;
     modelSelections.forEach((selection) => {
       for (let i = 0; i < selection.count; i++) {
-        const columnKey = columnIndex.toString();
-        dynamicColumnModels[columnKey] = selection.modelId;
-        columnIndex++;
+        const messageKey = messageIndex.toString();
+        dynamicMessageModels[messageKey] = selection.modelId;
+        messageIndex++;
       }
     });
 
-    // Send the same prompt to all columns with their respective models
+    // Send the same prompt to all messages with their respective models
     const promises = [];
 
-    for (const column of Object.keys(dynamicColumnModels)) {
-      if (dynamicColumnModels[column]) {
+    for (const message of Object.keys(dynamicMessageModels)) {
+      if (dynamicMessageModels[message]) {
         promises.push(
-          handleColumnPromptSubmit(column, prompt, attachments || [], dynamicColumnModels[column]),
+          handleMessagePromptSubmit(
+            message,
+            prompt,
+            attachments || [],
+            dynamicMessageModels[message],
+          ),
         );
       } else {
       }
     }
 
     if (promises.length === 0) {
-      console.error('No models selected for any column');
-      alert('Please select models for at least one column before submitting.');
+      console.error('No models selected for any message');
+      alert('Please select models for at least one message before submitting.');
       return;
     }
 
@@ -238,7 +243,7 @@ export default function Home() {
 
   const handleNewChat = () => {
     setSelectedSentences([]);
-    setColumnResponses((prev) => {
+    setMessageResponses((prev) => {
       const reset: { [key: string]: string[] } = {};
       Object.keys(prev).forEach((key) => {
         reset[key] = [];
@@ -277,7 +282,7 @@ export default function Home() {
 
     // Reset model selections and show modal
     setModelSelections([]);
-    setColumnModels({});
+    setMessageModels({});
     setShowModelSelectionModal(true);
     // Reset default model flag
     setIsUsingDefaultModel(false);
@@ -288,26 +293,26 @@ export default function Home() {
     setTimeout(() => setResetModelSelector(false), 100);
   };
 
-  const handleColumnPromptSubmit = async (
-    column: string,
+  const handleMessagePromptSubmit = async (
+    message: string,
     prompt: string,
     attachments: File[],
     model: string,
   ) => {
-    // Set generating state for this column
+    // Set generating state for this message
     setIsGenerating((prev) => ({
       ...prev,
-      [column]: true,
+      [message]: true,
     }));
 
-    // Clear previous responses for this column
-    setColumnResponses((prev) => ({
+    // Clear previous responses for this message
+    setMessageResponses((prev) => ({
       ...prev,
-      [column]: [],
+      [message]: [],
     }));
     setOriginalResponses((prev) => ({
       ...prev,
-      [column]: '',
+      [message]: '',
     }));
 
     try {
@@ -352,7 +357,7 @@ export default function Home() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Main page: Column ${column} - API error response:`, errorText);
+        console.error(`Main page: Message ${message} - API error response:`, errorText);
         throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
@@ -382,9 +387,9 @@ export default function Home() {
               const parsed = JSON.parse(data);
               if (parsed.success && parsed.data && parsed.data.content) {
                 accumulatedResponse += parsed.data.content;
-                setColumnResponses((prev) => ({
+                setMessageResponses((prev) => ({
                   ...prev,
-                  [column]: [...(prev[column] || []), parsed.data.content],
+                  [message]: [...(prev[message] || []), parsed.data.content],
                 }));
               } else if (!parsed.success) {
                 console.error('API Error:', parsed.error);
@@ -402,10 +407,10 @@ export default function Home() {
       // Set the final accumulated response
       setOriginalResponses((prev) => ({
         ...prev,
-        [column]: accumulatedResponse,
+        [message]: accumulatedResponse,
       }));
     } catch (error) {
-      console.error(`Error in column ${column}:`, error);
+      console.error(`Error in message ${message}:`, error);
 
       // Create user-friendly error message based on error type
       let errorMessage = 'An error occurred while generating the response.';
@@ -430,76 +435,78 @@ export default function Home() {
         }
       }
 
-      setColumnResponses((prev) => ({
+      setMessageResponses((prev) => ({
         ...prev,
-        [column]: [...(prev[column] || []), errorMessage],
+        [message]: [...(prev[message] || []), errorMessage],
       }));
     } finally {
       setIsGenerating((prev) => ({
         ...prev,
-        [column]: false,
+        [message]: false,
       }));
     }
   };
 
-  const handleModelChange = useCallback((column: string, modelId: string) => {
-    setColumnModels((prev) => ({
+  const handleModelChange = useCallback((message: string, modelId: string) => {
+    setMessageModels((prev) => ({
       ...prev,
-      [column]: modelId,
+      [message]: modelId,
     }));
   }, []);
 
-  const handleAddColumn = useCallback(() => {
-    const existingColumns = Object.keys(columnModels);
+  const handleAddMessage = useCallback(() => {
+    const existingMessages = Object.keys(messageModels);
 
-    // Limit to maximum 6 columns
-    if (existingColumns.length >= 6) {
+    // Limit to maximum 6 messages
+    if (existingMessages.length >= 6) {
+      alert('Maximum 6 messages allowed.');
       return;
     }
 
-    const nextColumn = (existingColumns.length + 1).toString(); // '1', '2', ...
+    const nextMessage = (existingMessages.length + 1).toString(); // '1', '2', ...
 
-    setColumnModels((prev) => ({
+    setMessageModels((prev) => ({
       ...prev,
-      [nextColumn]: '',
+      [nextMessage]: '',
     }));
 
-    setColumnResponses((prev) => ({
+    setMessageResponses((prev) => ({
       ...prev,
-      [nextColumn]: [],
+      [nextMessage]: [],
     }));
 
     setOriginalResponses((prev) => ({
       ...prev,
-      [nextColumn]: '',
+      [nextMessage]: '',
     }));
 
     setIsGenerating((prev) => ({
       ...prev,
-      [nextColumn]: false,
+      [nextMessage]: false,
     }));
-  }, [columnModels]);
+  }, [messageModels]);
 
-  const handleDeleteColumn = useCallback(
-    (columnKey: string) => {
-      // Only allow delete if more than one column remains
-      const currentColumns = Object.keys(columnModels);
-      if (currentColumns.length <= 1) return;
-      // Remove the column and re-index all columns
-      const filteredKeys = currentColumns.filter((key) => key !== columnKey);
+  const handleDeleteMessage = useCallback(
+    (messageKey: string) => {
+      // Only allow delete if more than one message remains
+      const currentMessages = Object.keys(messageModels);
+      if (currentMessages.length <= 1) return;
+      // Remove the message and re-index all messages
+      const filteredKeys = currentMessages.filter((key) => key !== messageKey);
       const remap = (obj: { [key: string]: any }) => {
         const newObj: { [key: string]: any } = {};
-        filteredKeys.forEach((oldKey, idx) => {
-          newObj[(idx + 1).toString()] = obj[oldKey];
+        filteredKeys.forEach((key, index) => {
+          const newKey = (index + 1).toString();
+          newObj[newKey] = obj[key];
         });
         return newObj;
       };
-      setColumnModels((prev) => remap(prev));
-      setColumnResponses((prev) => remap(prev));
+      setMessageModels((prev) => remap(prev));
+      setMessageResponses((prev) => remap(prev));
       setOriginalResponses((prev) => remap(prev));
       setIsGenerating((prev) => remap(prev));
     },
-    [columnModels],
+    [messageModels],
   );
 
   const handleRemix = useCallback(
@@ -531,7 +538,7 @@ export default function Home() {
         // Combine all existing responses
         const combinedResponses = Object.entries(originalResponses)
           .filter(([_, response]) => response.trim() !== '')
-          .map(([column, response]) => `Column ${column}:\n${response}`)
+          .map(([message, response]) => `Message ${message}:\n${response}`)
           .join('\n\n---\n\n');
 
         // Create the remix prompt
@@ -651,10 +658,10 @@ export default function Home() {
 
   const handleSocialPostsGenerate = useCallback(
     async (config: SocialPostConfig) => {
-      // Generate a unique ID for this social post column
+      // Generate a unique ID for this social post message
       const socialPostId = `social-${Date.now()}`;
 
-      // Initialize the column
+      // Initialize the message
       setIsSocialPostsGenerating((prev) => ({ ...prev, [socialPostId]: true }));
       setShowSocialPosts((prev) => ({ ...prev, [socialPostId]: true }));
       setSocialPostsResponses((prev) => ({ ...prev, [socialPostId]: '' }));
@@ -688,18 +695,18 @@ export default function Home() {
 
         socialPrompt += `${platformPrompts[config.platform as keyof typeof platformPrompts]} ${typePrompts[config.postType as keyof typeof typePrompts]}`;
 
-        // If using selected columns or existing responses, include them
+        // If using selected messages or existing responses, include them
         if (!config.customPrompt) {
           let responsesToInclude: string[] = [];
 
-          // If specific columns are selected, use those
+          // If specific messages are selected, use those
           if (config.selectedColumns && config.selectedColumns.length > 0) {
             responsesToInclude = config.selectedColumns
               .filter(
-                (columnKey) =>
-                  originalResponses[columnKey] && originalResponses[columnKey].trim() !== '',
+                (messageKey) =>
+                  originalResponses[messageKey] && originalResponses[messageKey].trim() !== '',
               )
-              .map((columnKey) => `Column ${columnKey}:\n${originalResponses[columnKey]}`);
+              .map((messageKey) => `Message ${messageKey}:\n${originalResponses[messageKey]}`);
           } else {
             // Otherwise, use all existing responses
             const hasResponses = Object.values(originalResponses).some(
@@ -708,7 +715,7 @@ export default function Home() {
             if (hasResponses) {
               responsesToInclude = Object.entries(originalResponses)
                 .filter(([_, response]) => response.trim() !== '')
-                .map(([column, response]) => `Column ${column}:\n${response}`);
+                .map(([message, response]) => `Message ${message}:\n${response}`);
             }
           }
 
@@ -852,8 +859,8 @@ export default function Home() {
       // Auto-hiding happens when content is received, and we want to keep the selections
       if (prev && !newValue && modelSelections.length === 0) {
         // Only clear if there are no model selections (manual close)
-        setColumnModels({});
-        setColumnResponses({});
+        setMessageModels({});
+        setMessageResponses({});
         setOriginalResponses({});
         setIsGenerating({});
       }
@@ -882,7 +889,7 @@ export default function Home() {
                 {/* Show header text when no AI responses are present */}
                 <HeaderText
                   isVisible={
-                    Object.values(columnResponses).every((responses) => responses.length === 0) &&
+                    Object.values(messageResponses).every((responses) => responses.length === 0) &&
                     Object.values(originalResponses).every((response) => !response) &&
                     !Object.values(isGenerating).some((generating) => generating) &&
                     !isUsingDefaultModel
@@ -892,18 +899,13 @@ export default function Home() {
                 <ChatMessages
                   key={chatKey} // Add key to force re-render
                   onSentenceSelect={handleSentenceSelect}
-                  selectedSentences={selectedSentences}
-                  onModelChange={handleModelChange}
-                  columnResponses={columnResponses}
+                  messageResponses={messageResponses}
                   originalResponses={originalResponses}
                   isGenerating={isGenerating}
-                  onAddColumn={handleAddColumn}
-                  onDeleteColumn={handleDeleteColumn}
                   remixResponses={remixResponses}
                   remixModels={remixModels}
                   isRemixGenerating={isRemixGenerating}
                   showRemix={showRemix}
-                  onCloseRemix={handleCloseRemix}
                   remixModel={remixModel}
                   socialPostsResponses={socialPostsResponses}
                   isSocialPostsGenerating={isSocialPostsGenerating}
@@ -914,7 +916,7 @@ export default function Home() {
                   currentMessage={currentMessage}
                   onRemix={handleRemix}
                   remixDisabled={useMemo(() => {
-                    const hasResponses = Object.values(columnResponses).some(
+                    const hasResponses = Object.values(messageResponses).some(
                       (responses) => responses.length > 0,
                     );
                     const hasCurrentMessage = currentMessage.trim();
@@ -924,10 +926,9 @@ export default function Home() {
                     );
                     const hasMultipleModels = totalModelQuantity >= 2;
                     return !hasResponses || !hasCurrentMessage || !hasMultipleModels;
-                  }, [columnResponses, currentMessage, modelSelections])}
-                  onModelSelectionsChange={handleModelSelectionsChange}
+                  }, [messageResponses, currentMessage, modelSelections])}
                   modelSelections={modelSelections}
-                  columnModels={columnModels}
+                  messageModels={messageModels}
                   onModelSelect={handleModelSelect}
                   onModelSelectionsUpdate={handleModelSelectionsUpdate}
                   onDirectSubmit={handleDirectSubmit}
@@ -937,7 +938,6 @@ export default function Home() {
                   showAISelection={showAISelection}
                   onToggleAISelection={handleToggleAISelection}
                   resetModelSelector={resetModelSelector}
-                  onCloseAISelection={handleToggleAISelection}
                   onModelSelectionClick={handleOpenModelSelectionModal}
                   isUsingDefaultModel={isUsingDefaultModel}
                   isLeftNavCollapsed={isLeftNavCollapsed}
@@ -960,7 +960,7 @@ export default function Home() {
           isOpen={showSocialPostsDrawer}
           onClose={() => setShowSocialPostsDrawer(false)}
           onGenerate={handleSocialPostsGenerate}
-          availableColumns={originalResponses}
+          availableMessages={originalResponses}
         />
 
         {/* Model Selection Modal */}

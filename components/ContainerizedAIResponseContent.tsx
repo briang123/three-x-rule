@@ -10,15 +10,15 @@ import './TextHighlighter.css';
 function HighlightableText({
   content,
   onAddSelection,
-  column,
+  message,
 }: {
   content: string;
   onAddSelection: (text: string) => void;
-  column: string;
+  message: string;
 }) {
   const { highlights, addHighlight, removeHighlight } = useTextHighlighter();
 
-  const columnColors = {
+  const messageColors = {
     A: 'rgba(59, 130, 246, 0.3)', // blue
     B: 'rgba(34, 197, 94, 0.3)', // green
     C: 'rgba(168, 85, 247, 0.3)', // purple
@@ -49,9 +49,9 @@ function HighlightableText({
         onHighlightAdd={handleHighlightAdd}
         onHighlightRemove={handleHighlightRemove}
         highlightColor={
-          columnColors[column as keyof typeof columnColors] || 'rgba(156, 163, 175, 0.3)'
+          messageColors[message as keyof typeof messageColors] || 'rgba(156, 163, 175, 0.3)'
         }
-        className={`bg-gray-50 dark:bg-kitchen-dark-surface rounded-lg p-4 border border-gray-200 dark:border-kitchen-dark-border select-text highlightable-text-${column.toLowerCase()}`}
+        className={`bg-gray-50 dark:bg-kitchen-dark-surface rounded-lg p-4 border border-gray-200 dark:border-kitchen-dark-border select-text highlightable-text-${message.toLowerCase()}`}
       >
         <div className="text-sm text-gray-800 dark:text-kitchen-dark-text markdown-content">
           <ReactMarkdown
@@ -119,7 +119,7 @@ function ErrorMessage({ message }: { message: string }) {
 
 interface ContainerizedAIResponseContentProps {
   content: string;
-  column: string;
+  message: string;
   onAddSelection: (text: string) => void;
   showCopyButton?: boolean;
   className?: string;
@@ -127,7 +127,7 @@ interface ContainerizedAIResponseContentProps {
 
 const ContainerizedAIResponseContent: React.FC<ContainerizedAIResponseContentProps> = ({
   content,
-  column,
+  message,
   onAddSelection,
   showCopyButton = true,
   className = '',
@@ -146,7 +146,7 @@ const ContainerizedAIResponseContent: React.FC<ContainerizedAIResponseContentPro
       {isErrorMessage(content) ? (
         <ErrorMessage message={content} />
       ) : (
-        <HighlightableText content={content} onAddSelection={onAddSelection} column={column} />
+        <HighlightableText content={content} onAddSelection={onAddSelection} message={message} />
       )}
     </div>
   );

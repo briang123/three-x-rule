@@ -5,13 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ModelInfo } from '@/lib/api-client';
 import { SocialPostConfig } from './social-platforms';
 
-export { SocialPostConfig };
+export type { SocialPostConfig };
 
 interface SocialPostsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  onGenerate: (config: SocialPostConfig) => void;
-  availableColumns?: { [key: string]: string };
+  onGenerate: (config: SocialPostConfig) => Promise<void>;
+  availableMessages?: { [key: string]: string };
 }
 
 const PLATFORMS = [
@@ -37,7 +37,7 @@ export default function SocialPostsDrawer({
   isOpen,
   onClose,
   onGenerate,
-  availableColumns = {},
+  availableMessages = {},
 }: SocialPostsDrawerProps) {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,31 +272,31 @@ export default function SocialPostsDrawer({
               </div>
 
               {/* Column Selection */}
-              {Object.keys(availableColumns).length > 0 && (
+              {Object.keys(availableMessages).length > 0 && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-kitchen-text dark:text-kitchen-dark-text mb-3">
-                    Select Context Columns (Optional)
+                    Select messages to include as context:
                   </label>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {Object.entries(availableColumns).map(([columnKey, columnContent]) => (
+                    {Object.entries(availableMessages).map(([messageKey, messageContent]) => (
                       <button
-                        key={columnKey}
-                        onClick={() => handleColumnToggle(columnKey)}
+                        key={messageKey}
+                        onClick={() => handleColumnToggle(messageKey)}
                         className={`w-full p-3 rounded-lg border text-left transition-all ${
-                          config.selectedColumns?.includes(columnKey)
+                          config.selectedColumns?.includes(messageKey)
                             ? 'border-kitchen-accent-blue dark:border-kitchen-dark-accent-blue bg-kitchen-accent-blue/5 dark:bg-kitchen-dark-surface-light'
                             : 'border-kitchen-light-gray dark:border-kitchen-dark-border hover:border-kitchen-accent-blue/50'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm">Column {columnKey}</div>
+                            <div className="font-medium text-sm">Message {messageKey}</div>
                             <div className="text-xs text-kitchen-text-light dark:text-kitchen-dark-text-light truncate">
-                              {columnContent.substring(0, 100)}
-                              {columnContent.length > 100 ? '...' : ''}
+                              {messageContent.substring(0, 100)}
+                              {messageContent.length > 100 ? '...' : ''}
                             </div>
                           </div>
-                          {config.selectedColumns?.includes(columnKey) && (
+                          {config.selectedColumns?.includes(messageKey) && (
                             <div className="w-2 h-2 bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue rounded-full ml-2 flex-shrink-0"></div>
                           )}
                         </div>
@@ -304,7 +304,7 @@ export default function SocialPostsDrawer({
                     ))}
                   </div>
                   <div className="text-xs text-kitchen-text-light dark:text-kitchen-dark-text-light mt-1">
-                    Select columns to include as context for social post generation
+                    Select messages to include as context for social post generation
                   </div>
                 </div>
               )}

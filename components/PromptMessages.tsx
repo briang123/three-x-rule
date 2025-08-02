@@ -7,49 +7,49 @@ import ChatBubbleIcon from './icons/ChatBubbleIcon';
 
 interface PromptMessagesProps {
   hasAIContent: boolean;
-  columnKeys: string[];
-  columnResponses: { [key: string]: string[] };
+  messageKeys: string[];
+  messageResponses: { [key: string]: string[] };
   originalResponses: { [key: string]: string };
   isGenerating: { [key: string]: boolean };
-  columnModels: { [key: string]: string };
+  messageModels: { [key: string]: string };
   loading: boolean;
   onAddSelection: (text: string, source: string) => void;
-  columnRefs: React.MutableRefObject<{ [key: string]: HTMLDivElement | null }>;
-  getColumnColor: (column: string) => string;
+  messageRefs: React.MutableRefObject<{ [key: string]: HTMLDivElement | null }>;
+  getMessageColor: (message: string) => string;
 }
 
 const PromptMessages: React.FC<PromptMessagesProps> = ({
   hasAIContent,
-  columnKeys,
-  columnResponses,
+  messageKeys,
+  messageResponses,
   originalResponses,
   isGenerating,
-  columnModels,
+  messageModels,
   loading,
   onAddSelection,
-  columnRefs,
-  getColumnColor,
+  messageRefs,
+  getMessageColor,
 }) => {
   return (
     <>
       {hasAIContent &&
-        columnKeys.map((column, index) => (
+        messageKeys.map((message, index) => (
           <motion.div
-            key={column}
+            key={message}
             ref={(el) => {
-              columnRefs.current[column] = el;
+              messageRefs.current[message] = el;
             }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 * index, ease: 'easeOut' }}
-            className="kitchen-card p-6 flex flex-col overflow-hidden w-full max-w-full flex-shrink-0 column-container"
+            className="kitchen-card p-6 flex flex-col overflow-hidden w-full max-w-full flex-shrink-0 message-container"
           >
             <div className="flex items-center justify-between mb-4 flex-shrink-0 min-h-0">
               <div className="flex items-center space-x-3">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold ${getColumnColor(column)} bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-lg font-semibold ${getMessageColor(message)} bg-kitchen-accent-blue dark:bg-kitchen-dark-accent-blue`}
                 >
-                  {column}
+                  {message}
                 </div>
               </div>
               {loading ? (
@@ -61,7 +61,7 @@ const PromptMessages: React.FC<PromptMessagesProps> = ({
                 <div className="flex items-center space-x-2">
                   {/* Show model badge instead of dropdown when there's AI content */}
                   <MessageModelBadge
-                    modelName={columnModels[column] || 'Model'}
+                    modelName={messageModels[message] || 'Model'}
                     hasAIContent={hasAIContent}
                   />
                 </div>
@@ -69,9 +69,9 @@ const PromptMessages: React.FC<PromptMessagesProps> = ({
             </div>
 
             {/* Responses Display */}
-            <div className="column-content pr-2">
+            <div className="message-content pr-2">
               <div className="space-y-3">
-                {isGenerating[column] && (
+                {isGenerating[message] && (
                   <div className="text-center text-blue-600 py-4">
                     <div className="flex items-center justify-center space-x-2">
                       <TypingIndicator />
@@ -80,7 +80,7 @@ const PromptMessages: React.FC<PromptMessagesProps> = ({
                   </div>
                 )}
 
-                {columnResponses[column].length === 0 && !isGenerating[column] ? (
+                {messageResponses[message].length === 0 && !isGenerating[message] ? (
                   <div className="text-center text-gray-500 py-8">
                     <ChatBubbleIcon />
                     <p>No responses yet. Enter a prompt above to generate content.</p>
@@ -88,9 +88,9 @@ const PromptMessages: React.FC<PromptMessagesProps> = ({
                 ) : (
                   // Markdown View
                   <ContainerizedAIResponseContent
-                    content={originalResponses[column] || columnResponses[column].join('\n\n')}
-                    column={column}
-                    onAddSelection={(text) => onAddSelection(text, column)}
+                    content={originalResponses[message] || messageResponses[message].join('\n\n')}
+                    message={message}
+                    onAddSelection={(text) => onAddSelection(text, message)}
                   />
                 )}
               </div>
