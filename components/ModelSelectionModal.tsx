@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ModelInfo } from '@/lib/api-client';
 import { ModelSelection } from './ModelGridSelector';
+import { useModels } from '@/hooks';
 
 interface ModelSelectionModalProps {
   isOpen: boolean;
@@ -20,9 +20,7 @@ export default function ModelSelectionModal({
   initialSelections = [],
   disabled = false,
 }: ModelSelectionModalProps) {
-  const [models, setModels] = useState<ModelInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { models, loading, error } = useModels();
   const [selectedModels, setSelectedModels] = useState<ModelSelection[]>(initialSelections);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -30,32 +28,6 @@ export default function ModelSelectionModal({
   useEffect(() => {
     setSelectedModels(initialSelections);
   }, [initialSelections]);
-
-  // Fetch models when modal opens
-  useEffect(() => {
-    if (isOpen && models.length === 0) {
-      const fetchModels = async () => {
-        try {
-          setLoading(true);
-          const response = await fetch('/api/chat');
-          const data = await response.json();
-
-          if (data.success) {
-            setModels(data.data.models);
-          } else {
-            setError(data.error || 'Failed to fetch models');
-          }
-        } catch (err) {
-          setError('Failed to fetch models');
-          console.error('Error fetching models:', err);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchModels();
-    }
-  }, [isOpen, models.length]);
 
   // Call onModelSelectionsChange whenever selectedModels changes
   const prevSelectedModelsRef = useRef<ModelSelection[]>(initialSelections);

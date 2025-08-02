@@ -2,9 +2,14 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ModelSelectionModal from './ModelSelectionModal';
 import { ModelSelection } from './ModelGridSelector';
+import { useModels } from '@/hooks';
 
-// Mock the fetch function
-global.fetch = jest.fn();
+// Mock the useModels hook
+jest.mock('@/hooks', () => ({
+  useModels: jest.fn(),
+}));
+
+const mockUseModels = useModels as jest.MockedFunction<typeof useModels>;
 
 describe('ModelSelectionModal', () => {
   const mockOnClose = jest.fn();
@@ -13,7 +18,16 @@ describe('ModelSelectionModal', () => {
   beforeEach(() => {
     mockOnClose.mockClear();
     mockOnModelSelectionsChange.mockClear();
-    (global.fetch as jest.Mock).mockClear();
+    mockUseModels.mockClear();
+
+    // Default mock for useModels
+    mockUseModels.mockReturnValue({
+      models: [],
+      loading: false,
+      error: null,
+      initialized: true,
+      refetch: jest.fn(),
+    });
   });
 
   it('renders modal when isOpen is true', () => {
@@ -70,6 +84,14 @@ describe('ModelSelectionModal', () => {
   });
 
   it('shows loading state initially', () => {
+    mockUseModels.mockReturnValue({
+      models: [],
+      loading: true,
+      error: null,
+      initialized: false,
+      refetch: jest.fn(),
+    });
+
     render(
       <ModelSelectionModal
         isOpen={true}
@@ -82,7 +104,13 @@ describe('ModelSelectionModal', () => {
   });
 
   it('shows error state when API call fails', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+    mockUseModels.mockReturnValue({
+      models: [],
+      loading: false,
+      error: 'Network error',
+      initialized: false,
+      refetch: jest.fn(),
+    });
 
     render(
       <ModelSelectionModal
@@ -94,7 +122,7 @@ describe('ModelSelectionModal', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Error Loading Models')).toBeInTheDocument();
-      expect(screen.getByText('Failed to fetch models')).toBeInTheDocument();
+      expect(screen.getByText('Network error')).toBeInTheDocument();
     });
   });
 
@@ -112,11 +140,12 @@ describe('ModelSelectionModal', () => {
       },
     ];
 
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => ({
-        success: true,
-        data: { models: mockModels },
-      }),
+    mockUseModels.mockReturnValue({
+      models: mockModels,
+      loading: false,
+      error: null,
+      initialized: true,
+      refetch: jest.fn(),
     });
 
     render(
@@ -149,11 +178,12 @@ describe('ModelSelectionModal', () => {
 
     const initialSelections: ModelSelection[] = [{ modelId: 'gemini-2.0-flash', count: 2 }];
 
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => ({
-        success: true,
-        data: { models: mockModels },
-      }),
+    mockUseModels.mockReturnValue({
+      models: mockModels,
+      loading: false,
+      error: null,
+      initialized: true,
+      refetch: jest.fn(),
     });
 
     render(
@@ -186,11 +216,12 @@ describe('ModelSelectionModal', () => {
 
     const initialSelections: ModelSelection[] = [{ modelId: 'gemini-2.0-flash', count: 1 }];
 
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => ({
-        success: true,
-        data: { models: mockModels },
-      }),
+    mockUseModels.mockReturnValue({
+      models: mockModels,
+      loading: false,
+      error: null,
+      initialized: true,
+      refetch: jest.fn(),
     });
 
     // Clear any previous calls

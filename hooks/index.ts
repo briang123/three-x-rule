@@ -6,6 +6,7 @@ export { useScrollPerformance } from './useScrollPerformance';
 export { default as useTimeout } from './useTimeout';
 export { useCopyToClipboard } from './useCopyToClipboard';
 export { useModelOrchestration } from './useModelOrchestration';
+export { useModels } from './useModels';
 export { default as useSocialPostsBorderFadeOut } from './useSocialPostsBorderFadeOut';
 export { useRemixScroll as useRemixScrollOriginal } from './useRemixScroll';
 export { useScrollPerformance as useScrollPerformanceOriginal } from './useScrollPerformance';

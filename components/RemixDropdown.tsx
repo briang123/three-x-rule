@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ModelInfo } from '@/lib/api-client';
+import { useModels } from '@/hooks';
 
 interface RemixDropdownProps {
   onRemix: (modelId: string) => void;
@@ -16,9 +16,7 @@ export default function RemixDropdown({
   isGenerating = false,
 }: RemixDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [models, setModels] = useState<ModelInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { models, loading, error } = useModels();
   const [openDirection, setOpenDirection] = useState<'up' | 'down'>('down');
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -28,29 +26,6 @@ export default function RemixDropdown({
     isGenerating,
     finalDisabled: disabled || isGenerating,
   });
-
-  useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/chat');
-        const data = await response.json();
-
-        if (data.success) {
-          setModels(data.data.models);
-        } else {
-          setError(data.error || 'Failed to fetch models');
-        }
-      } catch (err) {
-        setError('Failed to fetch models');
-        console.error('Error fetching models:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchModels();
-  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {

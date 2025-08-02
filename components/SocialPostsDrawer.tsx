@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ModelInfo } from '@/lib/api-client';
 import { SocialPostConfig } from './social-platforms';
+import { useModels } from '@/hooks';
 
 export type { SocialPostConfig };
 
@@ -39,8 +39,7 @@ export default function SocialPostsDrawer({
   onGenerate,
   availableMessages = {},
 }: SocialPostsDrawerProps) {
-  const [models, setModels] = useState<ModelInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { models, loading } = useModels();
   const [config, setConfig] = useState<SocialPostConfig>({
     platform: 'twitter',
     modelId: '',
@@ -52,30 +51,12 @@ export default function SocialPostsDrawer({
     selectedColumns: [],
   });
 
+  // Set default model when models are loaded
   useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/chat');
-        const data = await response.json();
-
-        if (data.success) {
-          setModels(data.data.models);
-          if (data.data.models.length > 0) {
-            setConfig((prev) => ({ ...prev, modelId: data.data.models[0].id }));
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching models:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (isOpen) {
-      fetchModels();
+    if (models.length > 0 && !config.modelId) {
+      setConfig((prev) => ({ ...prev, modelId: models[0].id }));
     }
-  }, [isOpen]);
+  }, [models, config.modelId]);
 
   const handlePostTypeChange = (postType: string) => {
     const selectedType = POST_TYPES.find((type) => type.id === postType);

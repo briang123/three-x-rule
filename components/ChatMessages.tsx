@@ -9,6 +9,7 @@ import {
   useScrollEffectsWithState,
   useSocialPostsBorderFadeOut,
   useModelOrchestration,
+  useModels,
 } from '@/hooks';
 import PromptMessages from './PromptMessages';
 import { SocialPostConfig, SocialPosts } from './social-platforms';
@@ -144,9 +145,7 @@ const ChatMessages = React.memo(function ChatMessages({
     onSubmit,
   });
 
-  const [models, setModels] = useState<ModelInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
+  const { models, loading, error, initialized } = useModels();
 
   // Use the social posts border fade-out hook
   const { socialPostsBorderStates, setSocialPostsBorderStates } = useSocialPostsBorderFadeOut({
@@ -269,37 +268,6 @@ const ChatMessages = React.memo(function ChatMessages({
     messageRefs,
     scrollToElement,
   ]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchModels = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/chat');
-        const data = await response.json();
-
-        if (data.success && isMounted) {
-          setModels(data.data.models);
-          setInitialized(true);
-        } else if (!data.success) {
-          console.error('ChatMessages: Failed to fetch models:', data.error);
-        }
-      } catch (err) {
-        console.error('Error fetching models:', err);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchModels();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []); // Only run once on mount
 
   const getMessageColor = (message: string) => {
     const colors = {

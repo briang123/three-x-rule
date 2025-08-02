@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ModelInfo } from '@/lib/api-client';
 import { ColourfulText } from './ColourfulText';
+import { useModels } from '@/hooks';
 
 export interface ModelSelection {
   modelId: string;
@@ -201,9 +201,7 @@ export default function ModelGridSelector({
   onAnimationComplete,
   onClose,
 }: ModelGridSelectorProps) {
-  const [models, setModels] = useState<ModelInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { models, loading, error } = useModels();
   const [selectedModels, setSelectedModels] = useState<ModelSelection[]>(initialSelections);
   const [currentGreeting, setCurrentGreeting] = useState<{ text: string; highlights: string[] }>({
     text: '',
@@ -222,30 +220,12 @@ export default function ModelGridSelector({
     setSelectedModels(initialSelections);
   }, [initialSelections]);
 
+  // Trigger animations after loading completes
   useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/chat');
-        const data = await response.json();
-
-        if (data.success) {
-          setModels(data.data.models);
-        } else {
-          setError(data.error || 'Failed to fetch models');
-        }
-      } catch (err) {
-        setError('Failed to fetch models');
-        console.error('Error fetching models:', err);
-      } finally {
-        setLoading(false);
-        // Trigger animations after loading completes with longer delay for notification
-        setTimeout(() => setIsVisible(true), 100);
-      }
-    };
-
-    fetchModels();
-  }, []);
+    if (!loading) {
+      setTimeout(() => setIsVisible(true), 100);
+    }
+  }, [loading]);
 
   // Call onModelSelectionsChange whenever selectedModels changes, but only if there's an actual change
   const prevSelectedModelsRef = useRef<ModelSelection[]>(initialSelections);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ModelInfo } from '@/lib/api-client';
+import { useModels } from '@/hooks';
 
 interface ModelSelectorProps {
   selectedModel: string;
@@ -15,32 +15,7 @@ export default function ModelSelector({
   onModelChange,
   disabled = false,
 }: ModelSelectorProps) {
-  const [models, setModels] = useState<ModelInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/chat');
-        const data = await response.json();
-
-        if (data.success) {
-          setModels(data.data.models);
-        } else {
-          setError(data.error || 'Failed to fetch models');
-        }
-      } catch (err) {
-        setError('Failed to fetch models');
-        console.error('Error fetching models:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchModels();
-  }, []);
+  const { models, loading, error } = useModels();
 
   if (loading) {
     return (
