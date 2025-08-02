@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import { SelectedSentence } from '@/app/page';
-import { ModelInfo } from '@/lib/api-client';
 import ChatInputWrapper from './ChatInputWrapper';
 import { ModelSelection } from './ModelGridSelector';
 import {
@@ -124,7 +123,6 @@ const ChatMessages = React.memo(function ChatMessages({
   isLeftNavCollapsed = true,
 }: ChatMessagesProps) {
   // Position tracking refs
-  const modelSelectorRef = useRef<HTMLDivElement>(null);
   const toolsRowRef = useRef<HTMLDivElement>(null);
 
   const handleAddSelection = useCallback(
@@ -171,7 +169,7 @@ const ChatMessages = React.memo(function ChatMessages({
     onSubmit,
   });
 
-  const { models, loading, error, initialized } = useModels();
+  const { models, loading } = useModels();
 
   // Use the social posts border fade-out hook
   const { socialPostsBorderStates, setSocialPostsBorderStates } = useSocialPostsBorderFadeOut({
