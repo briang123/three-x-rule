@@ -21,3 +21,4 @@ export { useComputedValues } from './useComputedValues';
 export { useEffects } from './useEffects';
 export { useResetHandlers } from './useResetHandlers';
 export { useToggleHandlers } from './useToggleHandlers';
+export { useMultiModelChat } from './useMultiModelChat';
