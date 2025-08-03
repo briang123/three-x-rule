@@ -27,8 +27,8 @@ jest.mock('../components/TopBar', () => {
   };
 });
 
-jest.mock('../components/ChatMessages', () => {
-  return function MockChatMessages({
+jest.mock('../components/MainContent', () => {
+  return function MockMainContent({
     onSentenceSelect,
     messageResponses,
     originalResponses,
@@ -45,7 +45,7 @@ jest.mock('../components/ChatMessages', () => {
     onSubmit,
     currentMessage,
     onRemix,
-    remixDisabled,
+    isRemixDisabled,
     isRemixGenerating,
     modelSelections,
     messageModels,
@@ -61,8 +61,8 @@ jest.mock('../components/ChatMessages', () => {
     isLeftNavCollapsed,
   }: any) {
     return (
-      <div data-testid="chat-messages">
-        <div data-testid="remix-disabled">{remixDisabled?.toString() || 'false'}</div>
+      <div data-testid="main-content">
+        <div data-testid="remix-disabled">{isRemixDisabled?.toString() || 'false'}</div>
         <div data-testid="message-responses">{JSON.stringify(messageResponses)}</div>
         <div data-testid="current-message">{currentMessage}</div>
         <div data-testid="model-selections">{JSON.stringify(modelSelections)}</div>
@@ -198,7 +198,7 @@ describe('Home Page - Component Rendering', () => {
     expect(screen.getByTestId('aurora-background')).toBeInTheDocument();
     expect(screen.getByTestId('left-navigation')).toBeInTheDocument();
     expect(screen.getByTestId('top-bar')).toBeInTheDocument();
-    expect(screen.getByTestId('chat-messages')).toBeInTheDocument();
+    expect(screen.getByTestId('main-content')).toBeInTheDocument();
   });
 });
 
