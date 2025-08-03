@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, createContext, useContext } from 'react';
 import TopBar from '@/components/TopBar';
 import LeftNavigation from '@/components/LeftNavigation';
-import HeaderText from '@/components/HeaderText';
 import AuroraBackground from '@/components/AuroraBackground';
 import MainContent from '@/components/MainContent';
 import SocialPostsDrawer from '@/components/SocialPostsDrawer';
@@ -22,6 +21,39 @@ import {
 } from '@/hooks';
 import { PendingOrchestration } from '@/lib/types';
 
+// Create a context for the app state to reduce prop drilling
+interface AppContextType {
+  // Chat state
+  chatState: ReturnType<typeof useChatState>;
+  remixState: ReturnType<typeof useRemixState>;
+  socialPostsState: ReturnType<typeof useSocialPostsState>;
+  modelSelectionState: ReturnType<typeof useModelSelectionState>;
+  uiState: ReturnType<typeof useUIState>;
+
+  // Computed values
+  computedValues: ReturnType<typeof useComputedValues>;
+
+  // Event handlers
+  eventHandlers: ReturnType<typeof useEventHandlers>;
+  resetHandlers: ReturnType<typeof useResetHandlers>;
+  toggleHandlers: ReturnType<typeof useToggleHandlers>;
+
+  // Local state
+  pendingOrchestration: PendingOrchestration | null;
+  setPendingOrchestration: React.Dispatch<React.SetStateAction<PendingOrchestration | null>>;
+}
+
+const AppContext = createContext<AppContextType | null>(null);
+
+// Custom hook to use the app context
+export const useAppContext = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useAppContext must be used within an AppProvider');
+  }
+  return context;
+};
+
 // Main component
 export default function Home() {
   // State management
@@ -35,218 +67,137 @@ export default function Home() {
     null,
   );
 
-  // Destructure state for easier access
-  const {
-    selectedSentences,
-    setSelectedSentences,
-    messageModels,
-    setMessageModels,
-    messageResponses,
-    setMessageResponses,
-    originalResponses,
-    setOriginalResponses,
-    isGenerating,
-    setIsGenerating,
-    currentMessage,
-    setCurrentMessage,
-    chatKey,
-    resetChatState,
-  } = chatState;
-
-  const {
-    remixResponses,
-    setRemixResponses,
-    remixModels,
-    setRemixModels,
-    isRemixGenerating,
-    setIsRemixGenerating,
-    showRemix,
-    setShowRemix,
-    remixModel,
-    setRemixModel,
-    resetRemixState,
-  } = remixState;
-
-  const {
-    showSocialPostsDrawer,
-    setShowSocialPostsDrawer,
-    socialPostsResponses,
-    setSocialPostsResponses,
-    isSocialPostsGenerating,
-    setIsSocialPostsGenerating,
-    showSocialPosts,
-    setShowSocialPosts,
-    socialPostsConfigs,
-    setSocialPostsConfigs,
-    resetSocialPostsState,
-  } = socialPostsState;
-
-  const {
-    modelSelections,
-    setModelSelections,
-    showAISelection,
-    setShowAISelection,
-    resetModelSelector,
-    setResetModelSelector,
-    showModelSelectionModal,
-    setShowModelSelectionModal,
-    isUsingDefaultModel,
-    setIsUsingDefaultModel,
-    resetModelSelectionState,
-  } = modelSelectionState;
-
-  const { showRightPanel, isLeftNavCollapsed, setIsLeftNavCollapsed, auroraConfig } = uiState;
-
   // Custom hooks
   const eventHandlers = useEventHandlers({
-    setSelectedSentences,
-    setCurrentMessage,
-    setMessageModels,
-    setMessageResponses,
-    setOriginalResponses,
-    setIsGenerating,
-    setRemixResponses,
-    setRemixModels,
-    setIsRemixGenerating,
-    setShowRemix,
-    setRemixModel,
-    setSocialPostsResponses,
-    setIsSocialPostsGenerating,
-    setShowSocialPosts,
-    setSocialPostsConfigs,
-    setModelSelections,
-    setIsUsingDefaultModel,
-    setShowModelSelectionModal,
-    setIsLeftNavCollapsed,
-    messageResponses,
-    originalResponses,
-    isGenerating,
-    currentMessage,
-    modelSelections,
+    setSelectedSentences: chatState.setSelectedSentences,
+    setCurrentMessage: chatState.setCurrentMessage,
+    setMessageModels: chatState.setMessageModels,
+    setMessageResponses: chatState.setMessageResponses,
+    setOriginalResponses: chatState.setOriginalResponses,
+    setIsGenerating: chatState.setIsGenerating,
+    setRemixResponses: remixState.setRemixResponses,
+    setRemixModels: remixState.setRemixModels,
+    setIsRemixGenerating: remixState.setIsRemixGenerating,
+    setShowRemix: remixState.setShowRemix,
+    setRemixModel: remixState.setRemixModel,
+    setSocialPostsResponses: socialPostsState.setSocialPostsResponses,
+    setIsSocialPostsGenerating: socialPostsState.setIsSocialPostsGenerating,
+    setShowSocialPosts: socialPostsState.setShowSocialPosts,
+    setSocialPostsConfigs: socialPostsState.setSocialPostsConfigs,
+    setModelSelections: modelSelectionState.setModelSelections,
+    setIsUsingDefaultModel: modelSelectionState.setIsUsingDefaultModel,
+    setShowModelSelectionModal: modelSelectionState.setShowModelSelectionModal,
+    setIsLeftNavCollapsed: uiState.setIsLeftNavCollapsed,
+    messageResponses: chatState.messageResponses,
+    originalResponses: chatState.originalResponses,
+    isGenerating: chatState.isGenerating,
+    currentMessage: chatState.currentMessage,
+    modelSelections: modelSelectionState.modelSelections,
     pendingOrchestration,
     setPendingOrchestration,
   });
 
   const computedValues = useComputedValues({
-    messageResponses,
-    originalResponses,
-    isGenerating,
-    currentMessage,
-    modelSelections,
-    isUsingDefaultModel,
+    messageResponses: chatState.messageResponses,
+    originalResponses: chatState.originalResponses,
+    isGenerating: chatState.isGenerating,
+    currentMessage: chatState.currentMessage,
+    modelSelections: modelSelectionState.modelSelections,
+    isUsingDefaultModel: modelSelectionState.isUsingDefaultModel,
   });
 
   const resetHandlers = useResetHandlers({
-    resetChatState,
-    resetRemixState,
-    resetSocialPostsState,
-    resetModelSelectionState,
+    resetChatState: chatState.resetChatState,
+    resetRemixState: remixState.resetRemixState,
+    resetSocialPostsState: socialPostsState.resetSocialPostsState,
+    resetModelSelectionState: modelSelectionState.resetModelSelectionState,
   });
 
   const toggleHandlers = useToggleHandlers({
-    setShowAISelection,
-    setMessageModels,
-    setMessageResponses,
-    setOriginalResponses,
-    setIsGenerating,
-    modelSelections,
+    setShowAISelection: modelSelectionState.setShowAISelection,
+    setMessageModels: chatState.setMessageModels,
+    setMessageResponses: chatState.setMessageResponses,
+    setOriginalResponses: chatState.setOriginalResponses,
+    setIsGenerating: chatState.setIsGenerating,
+    modelSelections: modelSelectionState.modelSelections,
   });
 
   // Effects
   useEffects({
     pendingOrchestration,
     setPendingOrchestration,
-    modelSelections,
+    modelSelections: modelSelectionState.modelSelections,
     handleDirectSubmit: eventHandlers.handleDirectSubmit,
-    setShowModelSelectionModal,
+    setShowModelSelectionModal: modelSelectionState.setShowModelSelectionModal,
   });
 
   // Event handlers
   const handleModelSelectionClick = useCallback(() => {
-    setShowModelSelectionModal(true);
-  }, [setShowModelSelectionModal]);
+    modelSelectionState.setShowModelSelectionModal(true);
+  }, [modelSelectionState.setShowModelSelectionModal]);
 
   const handleRemoveSentence = useCallback(
     (id: string) => {
-      setSelectedSentences((prev) => prev.filter((s) => s.id !== id));
+      chatState.setSelectedSentences((prev) => prev.filter((s) => s.id !== id));
     },
-    [setSelectedSentences],
+    [chatState.setSelectedSentences],
   );
 
-  const handleResetModelSelector = useCallback(() => {
-    setResetModelSelector(true);
-    setTimeout(() => setResetModelSelector(false), 100);
-  }, [setResetModelSelector]);
+  // Context value
+  const contextValue: AppContextType = {
+    chatState,
+    remixState,
+    socialPostsState,
+    modelSelectionState,
+    uiState,
+    computedValues,
+    eventHandlers,
+    resetHandlers,
+    toggleHandlers,
+    pendingOrchestration,
+    setPendingOrchestration,
+  };
 
   return (
-    <AuroraBackground
-      colorStops={auroraConfig.colorStops}
-      speed={auroraConfig.speed}
-      blend={auroraConfig.blend}
-      amplitude={auroraConfig.amplitude}
-    >
-      <div className="flex h-screen transition-colors duration-200">
-        <LeftNavigation
-          isCollapsed={isLeftNavCollapsed}
-          onToggleCollapse={eventHandlers.handleLeftNavToggle}
-        />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <TopBar
-            onNewChat={resetHandlers.handleNewChat}
-            onSocialPosts={() => setShowSocialPostsDrawer(true)}
+    <AppContext.Provider value={contextValue}>
+      <AuroraBackground
+        colorStops={uiState.auroraConfig.colorStops}
+        speed={uiState.auroraConfig.speed}
+        blend={uiState.auroraConfig.blend}
+        amplitude={uiState.auroraConfig.amplitude}
+      >
+        <div className="flex h-screen transition-colors duration-200">
+          <LeftNavigation
+            isCollapsed={uiState.isLeftNavCollapsed}
+            onToggleCollapse={eventHandlers.handleLeftNavToggle}
           />
-          <MainContent
-            chatKey={chatKey}
-            messageResponses={messageResponses}
-            originalResponses={originalResponses}
-            isGenerating={isGenerating}
-            currentMessage={currentMessage}
-            selectedSentences={selectedSentences}
-            messageModels={messageModels}
-            remixResponses={remixResponses}
-            remixModels={remixModels}
-            isRemixGenerating={isRemixGenerating}
-            showRemix={showRemix}
-            remixModel={remixModel}
-            socialPostsResponses={socialPostsResponses}
-            isSocialPostsGenerating={isSocialPostsGenerating}
-            showSocialPosts={showSocialPosts}
-            socialPostsConfigs={socialPostsConfigs}
-            modelSelections={modelSelections}
-            showAISelection={showAISelection}
-            isUsingDefaultModel={isUsingDefaultModel}
-            showRightPanel={showRightPanel}
-            isLeftNavCollapsed={isLeftNavCollapsed}
-            isHeaderVisible={computedValues.isHeaderVisible}
-            isRemixDisabled={computedValues.isRemixDisabled}
-            onSentenceSelect={eventHandlers.handleSentenceSelect}
-            onCloseSocialPosts={eventHandlers.handleCloseSocialPosts}
-            onSubmit={eventHandlers.handleSubmit}
-            onRemix={eventHandlers.handleRemix}
-            onModelSelectionsUpdate={eventHandlers.handleModelSelectionsUpdate}
-            onDirectSubmit={eventHandlers.handleDirectSubmit}
-            onToggleAISelection={toggleHandlers.handleToggleAISelection}
-            onModelSelectionClick={handleModelSelectionClick}
-            onRemoveSentence={handleRemoveSentence}
-            resetModelSelector={handleResetModelSelector}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <TopBar
+              onNewChat={resetHandlers.handleNewChat}
+              onSocialPosts={() => socialPostsState.setShowSocialPostsDrawer(true)}
+            />
+            <MainContent
+              onModelSelectionClick={handleModelSelectionClick}
+              onRemoveSentence={handleRemoveSentence}
+            />
+          </div>
+
+          <SocialPostsDrawer
+            isOpen={socialPostsState.showSocialPostsDrawer}
+            onClose={() => socialPostsState.setShowSocialPostsDrawer(false)}
+            onGenerate={eventHandlers.handleSocialPostsGenerate}
+            availableMessages={chatState.originalResponses}
+          />
+
+          <ModelSelectionModal
+            isOpen={modelSelectionState.showModelSelectionModal}
+            onClose={() => modelSelectionState.setShowModelSelectionModal(false)}
+            onModelSelectionsChange={eventHandlers.handleModelSelectionsChange}
+            initialSelections={modelSelectionState.modelSelections}
+            disabled={computedValues.isGeneratingAny}
           />
         </div>
-
-        <SocialPostsDrawer
-          isOpen={showSocialPostsDrawer}
-          onClose={() => setShowSocialPostsDrawer(false)}
-          onGenerate={eventHandlers.handleSocialPostsGenerate}
-          availableMessages={originalResponses}
-        />
-
-        <ModelSelectionModal
-          isOpen={showModelSelectionModal}
-          onClose={() => setShowModelSelectionModal(false)}
-          onModelSelectionsChange={eventHandlers.handleModelSelectionsChange}
-          initialSelections={modelSelections}
-          disabled={computedValues.isGeneratingAny}
-        />
-      </div>
-    </AuroraBackground>
+      </AuroraBackground>
+    </AppContext.Provider>
   );
 }
