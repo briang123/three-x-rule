@@ -10,34 +10,22 @@ import { ModelSelection } from '@/components/ModelGridSelector';
 import ModelSelectionModal from '@/components/ModelSelectionModal';
 import HeaderText from '@/components/HeaderText';
 import AuroraBackground from '@/components/AuroraBackground';
+import {
+  useChatState,
+  useRemixState,
+  useSocialPostsState,
+  useModelSelectionState,
+  useUIState,
+  type SelectedSentence,
+} from '@/hooks';
 
 // Types
-export interface SelectedSentence {
-  id: string;
-  text: string;
-  source: string;
-}
-
-interface AuroraConfig {
-  colorStops: [string, string, string];
-  speed: number;
-  blend: number;
-  amplitude: number;
-}
-
 interface PendingOrchestration {
   prompt: string;
   modelId: string;
 }
 
 // Constants
-const DEFAULT_AURORA_CONFIG: AuroraConfig = {
-  colorStops: ['#1e74a9', '#97128c', '#05ecf0'],
-  speed: 0.2,
-  blend: 0.47,
-  amplitude: 1.0,
-};
-
 const MAX_MESSAGES = 6;
 
 // Utility functions
@@ -61,17 +49,6 @@ const createErrorMessage = (error: Error): string => {
   return 'An error occurred while generating the response.';
 };
 
-const resetObjectValues = <T,>(
-  obj: { [key: string]: T },
-  defaultValue: T,
-): { [key: string]: T } => {
-  const reset: { [key: string]: T } = {};
-  Object.keys(obj).forEach((key) => {
-    reset[key] = defaultValue;
-  });
-  return reset;
-};
-
 const remapObjectKeys = <T,>(
   obj: { [key: string]: T },
   filteredKeys: string[],
@@ -82,151 +59,6 @@ const remapObjectKeys = <T,>(
     newObj[newKey] = obj[key];
   });
   return newObj;
-};
-
-// Custom hooks
-const useChatState = () => {
-  const [selectedSentences, setSelectedSentences] = useState<SelectedSentence[]>([]);
-  const [messageModels, setMessageModels] = useState<{ [key: string]: string }>({});
-  const [messageResponses, setMessageResponses] = useState<{ [key: string]: string[] }>({});
-  const [originalResponses, setOriginalResponses] = useState<{ [key: string]: string }>({});
-  const [isGenerating, setIsGenerating] = useState<{ [key: string]: boolean }>({});
-  const [currentMessage, setCurrentMessage] = useState('');
-  const [chatKey, setChatKey] = useState(0);
-
-  const resetChatState = useCallback(() => {
-    setSelectedSentences([]);
-    setMessageResponses(resetObjectValues(messageResponses, []));
-    setOriginalResponses(resetObjectValues(originalResponses, ''));
-    setIsGenerating(resetObjectValues(isGenerating, false));
-    setCurrentMessage('');
-    setChatKey((prev) => prev + 1);
-  }, [messageResponses, originalResponses, isGenerating]);
-
-  return {
-    selectedSentences,
-    setSelectedSentences,
-    messageModels,
-    setMessageModels,
-    messageResponses,
-    setMessageResponses,
-    originalResponses,
-    setOriginalResponses,
-    isGenerating,
-    setIsGenerating,
-    currentMessage,
-    setCurrentMessage,
-    chatKey,
-    resetChatState,
-  };
-};
-
-const useRemixState = () => {
-  const [remixResponses, setRemixResponses] = useState<string[]>([]);
-  const [remixModels, setRemixModels] = useState<string[]>([]);
-  const [isRemixGenerating, setIsRemixGenerating] = useState<boolean>(false);
-  const [showRemix, setShowRemix] = useState<boolean>(false);
-  const [remixModel, setRemixModel] = useState<string>('');
-
-  const resetRemixState = useCallback(() => {
-    setRemixResponses([]);
-    setRemixModels([]);
-    setIsRemixGenerating(false);
-    setShowRemix(false);
-    setRemixModel('');
-  }, []);
-
-  return {
-    remixResponses,
-    setRemixResponses,
-    remixModels,
-    setRemixModels,
-    isRemixGenerating,
-    setIsRemixGenerating,
-    showRemix,
-    setShowRemix,
-    remixModel,
-    setRemixModel,
-    resetRemixState,
-  };
-};
-
-const useSocialPostsState = () => {
-  const [showSocialPostsDrawer, setShowSocialPostsDrawer] = useState<boolean>(false);
-  const [socialPostsResponses, setSocialPostsResponses] = useState<{ [key: string]: string }>({});
-  const [isSocialPostsGenerating, setIsSocialPostsGenerating] = useState<{
-    [key: string]: boolean;
-  }>({});
-  const [showSocialPosts, setShowSocialPosts] = useState<{ [key: string]: boolean }>({});
-  const [socialPostsConfigs, setSocialPostsConfigs] = useState<{ [key: string]: SocialPostConfig }>(
-    {},
-  );
-
-  const resetSocialPostsState = useCallback(() => {
-    setSocialPostsResponses({});
-    setIsSocialPostsGenerating({});
-    setShowSocialPosts({});
-    setSocialPostsConfigs({});
-  }, []);
-
-  return {
-    showSocialPostsDrawer,
-    setShowSocialPostsDrawer,
-    socialPostsResponses,
-    setSocialPostsResponses,
-    isSocialPostsGenerating,
-    setIsSocialPostsGenerating,
-    showSocialPosts,
-    setShowSocialPosts,
-    socialPostsConfigs,
-    setSocialPostsConfigs,
-    resetSocialPostsState,
-  };
-};
-
-const useModelSelectionState = () => {
-  const [modelSelections, setModelSelections] = useState<ModelSelection[]>([]);
-  const [showAISelection, setShowAISelection] = useState<boolean>(true);
-  const [resetModelSelector, setResetModelSelector] = useState<boolean>(false);
-  const [showModelSelectionModal, setShowModelSelectionModal] = useState<boolean>(false);
-  const [isUsingDefaultModel, setIsUsingDefaultModel] = useState<boolean>(false);
-
-  const resetModelSelectionState = useCallback(() => {
-    setModelSelections([]);
-    setShowModelSelectionModal(true);
-    setIsUsingDefaultModel(false);
-    setResetModelSelector(true);
-    setTimeout(() => setResetModelSelector(false), 100);
-  }, []);
-
-  return {
-    modelSelections,
-    setModelSelections,
-    showAISelection,
-    setShowAISelection,
-    resetModelSelector,
-    setResetModelSelector,
-    showModelSelectionModal,
-    setShowModelSelectionModal,
-    isUsingDefaultModel,
-    setIsUsingDefaultModel,
-    resetModelSelectionState,
-  };
-};
-
-const useUIState = () => {
-  const [showRightPanel, setShowRightPanel] = useState(false);
-  const [isLeftNavCollapsed, setIsLeftNavCollapsed] = useState<boolean>(true);
-  const [auroraConfig, setAuroraConfig] = useState<AuroraConfig>(DEFAULT_AURORA_CONFIG);
-
-  return {
-    showRightPanel,
-    setShowRightPanel,
-    isLeftNavCollapsed,
-    setIsLeftNavCollapsed,
-    auroraConfig,
-    setAuroraConfig,
-  };
 };
 
 // API functions

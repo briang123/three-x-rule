@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useCallback, useMemo } from 'react';
-import { SelectedSentence } from '@/app/page';
+import { SelectedSentence } from '@/hooks';
 import ChatInputWrapper from './ChatInputWrapper';
 import { ModelSelection } from './ModelGridSelector';
 import {

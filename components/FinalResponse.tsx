@@ -1,7 +1,15 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { FinalResponseData } from '@/app/page';
+import { SelectedSentence } from '@/hooks';
+
+interface FinalResponseData {
+  id: string;
+  timestamp: string;
+  prompt: string;
+  selectedSentences: SelectedSentence[];
+  finalResponse: string;
+}
 
 interface FinalResponseProps {
   finalResponses: FinalResponseData[];
@@ -100,7 +108,7 @@ export default function FinalResponse({ finalResponses }: FinalResponseProps) {
           {/* Final Response Content */}
           <div className="bg-gradient-to-r from-kitchen-muted-blue to-blue-50 p-4 rounded-xl border border-kitchen-accent-blue/20">
             <h4 className="text-sm font-medium text-kitchen-text mb-2">Refined Response</h4>
-            <p className="text-sm text-kitchen-text leading-relaxed">{data.response}</p>
+            <p className="text-sm text-kitchen-text leading-relaxed">{data.finalResponse}</p>
           </div>
         </motion.div>
       ))}

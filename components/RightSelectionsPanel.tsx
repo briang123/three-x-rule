@@ -1,8 +1,9 @@
 'use client';
 
+import React from 'react';
+import { SelectedSentence } from '@/hooks';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SelectedSentence } from '@/app/page';
 
 interface RightSelectionsPanelProps {
   selectedSentences: SelectedSentence[];
