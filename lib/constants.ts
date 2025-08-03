@@ -34,3 +34,6 @@ export const CHAT_INPUT_BOTTOM_PADDING = 'pb-96';
 export const CONTENT_PADDING = 'pl-6 pr-6';
 export const CONTENT_WIDTH = 'w-1/2 mx-auto';
 export const CONTENT_GAP = 'gap-6';
+
+// Chat constants
+export const MAX_MESSAGES = 6;
