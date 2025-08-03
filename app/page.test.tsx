@@ -103,14 +103,32 @@ jest.mock('../components/ModelSelectionModal', () => {
   };
 });
 
+// Define types for test data
+interface ModelSelection {
+  modelId: string;
+  count: number;
+}
+
+interface MessageResponses {
+  [key: string]: string[];
+}
+
+interface OriginalResponses {
+  [key: string]: string;
+}
+
+interface IsGenerating {
+  [key: string]: boolean;
+}
+
 // Test the remixDisabled calculation logic directly
 const calculateRemixDisabled = (
-  messageResponses: any,
+  messageResponses: MessageResponses,
   currentMessage: string,
-  modelSelections: any[],
+  modelSelections: ModelSelection[],
 ) => {
   const hasResponses = Object.values(messageResponses).some(
-    (responses: any) => responses.length > 0,
+    (responses: string[]) => responses.length > 0,
   );
   const hasCurrentMessage = currentMessage.trim();
   const totalModelQuantity = modelSelections.reduce(
@@ -125,9 +143,9 @@ const calculateRemixDisabled = (
 
 describe('Remix Button Logic', () => {
   it('should disable remix button when no responses exist', () => {
-    const messageResponses = {};
+    const messageResponses: MessageResponses = {};
     const currentMessage = 'test message';
-    const modelSelections = [
+    const modelSelections: ModelSelection[] = [
       { modelId: 'gemini-2.5-flash', count: 1 },
       { modelId: 'gemini-2.5-flash-lite', count: 1 },
     ];
@@ -137,9 +155,9 @@ describe('Remix Button Logic', () => {
   });
 
   it('should disable remix button when no current message', () => {
-    const messageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
+    const messageResponses: MessageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
     const currentMessage = '';
-    const modelSelections = [
+    const modelSelections: ModelSelection[] = [
       { modelId: 'gemini-2.5-flash', count: 1 },
       { modelId: 'gemini-2.5-flash-lite', count: 1 },
     ];
@@ -149,27 +167,27 @@ describe('Remix Button Logic', () => {
   });
 
   it('should disable remix button when total model quantity is 1', () => {
-    const messageResponses = { '1': ['Response 1'] };
+    const messageResponses: MessageResponses = { '1': ['Response 1'] };
     const currentMessage = 'test message';
-    const modelSelections = [{ modelId: 'gemini-2.5-flash', count: 1 }];
+    const modelSelections: ModelSelection[] = [{ modelId: 'gemini-2.5-flash', count: 1 }];
 
     const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
     expect(isDisabled).toBe(true);
   });
 
   it('should disable remix button when total model quantity is 0', () => {
-    const messageResponses = { '1': ['Response 1'] };
+    const messageResponses: MessageResponses = { '1': ['Response 1'] };
     const currentMessage = 'test message';
-    const modelSelections = [];
+    const modelSelections: ModelSelection[] = [];
 
     const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
     expect(isDisabled).toBe(true);
   });
 
   it('should enable remix button when all conditions are met', () => {
-    const messageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
+    const messageResponses: MessageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
     const currentMessage = 'test message';
-    const modelSelections = [
+    const modelSelections: ModelSelection[] = [
       { modelId: 'gemini-2.5-flash', count: 1 },
       { modelId: 'gemini-2.5-flash-lite', count: 1 },
     ];
@@ -179,9 +197,9 @@ describe('Remix Button Logic', () => {
   });
 
   it('should enable remix button when total model quantity is 3', () => {
-    const messageResponses = { '1': ['Response 1'] };
+    const messageResponses: MessageResponses = { '1': ['Response 1'] };
     const currentMessage = 'test message';
-    const modelSelections = [
+    const modelSelections: ModelSelection[] = [
       { modelId: 'gemini-2.5-flash', count: 2 },
       { modelId: 'gemini-2.5-flash-lite', count: 1 },
     ];
@@ -208,30 +226,30 @@ describe('Model Selection Response Preservation', () => {
     // preserves existing responses instead of clearing them
 
     // Mock the handleModelSelectionsChange function behavior
-    const mockMessageResponses = {
+    const mockMessageResponses: MessageResponses = {
       '1': ['Existing response 1', 'Existing response 2'],
       '2': ['Existing response 3'],
     };
-    const mockOriginalResponses = {
+    const mockOriginalResponses: OriginalResponses = {
       '1': 'Original response 1',
       '2': 'Original response 2',
     };
-    const mockIsGenerating = {
+    const mockIsGenerating: IsGenerating = {
       '1': false,
       '2': false,
     };
 
     // Simulate the new model selections
-    const newSelections = [
+    const newSelections: ModelSelection[] = [
       { modelId: 'gemini-2.5-flash', count: 1 },
       { modelId: 'claude-3-5-sonnet', count: 1 },
     ];
 
     // Simulate the updated state that should preserve responses
     const newMessageModels: { [key: string]: string } = {};
-    const newMessageResponses: { [key: string]: string[] } = {};
-    const newOriginalResponses: { [key: string]: string } = {};
-    const newIsGenerating: { [key: string]: boolean } = {};
+    const newMessageResponses: MessageResponses = {};
+    const newOriginalResponses: OriginalResponses = {};
+    const newIsGenerating: IsGenerating = {};
 
     let messageIndex = 1;
     newSelections.forEach((selection) => {
@@ -262,16 +280,16 @@ describe('Model Selection Response Preservation', () => {
   it('should initialize empty responses for new messages when no existing responses', () => {
     // This test verifies that new messages get empty responses when there are no existing ones
 
-    const mockMessageResponses = {};
-    const mockOriginalResponses = {};
-    const mockIsGenerating = {};
+    const mockMessageResponses: MessageResponses = {};
+    const mockOriginalResponses: OriginalResponses = {};
+    const mockIsGenerating: IsGenerating = {};
 
-    const newSelections = [{ modelId: 'gemini-2.5-flash', count: 2 }];
+    const newSelections: ModelSelection[] = [{ modelId: 'gemini-2.5-flash', count: 2 }];
 
     const newMessageModels: { [key: string]: string } = {};
-    const newMessageResponses: { [key: string]: string[] } = {};
-    const newOriginalResponses: { [key: string]: string } = {};
-    const newIsGenerating: { [key: string]: boolean } = {};
+    const newMessageResponses: MessageResponses = {};
+    const newOriginalResponses: OriginalResponses = {};
+    const newIsGenerating: IsGenerating = {};
 
     let messageIndex = 1;
     newSelections.forEach((selection) => {
@@ -302,18 +320,18 @@ describe('Model Selection Response Preservation', () => {
 
 describe('Remix Panel Visibility Logic', () => {
   it('should calculate remixDisabled correctly for single message', () => {
-    const messageResponses = { '1': ['Response 1'] };
+    const messageResponses: MessageResponses = { '1': ['Response 1'] };
     const currentMessage = 'test message';
-    const modelSelections = [{ modelId: 'gemini-2.5-flash', count: 1 }];
+    const modelSelections: ModelSelection[] = [{ modelId: 'gemini-2.5-flash', count: 1 }];
 
     const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
     expect(isDisabled).toBe(true);
   });
 
   it('should calculate remixDisabled correctly for multiple messages', () => {
-    const messageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
+    const messageResponses: MessageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
     const currentMessage = 'test message';
-    const modelSelections = [
+    const modelSelections: ModelSelection[] = [
       { modelId: 'gemini-2.5-flash', count: 1 },
       { modelId: 'claude-3-5-sonnet', count: 1 },
     ];
@@ -323,18 +341,18 @@ describe('Remix Panel Visibility Logic', () => {
   });
 
   it('should calculate remixDisabled correctly for multiple responses from single model', () => {
-    const messageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
+    const messageResponses: MessageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
     const currentMessage = 'test message';
-    const modelSelections = [{ modelId: 'gemini-2.5-flash', count: 2 }];
+    const modelSelections: ModelSelection[] = [{ modelId: 'gemini-2.5-flash', count: 2 }];
 
     const isDisabled = calculateRemixDisabled(messageResponses, currentMessage, modelSelections);
     expect(isDisabled).toBe(false);
   });
 
   it('should calculate remixDisabled correctly when no current message', () => {
-    const messageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
+    const messageResponses: MessageResponses = { '1': ['Response 1'], '2': ['Response 2'] };
     const currentMessage = '';
-    const modelSelections = [
+    const modelSelections: ModelSelection[] = [
       { modelId: 'gemini-2.5-flash', count: 1 },
       { modelId: 'claude-3-5-sonnet', count: 1 },
     ];
@@ -344,9 +362,9 @@ describe('Remix Panel Visibility Logic', () => {
   });
 
   it('should calculate remixDisabled correctly when no responses', () => {
-    const messageResponses = {};
+    const messageResponses: MessageResponses = {};
     const currentMessage = 'test message';
-    const modelSelections = [
+    const modelSelections: ModelSelection[] = [
       { modelId: 'gemini-2.5-flash', count: 1 },
       { modelId: 'claude-3-5-sonnet', count: 1 },
     ];
