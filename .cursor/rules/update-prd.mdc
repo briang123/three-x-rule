@@ -1,0 +1,150 @@
+# PRD Task Status Management
+
+## Task Status Guidelines
+
+When working with PRD documents and migration plans, the AI assistant must follow these task status management rules:
+
+### Task Status States
+
+1. **Pending Review** - Use `[-]` for tasks that have been implemented but are awaiting developer review and approval
+2. **Completed** - Use `[x]` for tasks that have been implemented AND approved by the developer
+3. **Not Started** - Use `[ ]` for tasks that have not been implemented yet
+
+### When to Update Task Status
+
+#### Do NOT mark as completed until developer approval:
+
+- Never mark a task as `[x]` immediately after implementation
+- Always wait for explicit developer approval before marking as completed
+- Use `[-]` to indicate implementation is done but pending review
+
+#### Update to completed after approval:
+
+- Only change `[-]` to `[x]` after developer confirms the implementation works correctly
+- Update status when developer explicitly approves the functionality
+- Document any changes made during the approval process
+
+### Implementation Workflow
+
+1. **Implementation Phase**:
+
+   - Implement the required functionality
+   - Create/update necessary files and components
+   - Write comprehensive tests for the implementation
+   - Update task status to `[-]` (pending review)
+
+2. **Review Phase**:
+
+   - Provide clear instructions for testing the implementation
+   - Wait for developer feedback and approval
+   - Make any necessary adjustments based on feedback
+
+3. **Approval Phase**:
+   - Update task status to `[x]` only after developer confirms functionality works
+   - Document any final changes made during approval process
+
+### Testing Requirements
+
+#### Test Creation Guidelines:
+
+- Create tests immediately after implementing each component/file
+- Tests must be comprehensive and cover all functionality
+- Include unit tests, integration tests, and end-to-end tests as appropriate
+- Ensure tests can be run independently and as part of test suites
+
+#### Test Categories Required:
+
+1. **Unit Tests** - Test individual functions and components in isolation
+2. **Integration Tests** - Test interactions between components and services
+3. **API Tests** - Test API endpoints and data flow
+4. **UI Tests** - Test user interface interactions and responsiveness
+5. **Accessibility Tests** - Test accessibility compliance
+6. **Performance Tests** - Test performance under various conditions
+
+#### Test File Naming Convention:
+
+- Unit tests: `ComponentName.test.ts` or `ComponentName.test.tsx`
+- Integration tests: `ComponentName.integration.test.ts`
+- API tests: `route.test.ts` (for API routes)
+- E2E tests: `ComponentName.e2e.test.ts`
+
+### Documentation Requirements
+
+#### Implementation Documentation:
+
+- Document all new files and components created
+- Include purpose and functionality descriptions
+- Document any dependencies or requirements
+- Include usage examples and API documentation
+
+#### Test Documentation:
+
+- Document test coverage and scenarios
+- Include test setup and execution instructions
+- Document any test data or mocks required
+- Include troubleshooting guides for test failures
+
+### Quality Assurance
+
+#### Code Quality:
+
+- Ensure all code follows project coding standards
+- Include proper error handling and validation
+- Implement proper TypeScript types
+- Add comprehensive comments and documentation
+
+#### Test Quality:
+
+- Ensure tests are reliable and not flaky
+- Include proper test cleanup and setup
+- Test both success and failure scenarios
+- Include edge case testing
+
+### Communication with Developer
+
+#### Status Updates:
+
+- Clearly communicate when implementation is ready for review
+- Provide specific testing instructions
+- Highlight any potential issues or limitations
+- Request specific feedback on functionality
+
+#### Approval Process:
+
+- Wait for explicit confirmation that functionality works
+- Address any issues raised during review
+- Update documentation based on feedback
+- Only mark as completed after final approval
+
+### Example Task Status Updates
+
+```markdown
+## Phase 1: Core Infrastructure
+
+### 1.1 AI SDK Service Layer
+
+- [x] Create custom Gemini provider for AI SDK (approved by developer)
+- [-] Implement structured remix response schema (implemented, pending review)
+- [ ] Add social post schema for platform-specific content (not started)
+```
+
+### Error Handling
+
+If the AI assistant encounters issues during implementation:
+
+1. Document the issue clearly
+2. Provide potential solutions or workarounds
+3. Update task status to reflect the issue
+4. Request developer guidance on how to proceed
+5. Do not mark as completed until issue is resolved
+
+### Continuous Improvement
+
+- Regularly review and update task status
+- Maintain accurate documentation
+- Ensure all tests remain functional
+- Update implementation based on changing requirements
+- Keep communication open with developer throughout the process
+  alwaysApply: true
+
+---
