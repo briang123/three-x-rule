@@ -117,6 +117,37 @@ global.ReadableStream = class ReadableStream {
   }
 };
 
+// Mock TransformStream for AI SDK
+global.TransformStream = class TransformStream {
+  constructor() {
+    this.readable = new global.ReadableStream();
+    this.writable = {
+      getWriter() {
+        return {
+          write: () => Promise.resolve(),
+          close: () => Promise.resolve(),
+          abort: () => Promise.resolve(),
+        };
+      },
+    };
+  }
+};
+
+// Mock WritableStream for AI SDK
+global.WritableStream = class WritableStream {
+  constructor() {
+    this.writable = {
+      getWriter() {
+        return {
+          write: () => Promise.resolve(),
+          close: () => Promise.resolve(),
+          abort: () => Promise.resolve(),
+        };
+      },
+    };
+  }
+};
+
 // Mock TextEncoder and TextDecoder
 global.TextEncoder = class TextEncoder {
   encode(input) {

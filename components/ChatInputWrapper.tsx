@@ -4,7 +4,7 @@ import { ModelInfo } from '@/lib/api-client';
 import { ModelSelection } from './ModelGridSelector';
 
 interface ChatInputWrapperProps {
-  onSubmit: (prompt: string, modelId: string, attachments?: File[]) => void;
+  onSubmit: (prompt: string, modelId?: string, attachments?: File[]) => void;
   currentMessage: string;
   isSubmitting: boolean;
   onModelSelect?: (modelId: string) => void;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { geminiService, ChatRequest } from '@/lib/gemini';
+import { AISDKService } from '@/lib/ai-sdk-service';
 
 // Check if we should use mock API
 const USE_MOCK_API = process.env.USE_MOCK_API === 'true' || !process.env.GEMINI_API_KEY;
@@ -115,35 +116,48 @@ export async function POST(request: NextRequest) {
         },
       });
     } else {
-      // Real AI API call
-      const response = await geminiService.sendMessage(chatRequest);
+      // Enhanced AI API call using existing geminiService for now
+      try {
+        const response = await geminiService.sendMessage(chatRequest);
 
-      // Return streaming response format for consistency
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream({
-        start(controller) {
-          // Send the full response as a single chunk
-          const data = {
-            success: true,
-            data: {
-              content: response.content,
-              model: chatRequest.model,
-            },
-          };
+        // Convert the response to a streaming format
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          start(controller) {
+            // Send the response as a single chunk for now
+            const data = {
+              success: true,
+              data: {
+                content: response.content,
+                model: chatRequest.model,
+              },
+            };
 
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-          controller.close();
-        },
-      });
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          },
+        });
 
-      return new Response(stream, {
-        headers: {
-          'Content-Type': 'text/plain; charset=utf-8',
-          'Cache-Control': 'no-cache',
-          Connection: 'keep-alive',
-        },
-      });
+        return new Response(stream, {
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'Cache-Control': 'no-cache',
+            Connection: 'keep-alive',
+          },
+        });
+      } catch (error) {
+        console.error('AI Service Error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: errorMessage,
+          },
+          { status: 500 },
+        );
+      }
     }
   } catch (error) {
     console.error('API Error:', error);

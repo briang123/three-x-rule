@@ -158,7 +158,6 @@ console.log(fullNames4); // ['Cool Bos', 'Cool Bos', 'Cool Bos']`;
         highlights={highlights}
         onHighlightAdd={addHighlight}
         onHighlightRemove={removeHighlight}
-        enableLineSelection={true}
         className="p-6 border rounded-lg bg-gray-50 font-mono text-sm leading-relaxed"
       />
 

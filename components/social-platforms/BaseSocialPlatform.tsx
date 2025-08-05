@@ -186,7 +186,7 @@ export default function BaseSocialPlatform({
                       post={post}
                       index={index}
                       contentType={getContentTypeLabelWithCount(config.postType, 1)}
-                      onAddSelection={onAddSelection}
+                      onAddSelection={(text) => onAddSelection(text, 'S')}
                     />
                   ))}
                 </>

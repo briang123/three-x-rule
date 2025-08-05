@@ -39,9 +39,9 @@ describe('useTimeout', () => {
     expect(callback).not.toHaveBeenCalled();
   });
 
-  it('should not create a timeout when delay is undefined', () => {
+  it('should not create a timeout when delay is null', () => {
     const callback = jest.fn();
-    const delay = undefined;
+    const delay = null;
 
     renderHook(() => useTimeout(callback, delay));
 

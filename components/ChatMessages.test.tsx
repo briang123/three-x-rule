@@ -364,8 +364,22 @@ describe('ChatMessages', () => {
     const props = {
       ...defaultProps,
       socialPostsConfigs: {
-        'post-1': { platform: 'twitter', length: 'short' },
-        'post-2': { platform: 'linkedin', length: 'long' },
+        'post-1': { 
+          platform: 'twitter', 
+          modelId: 'gemini-2.0-flash',
+          postType: 'tweet',
+          numberOfPosts: 1,
+          characterLimit: 280,
+          isThreaded: false
+        },
+        'post-2': { 
+          platform: 'linkedin', 
+          modelId: 'gemini-2.0-flash',
+          postType: 'post',
+          numberOfPosts: 1,
+          characterLimit: 3000,
+          isThreaded: false
+        },
       },
     };
 
