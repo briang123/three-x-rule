@@ -4,7 +4,7 @@ import ContainerizedAIResponseContent from './ContainerizedAIResponseContent';
 
 interface RemixResponseDisplayProps {
   isGenerating: boolean;
-  response: string;
+  response: string | string[];
   modelName: string;
   onAddSelection: (text: string) => void;
 }
@@ -35,9 +35,9 @@ const RemixResponseDisplay: React.FC<RemixResponseDisplayProps> = ({
           </div>
         </div>
       ) : (
-        // Completed response display
+        // Completed response display - Handle both string and array responses
         <ContainerizedAIResponseContent
-          content={response}
+          content={Array.isArray(response) ? response.join('') : response}
           message="R"
           onAddSelection={onAddSelection}
         />

@@ -5,7 +5,7 @@ import RemixResponseDisplay from './RemixResponseDisplay';
 import RemixButtonWrapper from './RemixButtonWrapper';
 
 interface RemixMessagesProps {
-  remixResponses: string[];
+  remixResponses: string[][];
   remixModels: string[];
   remixModel: string;
   isRemixGenerating: boolean;

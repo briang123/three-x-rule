@@ -59,6 +59,49 @@ export const useMultiModelChat = ({
     setChatInstances(instances);
   }, [modelSelections]);
 
+  // Create individual useChat instances for each model
+  const chatHooks = useMemo(() => {
+    const hooks: { [messageKey: string]: ReturnType<typeof useChat> } = {};
+
+    chatInstances.forEach((instance) => {
+      const { messageKey, modelId } = instance;
+
+      // Create a unique useChat instance for each message
+      const chatHook = useChat({
+        api: '/api/chat',
+        id: `multi-model-${messageKey}`,
+        body: {
+          model: modelId,
+          messageKey,
+        },
+        onFinish: (message) => {
+          const content = message.content;
+          setOriginalResponses((prev) => ({
+            ...prev,
+            [messageKey]: content,
+          }));
+          setIsGenerating((prev) => ({
+            ...prev,
+            [messageKey]: false,
+          }));
+          onModelFinish?.(modelId, messageKey, content);
+        },
+        onError: (error) => {
+          console.error(`Error in model ${modelId} (${messageKey}):`, error);
+          setIsGenerating((prev) => ({
+            ...prev,
+            [messageKey]: false,
+          }));
+          onModelError?.(modelId, messageKey, error);
+        },
+      });
+
+      hooks[messageKey] = chatHook;
+    });
+
+    return hooks;
+  }, [chatInstances, onModelFinish, onModelError]);
+
   // Submit to all selected models simultaneously
   const handleSubmit = useCallback(
     async (prompt: string, attachments?: File[]) => {
@@ -72,89 +115,49 @@ export const useMultiModelChat = ({
           ...prev,
           [instance.messageKey]: true,
         }));
+        setMessages((prev) => ({
+          ...prev,
+          [instance.messageKey]: [],
+        }));
+        setOriginalResponses((prev) => ({
+          ...prev,
+          [instance.messageKey]: '',
+        }));
       });
 
       try {
-        // Submit to all instances simultaneously
+        // Submit to all chat instances simultaneously
         const promises = chatInstances.map(async (instance) => {
-          const messageKey = instance.messageKey;
+          const { messageKey, modelId } = instance;
+          const chatHook = chatHooks[messageKey];
 
-          try {
-            const response = await fetch('/api/chat', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                messages: [{ role: 'user', content: prompt }],
-                model: instance.modelId,
-                messageKey,
-                attachments: attachments ? Array.from(attachments) : undefined,
-              }),
-            });
-
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const reader = response.body?.getReader();
-            if (!reader) {
-              throw new Error('No response body');
-            }
-
-            let accumulatedResponse = '';
-            const decoder = new TextDecoder();
-
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              const chunk = decoder.decode(value);
-              const lines = chunk.split('\n');
-
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6);
-                  if (data === '[DONE]') break;
-
-                  try {
-                    const parsed = JSON.parse(data);
-                    if (parsed.success && parsed.data?.content) {
-                      accumulatedResponse += parsed.data.content;
-
-                      // Update streaming messages
-                      setMessages((prev) => ({
-                        ...prev,
-                        [messageKey]: [...(prev[messageKey] || []), parsed.data.content],
-                      }));
-                    } else if (!parsed.success) {
-                      throw new Error(parsed.error || 'API request failed');
-                    }
-                  } catch (e) {
-                    console.error('Error parsing JSON:', e);
-                  }
-                }
-              }
-            }
-
-            // Handle completion
-            setOriginalResponses((prev) => ({
-              ...prev,
-              [messageKey]: accumulatedResponse,
-            }));
-            setIsGenerating((prev) => ({
-              ...prev,
-              [messageKey]: false,
-            }));
-            onModelFinish?.(instance.modelId, messageKey, accumulatedResponse);
-          } catch (error) {
-            console.error(`Error in model ${instance.modelId}:`, error);
-            setIsGenerating((prev) => ({
-              ...prev,
-              [messageKey]: false,
-            }));
-            onModelError?.(instance.modelId, messageKey, error as Error);
+          if (!chatHook) {
+            throw new Error(`Chat hook not found for message ${messageKey}`);
           }
+
+          // Prepare the request body with attachments
+          const body: any = {
+            messages: [{ role: 'user', content: prompt }],
+            model: modelId,
+            messageKey,
+          };
+
+          if (attachments && attachments.length > 0) {
+            body.attachments = Array.from(attachments);
+          }
+
+          // Submit the message using the chat hook
+          await chatHook.append(
+            {
+              role: 'user',
+              content: prompt,
+            },
+            {
+              options: {
+                body,
+              },
+            },
+          );
         });
 
         await Promise.all(promises);
@@ -170,15 +173,39 @@ export const useMultiModelChat = ({
         throw error;
       }
     },
-    [chatInstances, onModelFinish, onModelError],
+    [chatInstances, chatHooks],
   );
+
+  // Update messages from chat hooks
+  useEffect(() => {
+    chatInstances.forEach((instance) => {
+      const { messageKey } = instance;
+      const chatHook = chatHooks[messageKey];
+
+      if (chatHook && chatHook.messages.length > 0) {
+        const lastMessage = chatHook.messages[chatHook.messages.length - 1];
+        if (lastMessage.role === 'assistant' && lastMessage.content) {
+          // For streaming, we'll get the full content
+          setMessages((prev) => ({
+            ...prev,
+            [messageKey]: [lastMessage.content],
+          }));
+        }
+      }
+    });
+  }, [chatInstances, chatHooks]);
 
   // Reset all instances
   const resetAll = useCallback(() => {
     setMessages({});
     setOriginalResponses({});
     setIsGenerating({});
-  }, []);
+
+    // Reset all chat hooks
+    Object.values(chatHooks).forEach((chatHook) => {
+      chatHook.reload();
+    });
+  }, [chatHooks]);
 
   // Aggregate loading state
   const isLoading = useMemo(() => {

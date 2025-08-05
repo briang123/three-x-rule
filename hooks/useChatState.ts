@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+// TODO: Remove useChat import and usage. Use AI SDK v5 streaming primitives instead.
 
 export interface SelectedSentence {
   id: string;
@@ -15,6 +16,9 @@ export const useChatState = () => {
   const [currentMessage, setCurrentMessage] = useState('');
   const [chatKey, setChatKey] = useState(0);
 
+  // Create AI SDK useChat instance for single-model operations
+  // TODO: Remove useChat import and usage. Use AI SDK v5 streaming primitives instead.
+
   const resetChatState = useCallback(() => {
     setSelectedSentences([]);
     setMessageModels({});
@@ -23,6 +27,9 @@ export const useChatState = () => {
     setIsGenerating({});
     setCurrentMessage('');
     setChatKey((prev) => prev + 1);
+
+    // Reset the AI SDK chat instance
+    // TODO: Remove useChat import and usage. Use AI SDK v5 streaming primitives instead.
   }, []);
 
   return {
@@ -40,5 +47,6 @@ export const useChatState = () => {
     setCurrentMessage,
     chatKey,
     resetChatState,
+    // TODO: Remove useChat import and usage. Use AI SDK v5 streaming primitives instead.
   };
 };

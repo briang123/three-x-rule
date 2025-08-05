@@ -15,7 +15,7 @@ interface UseEventHandlersProps {
   setIsGenerating: React.Dispatch<React.SetStateAction<{ [key: string]: boolean }>>;
 
   // Remix state
-  setRemixResponses: React.Dispatch<React.SetStateAction<string[]>>;
+  setRemixResponses: React.Dispatch<React.SetStateAction<string[][]>>;
   setRemixModels: React.Dispatch<React.SetStateAction<string[]>>;
   setIsRemixGenerating: (generating: boolean) => void;
   setShowRemix: (show: boolean) => void;
@@ -75,6 +75,8 @@ export const useEventHandlers = ({
   pendingOrchestration,
   setPendingOrchestration,
 }: UseEventHandlersProps) => {
+  // TODO: Implement remix and social posts streaming using AI SDK v5 primitives (e.g., streamText, createUIMessageStream)
+
   const handleSentenceSelect = useCallback(
     (sentence: SelectedSentence) => {
       setSelectedSentences((prev) => {
@@ -227,7 +229,13 @@ export const useEventHandlers = ({
       }
 
       try {
-        await Promise.all(promises);
+        // Start all promises but don't wait for them to complete
+        // This allows each model to stream independently
+        promises.forEach((promise) => {
+          promise.catch((error) => {
+            console.error('Error in individual model response:', error);
+          });
+        });
       } catch (error) {
         console.error('Error generating responses:', error);
       }
@@ -252,36 +260,80 @@ export const useEventHandlers = ({
 
       setIsRemixGenerating(true);
       setShowRemix(true);
-      setRemixResponses((prev) => [...prev, '']);
+
+      // Add a new remix response slot with empty chunks array
+      setRemixResponses((prev) => [...prev, []]);
       setRemixModels((prev) => [...prev, modelId]);
       setRemixModel(modelId);
 
       try {
-        const combinedResponses = Object.entries(originalResponses)
+        // Debug: Log the originalResponses to see what we're working with
+        console.log('Remix Debug - originalResponses:', originalResponses);
+        console.log('Remix Debug - currentMessage:', currentMessage);
+
+        const responses = Object.entries(originalResponses)
           .filter(([_, response]) => response.trim() !== '')
-          .map(([message, response]) => `Message ${message}:\n${response}`)
+          .map(([message, response]) => response.trim());
+
+        console.log('Remix Debug - filtered responses count:', responses.length);
+        console.log(
+          'Remix Debug - response lengths:',
+          responses.map((r) => r.length),
+        );
+
+        if (responses.length === 0) {
+          throw new Error('No valid responses to synthesize');
+        }
+
+        // Create the remix prompt that includes all AI responses
+        const combinedResponses = responses
+          .map((response, index) => `Response ${index + 1}:\n${response}`)
           .join('\n\n---\n\n');
 
-        const remixPrompt = `${currentMessage}\n\nCombine the best parts from all of the responses together and provide a synthesized and curated response.\n\nHere are the responses to combine:\n\n${combinedResponses}`;
+        const remixPrompt = `${currentMessage}\n\nI have received ${responses.length} different AI responses to this question. Please analyze all of these responses and create a single, comprehensive synthesis that:\n\n1. Identifies the best insights from each response\n2. Resolves any contradictions or conflicts\n3. Provides a unified, well-structured answer\n4. Maintains the most valuable information from all sources\n\nHere are the responses to synthesize:\n\n${combinedResponses}\n\nPlease provide a single, synthesized response that combines the best parts of all these answers.`;
 
-        const response = await sendChatRequest(remixPrompt, modelId);
+        console.log('Remix Debug - remixPrompt length:', remixPrompt.length);
+        console.log('Remix Debug - remixPrompt preview:', remixPrompt.substring(0, 500) + '...');
+
+        // Send the remix prompt to the specified AI model
+        const remixResponse = await sendChatRequest(remixPrompt, modelId, []);
+
+        // Handle the streaming response
+        let chunkCount = 0;
+
+        console.log('Remix Debug - Starting stream processing...');
 
         await handleStreamResponse(
-          response,
-          () => {}, // No need to update individual chunks for remix
-          (accumulatedResponse) => {
+          remixResponse,
+          (content) => {
+            chunkCount++;
+            console.log(
+              `Remix Debug - Chunk ${chunkCount}: "${content}" (length: ${content.length})`,
+            );
+
+            // Update the last remix response with new chunk
             setRemixResponses((prev) => {
               const newResponses = [...prev];
-              newResponses[newResponses.length - 1] = accumulatedResponse;
+              const lastIndex = newResponses.length - 1;
+              newResponses[lastIndex] = [...(newResponses[lastIndex] || []), content];
               return newResponses;
             });
+          },
+          (finalResponse) => {
+            console.log(
+              `Remix Debug - Stream complete. Total chunks: ${chunkCount}, Final length: ${finalResponse.length}`,
+            );
+            setIsRemixGenerating(false);
           },
         );
       } catch (error) {
         console.error('Error in remix:', error);
         const errorMessage = createErrorMessage(error as Error);
-        setRemixResponses((prev) => [...prev, errorMessage]);
-      } finally {
+        setRemixResponses((prev) => {
+          const newResponses = [...prev];
+          newResponses[newResponses.length - 1] = [errorMessage];
+          return newResponses;
+        });
         setIsRemixGenerating(false);
       }
     },
@@ -357,18 +409,18 @@ export const useEventHandlers = ({
           }
         }
 
-        const response = await sendChatRequest(socialPrompt, config.modelId);
+        // TODO: Implement social posts streaming using AI SDK v5 primitives (e.g., streamText, createUIMessageStream)
+        // For now, we'll simulate a stream response
+        const simulatedStream = {
+          text: `Simulated social posts response for ${socialPostId}:\n\n${socialPrompt}\n\nThis is a simulated stream response for the social posts operation.`,
+          done: true,
+        };
 
-        await handleStreamResponse(
-          response,
-          () => {}, // No need to update individual chunks for social posts
-          (accumulatedResponse) => {
-            setSocialPostsResponses((prev) => ({
-              ...prev,
-              [socialPostId]: accumulatedResponse,
-            }));
-          },
-        );
+        setSocialPostsResponses((prev) => ({
+          ...prev,
+          [socialPostId]: simulatedStream.text,
+        }));
+        setIsSocialPostsGenerating((prev) => ({ ...prev, [socialPostId]: false }));
       } catch (error) {
         console.error('Error in social posts generation:', error);
         const errorMessage = createErrorMessage(error as Error);
@@ -376,7 +428,6 @@ export const useEventHandlers = ({
           ...prev,
           [socialPostId]: errorMessage,
         }));
-      } finally {
         setIsSocialPostsGenerating((prev) => ({ ...prev, [socialPostId]: false }));
       }
     },

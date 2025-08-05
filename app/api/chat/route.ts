@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { streamText } from 'ai';
 import { geminiService, ChatRequest } from '@/lib/gemini';
 import { AISDKService } from '@/lib/ai-sdk-service';
 
 // Check if we should use mock API
-const USE_MOCK_API = process.env.USE_MOCK_API === 'true' || !process.env.GEMINI_API_KEY;
+const USE_MOCK_API = process.env.USE_MOCK_API === 'true';
 
 // Mock response generator
 function generateMockResponse(prompt: string, modelId: string): string {
@@ -116,26 +117,47 @@ export async function POST(request: NextRequest) {
         },
       });
     } else {
-      // Enhanced AI API call using existing geminiService for now
+      // Use real Gemini service
       try {
+        // Check if we have file attachments
+        const attachments = body.attachments || [];
+
         const response = await geminiService.sendMessage(chatRequest);
 
         // Convert the response to a streaming format
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
           start(controller) {
-            // Send the response as a single chunk for now
-            const data = {
-              success: true,
-              data: {
-                content: response.content,
-                model: chatRequest.model,
-              },
+            // Split the response into words for streaming
+            const words = response.content.split(' ');
+            let index = 0;
+
+            // Use shorter delay for longer responses (like remix)
+            const delay = words.length > 50 ? 15 : 25;
+
+            const sendNextWord = () => {
+              if (index < words.length) {
+                const word = words[index] + (index < words.length - 1 ? ' ' : '');
+                const data = {
+                  success: true,
+                  data: {
+                    content: word,
+                    model: chatRequest.model,
+                  },
+                };
+
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+                index++;
+
+                // Send next word after a shorter delay for better streaming
+                setTimeout(sendNextWord, delay);
+              } else {
+                controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                controller.close();
+              }
             };
 
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-            controller.close();
+            sendNextWord();
           },
         });
 
@@ -147,7 +169,7 @@ export async function POST(request: NextRequest) {
           },
         });
       } catch (error) {
-        console.error('AI Service Error:', error);
+        console.error('Gemini Service Error:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 
         return NextResponse.json(

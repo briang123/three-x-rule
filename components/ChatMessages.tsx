@@ -30,7 +30,7 @@ interface MessageDataProps {
 
 // Remix functionality props
 interface RemixProps {
-  remixResponses?: string[];
+  remixResponses?: string[][];
   remixModels?: string[];
   showRemix?: boolean;
   remixModel?: string;

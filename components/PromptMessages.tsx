@@ -86,9 +86,9 @@ const PromptMessages: React.FC<PromptMessagesProps> = ({
                     <p>No responses yet. Enter a prompt above to generate content.</p>
                   </div>
                 ) : (
-                  // Markdown View
+                  // Markdown View - Use individual chunks for streaming effect
                   <ContainerizedAIResponseContent
-                    content={originalResponses[message] || messageResponses[message].join('\n\n')}
+                    content={messageResponses[message].join('')}
                     message={message}
                     onAddSelection={(text) => onAddSelection(text, message)}
                   />
